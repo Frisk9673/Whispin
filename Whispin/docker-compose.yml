@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  firebase-emulator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.firebase-emulator
+    image: whispin-firebase-emulator
+    env_file:
+      - .env
+    volumes:
+      - ./firebase:/data           # エミュレータのデータ永続化
+      - ./:/workspace              # firebase.json などを読み込む
+    ports:
+      - "9000:9000"   # Realtime Database Emulator
+      - "9099:9099"   # Auth Emulator
+      - "4000:4000"   # Emulator UI
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
