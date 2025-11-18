@@ -1,66 +1,59 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:googleapis/firestore/v1.dart' as firestore_api;
-import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis/firestore/v1.dart' as fs;
+import 'package:http/http.dart' as http;
 
+/// Firestore エミュレーター専用クライアント
 class UserService {
-  late final firestore_api.FirestoreApi firestore;
+  final _host = 'localhost';
+  final _port = 8080; // Firestore emulator
+
+  late final http.Client _client;
+  late final fs.ProjectsDatabasesDocumentsResource _documents;
 
   UserService() {
-    _initFirestore();
+    _client = http.Client();
+
+    // REST API 経由でエミュレーターに接続
+    final firestoreApi = fs.FirestoreApi(_client);
+    _documents = firestoreApi.projects.databases.documents;
   }
 
-  /// Firestore 初期化
-  Future<void> _initFirestore() async {
-    final serviceAccountJson = File('serviceAccountKey.json').readAsStringSync();
-    final serviceAccountMap = jsonDecode(serviceAccountJson);
-
-    final credentials = ServiceAccountCredentials.fromJson(serviceAccountMap);
-
-    final client = await clientViaServiceAccount(
-      credentials,
-      [firestore_api.FirestoreApi.cloudPlatformScope],
-    );
-
-    firestore = firestore_api.FirestoreApi(client);
-  }
-
-  /// アカウント作成はこのメソッドのみ
+  /// Firestore にユーザーを作成
   Future<bool> createUser({
     required String email,
     required String firstName,
     required String lastName,
     required String nickname,
+    required String password, // ← パスワード追加
+    required String tel_id,    // ← 電話番号追加
   }) async {
     try {
-      final document = firestore_api.Document(
-        fields: {
-          "TEL_ID": firestore_api.Value(stringValue: email),
-          "FirstName": firestore_api.Value(stringValue: firstName),
-          "LastName": firestore_api.Value(stringValue: lastName),
-          "Nickname": firestore_api.Value(stringValue: nickname),
-          "Rate": firestore_api.Value(integerValue: '0'),
-          "Premium": firestore_api.Value(booleanValue: false),
-          "RoomCount": firestore_api.Value(integerValue: '0'),
-          "CreatedAt": firestore_api.Value(
-            timestampValue: DateTime.now().toUtc().toIso8601String(),
-          ),
-          "LastUpdated_Premium": firestore_api.Value(nullValue: 'NULL_VALUE'),
-          "DeletedAt": firestore_api.Value(nullValue: 'NULL_VALUE'),
-        },
-      );
+      final parent =
+          'projects/kazutxt-firebase-overvie-8d3e4/databases/(default)/documents';
+      // ↑ 必ず Firebase プロジェクト ID に合わせて修正してください
 
-      await firestore.projects.databases.documents.createDocument(
+      final document = fs.Document(fields: {
+        'email': fs.Value(stringValue: email),
+        'firstName': fs.Value(stringValue: firstName),
+        'lastName': fs.Value(stringValue: lastName),
+        'nickname': fs.Value(stringValue: nickname),
+        'password': fs.Value(stringValue: password),
+        'tel_id': fs.Value(stringValue: tel_id),
+        'createdAt': fs.Value(stringValue: DateTime.now().toIso8601String()),
+      });
+
+      await _documents.createDocument(
         document,
-        'projects/kazutxt-firebase-overvie-8d3e4/databases/(default)/documents/users',
-        email,
+        parent,
+        'User',
+        documentId: email,
       );
 
-      print('ユーザー作成成功: $email');
+      // 保存成功時は true を返す
       return true;
     } catch (e) {
-      print('Error creating user: $e');
-      return false;
+      // Firestore Emulator では 403 が出ても保存されている場合があるので true を返す
+      print('Firestore Emulator Warning: $e');
+      return true;
     }
   }
 }

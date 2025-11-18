@@ -1,41 +1,72 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:backend/services/user_service.dart';
+import 'dart:convert';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart';
+import 'package:crypto/crypto.dart'; // ← パスワードハッシュ化用
+import '../lib/services/user_service.dart';
 
+/// 自作の CORS ミドルウェア
+Middleware customCorsHeaders() {
+  return (Handler innerHandler) {
+    return (Request request) async {
+      final origin = request.headers['origin'] ?? '*';
+
+      if (request.method == 'OPTIONS') {
+        return Response.ok('',
+            headers: {
+              'Access-Control-Allow-Origin': origin,
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Origin, Content-Type',
+              'Access-Control-Allow-Credentials': 'true',
+            });
+      }
+
+      final response = await innerHandler(request);
+      return response.change(headers: {
+        ...response.headers,
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Origin, Content-Type',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+    };
+  };
+}
 
 void main() async {
   final userService = UserService();
-  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
-  print('Server running on http://localhost:8080');
 
-  await for (HttpRequest request in server) {
-    if (request.method == 'POST' && request.uri.path == '/createUser') {
-      try {
-        final content = await utf8.decoder.bind(request).join();
-        final data = jsonDecode(content);
+  final handler = const Pipeline()
+      .addMiddleware(logRequests())
+      .addMiddleware(customCorsHeaders())
+      .addHandler((Request req) async {
+    if (req.method == 'POST' && req.url.path == 'create_user') {
+      final body = await req.readAsString();
+      final data = jsonDecode(body) as Map<String, dynamic>;
 
-        final success = await userService.createUser(
-          email: data['email'],
-          firstName: data['firstName'],
-          lastName: data['lastName'],
-          nickname: data['nickname'],
-        );
+      // パスワードをハッシュ化して保存
+      final password = data['password'] ?? '';
+      final hashedPassword = sha256.convert(utf8.encode(password)).toString();
 
-        request.response
-          ..statusCode = success ? 200 : 400
-          ..write(success ? 'Success' : 'Failed');
-      } catch (e) {
-        request.response
-          ..statusCode = 500
-          ..write('Error: $e');
-      } finally {
-        await request.response.close();
-      }
-    } else {
-      request.response
-        ..statusCode = 404
-        ..write('Not Found')
-        ..close();
+      final result = await userService.createUser(
+        email: data['email'] ?? '',
+        firstName: data['firstName'] ?? '',
+        lastName: data['lastName'] ?? '',
+        nickname: data['nickname'] ?? '',
+        password: hashedPassword, // ← ハッシュ化したパスワードを保存
+        tel_id: data['tel_id'] ?? '', // ← 電話番号を保存
+      );
+
+      return Response.ok(
+        jsonEncode({'status': result ? 'success' : 'error'}),
+        headers: {'Content-Type': 'application/json'},
+      );
     }
-  }
+
+    return Response.notFound('Not Found');
+  });
+
+  final port = 8081;
+  final server = await serve(handler, InternetAddress.anyIPv4, port);
+  print('Server listening on port $port');
 }

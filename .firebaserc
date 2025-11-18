@@ -1,6 +1,7 @@
 {
   "projects": {
-    "prod": "kazutxt-firebase-overvie-8d3e4"
+    "prod": "kazutxt-firebase-overvie-8d3e4",
+    "default": "kazutxt-firebase-overvie-8d3e4"
   },
   "targets": {},
   "etags": {}
