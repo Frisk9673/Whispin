@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'account_create.dart';
+import 'logout.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -154,7 +156,10 @@ class ProfileScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () async {
+                            // ログアウト処理とアカウント作成画面へ遷移
+                            await signOutAndGoToRegister(context);
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             shape: RoundedRectangleBorder(
