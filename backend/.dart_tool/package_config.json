@@ -123,9 +123,9 @@
     },
     {
       "name": "googleapis_auth",
-      "rootUri": "file:///C:/Users/t_nishiyama/AppData/Local/Pub/Cache/hosted/pub.dev/googleapis_auth-1.3.1",
+      "rootUri": "file:///C:/Users/t_nishiyama/AppData/Local/Pub/Cache/hosted/pub.dev/googleapis_auth-1.4.1",
       "packageUri": "lib/",
-      "languageVersion": "2.13"
+      "languageVersion": "2.19"
     },
     {
       "name": "hive",
@@ -165,9 +165,9 @@
     },
     {
       "name": "js",
-      "rootUri": "file:///C:/Users/t_nishiyama/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.7.2",
+      "rootUri": "file:///C:/Users/t_nishiyama/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.6.7",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "2.19"
     },
     {
       "name": "logging",
@@ -350,7 +350,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-11-14T01:51:12.744881Z",
+  "generated": "2025-11-18T01:22:38.377967Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/Users/t_nishiyama/Desktop/flutter",
