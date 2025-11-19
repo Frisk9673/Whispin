@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+<<<<<<< Updated upstream
 import 'profile.dart';
+=======
+import 'header.dart'; // CommonHeaderをインポート
+>>>>>>> Stashed changes
 
 class RoomJoinScreen extends StatelessWidget {
   const RoomJoinScreen({super.key});
@@ -11,6 +15,7 @@ class RoomJoinScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+<<<<<<< Updated upstream
             // ヘッダー
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -73,6 +78,17 @@ class RoomJoinScreen extends StatelessWidget {
                   ),
                 ],
               ),
+=======
+            // 共通ヘッダーの使用
+            const CommonHeader(
+              // 必要に応じてカスタマイズ
+              // onSettingsPressed: () {
+              //   // 設定画面への遷移処理
+              // },
+              // onProfilePressed: () {
+              //   // プロフィール画面への遷移処理
+              // },
+>>>>>>> Stashed changes
             ),
             // メインコンテンツ
             Expanded(
@@ -90,14 +106,18 @@ class RoomJoinScreen extends StatelessWidget {
                           Expanded(
                             child: _buildCircleButton(
                               label: '部屋に参加',
-                              onPressed: () {},
+                              onPressed: () {
+                                // 部屋に参加する処理
+                              },
                             ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
                             child: _buildCircleButton(
                               label: 'ブロック一覧',
-                              onPressed: () {},
+                              onPressed: () {
+                                // ブロック一覧画面への遷移
+                              },
                             ),
                           ),
                         ],
@@ -110,14 +130,18 @@ class RoomJoinScreen extends StatelessWidget {
                           Expanded(
                             child: _buildCircleButton(
                               label: '部屋を作成',
-                              onPressed: () {},
+                              onPressed: () {
+                                // 部屋作成画面への遷移
+                              },
                             ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
                             child: _buildCircleButton(
                               label: 'フレンド一覧',
-                              onPressed: () {},
+                              onPressed: () {
+                                // フレンド一覧画面への遷移
+                              },
                             ),
                           ),
                         ],
