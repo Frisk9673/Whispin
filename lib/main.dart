@@ -1,17 +1,17 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'account_create.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FirebaseOptions はプロジェクト固有の値を使う
+  // FirebaseOptions（Auth はエミュレータに流すので APIKEY はダミーでOK）
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: 'dummy', // Web用にダミーでもOK
+      apiKey: 'dummy', 
       authDomain: 'dummy.firebaseapp.com',
       projectId: 'kazutxt-firebase-overvie-8d3e4',
       storageBucket: 'dummy.appspot.com',
@@ -20,15 +20,16 @@ Future<void> main() async {
     ),
   );
 
-  // Firestore Emulator に接続
+  // 🔥 Firestore Emulator に接続
   final db = FirebaseFirestore.instance;
   db.useFirestoreEmulator('localhost', 8080);
-
-  // Flutter Web での CORS 回避用設定
   db.settings = const Settings(
     persistenceEnabled: false,
     sslEnabled: false,
   );
+
+  // 🔥 Auth Emulator に接続 ← これが無いとエラーになる！
+  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
 
   runApp(const MyApp());
 }
@@ -43,57 +44,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
