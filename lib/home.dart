@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'profile.dart';
+import 'header.dart'; // CommonHeaderをインポート
 
 class RoomJoinScreen extends StatelessWidget {
   const RoomJoinScreen({super.key});
@@ -11,68 +11,15 @@ class RoomJoinScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // ヘッダー
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'whispin',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Icon(
-                            Icons.settings,
-                            size: 32,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Icon(
-                            Icons.account_circle,
-                            size: 32,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // 共通ヘッダーの使用
+            const CommonHeader(
+              // 必要に応じてカスタマイズ
+              // onSettingsPressed: () {
+              //   // 設定画面への遷移処理
+              // },
+              // onProfilePressed: () {
+              //   // プロフィール画面への遷移処理
+              // },
             ),
             // メインコンテンツ
             Expanded(
@@ -90,14 +37,18 @@ class RoomJoinScreen extends StatelessWidget {
                           Expanded(
                             child: _buildCircleButton(
                               label: '部屋に参加',
-                              onPressed: () {},
+                              onPressed: () {
+                                // 部屋に参加する処理
+                              },
                             ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
                             child: _buildCircleButton(
                               label: 'ブロック一覧',
-                              onPressed: () {},
+                              onPressed: () {
+                                // ブロック一覧画面への遷移
+                              },
                             ),
                           ),
                         ],
@@ -110,14 +61,18 @@ class RoomJoinScreen extends StatelessWidget {
                           Expanded(
                             child: _buildCircleButton(
                               label: '部屋を作成',
-                              onPressed: () {},
+                              onPressed: () {
+                                // 部屋作成画面への遷移
+                              },
                             ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
                             child: _buildCircleButton(
                               label: 'フレンド一覧',
-                              onPressed: () {},
+                              onPressed: () {
+                                // フレンド一覧画面への遷移
+                              },
                             ),
                           ),
                         ],
