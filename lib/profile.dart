@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import 'account_create.dart';
-import 'logout.dart';
-=======
 import 'header.dart'; // CommonHeaderをインポート
->>>>>>> Stashed changes
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -113,14 +108,8 @@ class ProfileScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-<<<<<<< Updated upstream
-                          onPressed: () async {
-                            // ログアウト処理とアカウント作成画面へ遷移
-                            await signOutAndGoToRegister(context);
-=======
                           onPressed: () {
                             // ログアウト処理
->>>>>>> Stashed changes
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,

@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import 'profile.dart';
-=======
 import 'header.dart'; // CommonHeaderをインポート
->>>>>>> Stashed changes
 
 class RoomJoinScreen extends StatelessWidget {
   const RoomJoinScreen({super.key});
@@ -15,70 +11,6 @@ class RoomJoinScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-<<<<<<< Updated upstream
-            // ヘッダー
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'whispin',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Icon(
-                            Icons.settings,
-                            size: 32,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Icon(
-                            Icons.account_circle,
-                            size: 32,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-=======
             // 共通ヘッダーの使用
             const CommonHeader(
               // 必要に応じてカスタマイズ
@@ -88,7 +20,6 @@ class RoomJoinScreen extends StatelessWidget {
               // onProfilePressed: () {
               //   // プロフィール画面への遷移処理
               // },
->>>>>>> Stashed changes
             ),
             // メインコンテンツ
             Expanded(
