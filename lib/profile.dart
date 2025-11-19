@@ -1,8 +1,105 @@
+import 'dart:io' show File, Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'header.dart'; // CommonHeaderをインポート
+import 'package:image_picker/image_picker.dart';
+import 'header.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? _selectedImagePath;
+
+  Future<void> _pickImage() async {
+    final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    final bool isDesktop =
+        kIsWeb || (!Platform.isAndroid && !Platform.isIOS);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isMobile) ...[
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('写真を撮る'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _getImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('ライブラリから選択'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _getImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+
+              if (isDesktop) ...[
+                ListTile(
+                  leading: const Icon(Icons.folder),
+                  title: const Text('フォルダから選択'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _getImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+
+              ListTile(
+                leading: const Icon(Icons.cancel),
+                title: const Text('キャンセル'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source);
+
+      if (image != null && mounted) {
+        setState(() {
+          _selectedImagePath = image.path;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('画像の選択に失敗しました: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  ImageProvider? _buildProfileImage() {
+    if (_selectedImagePath == null) return null;
+
+    if (kIsWeb) {
+      return NetworkImage(_selectedImagePath!);
+    }
+
+    return FileImage(File(_selectedImagePath!));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,23 +108,18 @@ class ProfileScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // 共通ヘッダーの使用（通知アイコンに変更）
             CommonHeader(
-              onSettingsPressed: () {
-                // 通知画面や設定画面への遷移
-              },
-              onProfilePressed: () {
-                // 既にプロフィール画面なので何もしない、または他のアクション
-              },
+              onSettingsPressed: () {},
+              onProfilePressed: () {},
             ),
-            // プロフィール
+
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
-                      // ① プロフィール画像
+                      // プロフィール画像
                       Stack(
                         children: [
                           Container(
@@ -40,41 +132,50 @@ class ProfileScreen extends StatelessWidget {
                                 width: 2,
                               ),
                             ),
-                            child: const Icon(
-                              Icons.account_circle,
-                              size: 180,
-                              color: Colors.grey,
-                            ),
+                            child: _selectedImagePath != null
+                                ? CircleAvatar(
+                                    backgroundImage: _buildProfileImage(),
+                                    radius: 90,
+                                  )
+                                : const Icon(
+                                    Icons.account_circle,
+                                    size: 180,
+                                    color: Colors.grey,
+                                  ),
                           ),
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black87,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black87,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                 ),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 28,
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 40),
-                      // ② ユーザー情報
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
+                        children: const [
+                          Text(
                             'ニックネーム: XXXXXXX',
                             style: TextStyle(
                               fontSize: 18,
@@ -82,8 +183,8 @@ class ProfileScreen extends StatelessWidget {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: 16),
+                          Text(
                             '本名: XXXXXXX',
                             style: TextStyle(
                               fontSize: 18,
@@ -91,8 +192,8 @@ class ProfileScreen extends StatelessWidget {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: 16),
+                          Text(
                             '電話番号: XXX-XXXX-XXXX',
                             style: TextStyle(
                               fontSize: 18,
@@ -102,115 +203,24 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 48),
-                      // ③ ④ ⑤ ⑥ ボタングループ
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // ログアウト処理
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'ログアウト',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+
+                      _buildButton('ログアウト', Colors.red, () {}),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // アカウント削除処理
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'アカウント削除',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildButton('アカウント削除', Colors.red, () {}),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return const PremiumMemberDialog();
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[300],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            '有料プラン',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildButton('有料プラン', Colors.blue, () {}),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // お問い合わせ処理
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[300],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'お問い合わせ',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildButton('お問い合わせ', Colors.blue, () {}),
+
                       const SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
             ),
-            // ⑦ 戻るボタン
+
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: SizedBox(
@@ -242,100 +252,26 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class PremiumMemberDialog extends StatelessWidget {
-  const PremiumMemberDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // タイトル
-            const Text(
-              '# 1 あなたは有料会員です',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // 質問文
-            const Text(
-              '有料プランを解約しますか？',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // ボタン
-            Column(
-              children: [
-                // キャンセルボタン
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'キャンセル',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // 解約するボタン
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // ここに解約処理を実装
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      '解約する',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+  Widget _buildButton(String text, Color color, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
       ),
     );
