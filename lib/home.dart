@@ -1,84 +1,74 @@
 import 'package:flutter/material.dart';
-import 'header.dart'; // CommonHeaderをインポート
+import 'header.dart';
+import 'profile.dart';
 
 class RoomJoinScreen extends StatelessWidget {
   const RoomJoinScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final buttonSize = size.width * 0.20; // 画面幅の35%の円ボタン
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // 共通ヘッダーの使用
-            const CommonHeader(
-              // 必要に応じてカスタマイズ
-              // onSettingsPressed: () {
-              //   // 設定画面への遷移処理
-              // },
-              // onProfilePressed: () {
-              //   // プロフィール画面への遷移処理
-              // },
+            // ヘッダー（高さ固定）
+            CommonHeader(
+              onProfilePressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
             ),
-            // メインコンテンツ
+
+            // メインエリア
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 40.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 上部の2つのボタン（部屋に参加、ブロック一覧）
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: _buildCircleButton(
-                              label: '部屋に参加',
-                              onPressed: () {
-                                // 部屋に参加する処理
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: _buildCircleButton(
-                              label: 'ブロック一覧',
-                              onPressed: () {
-                                // ブロック一覧画面への遷移
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                      // 下部の2つのボタン
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: _buildCircleButton(
-                              label: '部屋を作成',
-                              onPressed: () {
-                                // 部屋作成画面への遷移
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: _buildCircleButton(
-                              label: 'フレンド一覧',
-                              onPressed: () {
-                                // フレンド一覧画面への遷移
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 上の段
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildCircleButton(
+                          label: "部屋に参加",
+                          size: buttonSize,
+                          onPressed: () {},
+                        ),
+                        SizedBox(width: size.width * 0.08),
+                        _buildCircleButton(
+                          label: "ブロック一覧",
+                          size: buttonSize,
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: size.height * 0.05),
+
+                    // 下の段
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildCircleButton(
+                          label: "部屋を作成",
+                          size: buttonSize,
+                          onPressed: () {},
+                        ),
+                        SizedBox(width: size.width * 0.08),
+                        _buildCircleButton(
+                          label: "フレンド一覧",
+                          size: buttonSize,
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -88,32 +78,32 @@ class RoomJoinScreen extends StatelessWidget {
     );
   }
 
+  /// 円形ボタン（レスポンシブサイズ対応）
   Widget _buildCircleButton({
     required String label,
+    required double size,
     required VoidCallback onPressed,
   }) {
     return GestureDetector(
       onTap: onPressed,
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.black87,
-              width: 3,
-            ),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.black87,
+            width: 3,
           ),
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
       ),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'admin_login_controller.dart';
 import 'admin_home_page.dart';
 
+import '../../account_create.dart';  // ← 追加
+import '../../login.dart';           // ← 追加
+
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
 
@@ -25,15 +28,18 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     setState(() => _isLoading = false);
 
     if (!mounted) return;
+
     if (success) {
-      // 成功 → 管理者ホームへ（履歴消して戻れないように）
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminHomePage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ログイン失敗：メールまたはパスワードが違います'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('ログイン失敗：メールまたはパスワードが違います'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -49,21 +55,67 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // --- メールアドレス ---
               TextField(
                 controller: controller.emailController,
-                decoration: const InputDecoration(labelText: 'メールアドレス', prefixIcon: Icon(Icons.email)),
+                decoration: const InputDecoration(
+                  labelText: 'メールアドレス',
+                  prefixIcon: Icon(Icons.email),
+                ),
               ),
               const SizedBox(height: 12),
+
+              // --- パスワード ---
               TextField(
                 controller: controller.passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'パスワード', prefixIcon: Icon(Icons.lock)),
+                decoration: const InputDecoration(
+                  labelText: 'パスワード',
+                  prefixIcon: Icon(Icons.lock),
+                ),
               ),
               const SizedBox(height: 20),
+
+              // --- ログインボタン ---
               ElevatedButton(
                 onPressed: _isLoading ? null : _onLogin,
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('ログイン'),
-                style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('ログイン'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+
+              // --- ユーザーログイン画面へ ---
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  );
+                },
+                child: const Text(
+                  'ユーザログイン画面はこちら',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+
+              // --- ユーザー新規登録画面へ ---
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UserRegisterPage()),
+                  );
+                },
+                child: const Text(
+                  'ユーザー新規登録はこちら',
+                  style: TextStyle(fontSize: 14),
+                ),
               ),
             ],
           ),

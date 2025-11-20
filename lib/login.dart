@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'home.dart';
 import 'account_create.dart';
+import 'admin/login/admin_login.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,7 +71,23 @@ class _LoginPageState extends State<LoginPage> {
                 );
               },
               child: const Text("新規登録はこちら"),
-            )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdmLoginApp()),
+                );
+              },
+              child: const Text(
+                '管理者ログインはこちら',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
           ],
         ),
       ),

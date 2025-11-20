@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'home.dart'; 
-import 'login.dart'; // ← ログイン画面
+import 'login.dart';
+import 'admin/login/admin_login.dart';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
@@ -36,13 +37,13 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     try {
       setState(() => loading = true);
 
-      // ① Auth に登録（エミュレータに飛ぶ）
+      // Auth にユーザ作成（エミュレータ）
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // ② Firestore にユーザー情報を登録（主キーは TEL_ID）
+      // Firestore にユーザ情報登録
       await FirebaseFirestore.instance
           .collection('User')
           .doc(telId)
@@ -54,13 +55,15 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         "Nickname": nicknameController.text.trim(),
         "Rate": 0,
         "Premium": false,
-        "RoomCount": 3,
+        "RoomCount": 0,
         "CreateAt": FieldValue.serverTimestamp(),
         "LastUpdated_Premium": null,
         "DeletedAt": null,
+
+        /// 🔥 role を追加（ユーザ登録は必ず "user"）
+        "role": "user",
       });
 
-      // 登録成功 → Home（RoomJoinScreen）へ
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
@@ -125,7 +128,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
               const SizedBox(height: 24),
 
-              /// 🔥 本来入っていた “ログイン画面へ戻る” リンク（復活）
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(
@@ -136,6 +138,24 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 child: const Text(
                   "すでにアカウントをお持ちの方はこちら（ログイン）",
                   style: TextStyle(fontSize: 14),
+                ),
+              ),
+
+              /// 🔥 管理者ログイン
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdmLoginApp()),
+                  );
+                },
+                child: const Text(
+                  '管理者ログインはこちら',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 16,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],

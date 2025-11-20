@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'header.dart';
+import 'logout.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -206,7 +207,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 48),
 
-                      _buildButton('ログアウト', Colors.red, () {}),
+                      _buildButton(
+                        'ログアウト',
+                      Colors.red,
+                        () {
+                          signOutAndGoToRegister(context);
+                        },
+                      ),
                       const SizedBox(height: 16),
                       _buildButton('アカウント削除', Colors.red, () {}),
                       const SizedBox(height: 16),

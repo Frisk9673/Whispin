@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'account_create.dart';
 
-/// シンプルなログアウトヘルパー
-/// 必要なら FirebaseAuth.signOut() 等を追加してください。
+/// --- ログアウト処理 ---
+/// ・FirebaseAuth でログアウト
+/// ・画面履歴を全削除してユーザー登録へ戻る
 Future<void> signOutAndGoToRegister(BuildContext context) async {
-  // TODO: FirebaseAuth が導入されている場合はここで signOut を呼ぶ
-  // 例:
-  // await FirebaseAuth.instance.signOut();
+  try {
+    // FirebaseAuth が導入されている場合の正式なログアウト処理
+    await FirebaseAuth.instance.signOut();
+  } catch (e) {
+    debugPrint('ログアウト時にエラー発生: $e');
+  }
 
-  // 画面遷移: ユーザー登録画面へ置き換え
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(builder: (_) => const UserRegisterPage()),
-    (route) => false,
-  );
+  // pushAndRemoveUntil により履歴を完全に消し、戻れなくする
+  if (context.mounted) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const UserRegisterPage()),
+      (_) => false,
+    );
+  }
 }
