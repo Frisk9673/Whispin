@@ -19,11 +19,20 @@ class _LoginPageState extends State<LoginPage> {
   String message = '';
 
   Future<void> loginUser() async {
+    // ログ追加
+    print('🔐 ログイン処理開始');
+    print('📧 入力メール: ${emailController.text.trim()}');
+    
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      // ログ追加
+      print('✅ ログイン成功');
+      print('👤 ユーザーID: ${userCredential.user?.uid}');
+      print('📧 ユーザーメール: ${userCredential.user?.email}');
 
       // ログイン成功 → Home へ遷移
       Navigator.pushReplacement(
@@ -31,6 +40,8 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
       );
     } catch (e) {
+      // ログ追加
+      print('❌ ログインエラー: $e');
       setState(() => message = "ログインエラー: $e");
     }
   }
@@ -65,6 +76,8 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () {
+                // ログ追加
+                print('🔄 新規登録画面へ遷移');
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const UserRegisterPage()),

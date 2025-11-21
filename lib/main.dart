@@ -8,7 +8,7 @@ import 'account_create.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FirebaseOptions（Auth はエミュレータに流すので APIKEY はダミーでOK）
+  // Firebase初期化
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: 'dummy', 
@@ -20,16 +20,30 @@ Future<void> main() async {
     ),
   );
 
-  // 🔥 Firestore Emulator に接続
-  final db = FirebaseFirestore.instance;
-  db.useFirestoreEmulator('localhost', 8080);
-  db.settings = const Settings(
-    persistenceEnabled: false,
-    sslEnabled: false,
-  );
+  print('🔗 エミュレーター設定開始...');
 
-  // 🔥 Auth Emulator に接続 ← これが無いとエラーになる！
-  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+  // Authエミュレーター設定（確実な方法）
+  try {
+    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    print('✅ Authエミュレーター設定完了: localhost:9099');
+  } catch (e) {
+    print('❌ Authエミュレーター設定エラー: $e');
+  }
+
+  // Firestoreエミュレーター設定
+  try {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: false,
+      sslEnabled: false,
+    );
+    print('✅ Firestoreエミュレーター設定完了: localhost:8080');
+  } catch (e) {
+    print('❌ Firestoreエミュレーター設定エラー: $e');
+  }
+
+  // 設定の確認
+  print('🎯 Firebase設定完了、アプリ起動...');
 
   runApp(const MyApp());
 }
@@ -39,8 +53,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: UserRegisterPage(),
+    return MaterialApp(
+      home: const UserRegisterPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
