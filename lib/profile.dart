@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'user_chat.dart';
 import 'header.dart';
 import 'logout.dart';
 import 'account_create.dart';
@@ -374,10 +374,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildButton(
                       'お問い合わせ',
                       Colors.blue,
-                      () {},
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const UserChatScreen(),
+                          ),
+                        );
+                      },
                     ),
-
-                    const SizedBox(height: 40),
                   ],
                 ),
               ),
