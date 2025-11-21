@@ -289,12 +289,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
 
                     _buildButton(
-                      '有料プラン',
-                      Colors.blue,
-                      () {},
-                    ),
+  '有料プラン',
+  Colors.blue,
+  () async {
+    final email = FirebaseAuth.instance.currentUser?.email;
+    if (email == null) return;
 
-                    const SizedBox(height: 16),
+    // Firestore から Premium を取得
+    final query = await FirebaseFirestore.instance
+        .collection('User')
+        .where('EmailAddress', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) return;
+
+    final userDoc = query.docs.first;
+    final bool isPremium = userDoc['Premium'] ?? false;
+
+    // ★ Premium 状態によって表示するポップアップを変更する
+    if (!isPremium) {
+      // --- 加入確認ポップアップ ---
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("プレミアムプラン加入"),
+          content: const Text("プレミアムに加入しますか？"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("いいえ"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("はい"),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        await userDoc.reference.update({
+          'Premium': true,
+          'LastUpdated_Premium': FieldValue.serverTimestamp(),
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("プレミアムに加入しました！")),
+        );
+      }
+
+    } else {
+      // --- 解約確認ポップアップ ---
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("プレミアム解約"),
+          content: const Text("本当に解約しますか？"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("いいえ"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("はい"),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        await userDoc.reference.update({
+          'Premium': false,
+          'LastUpdated_Premium': FieldValue.serverTimestamp(),
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("プレミアムを解約しました")),
+        );
+      }
+    }
+  },
+),
+
                     _buildButton(
                       'お問い合わせ',
                       Colors.blue,
