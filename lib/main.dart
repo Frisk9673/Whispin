@@ -1,36 +1,61 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'firebase_options.dart';
+
+import 'account_create.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase初期化
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: const FirebaseOptions(
+      apiKey: 'dummy', 
+      authDomain: 'dummy.firebaseapp.com',
+      projectId: 'kazutxt-firebase-overvie-8d3e4',
+      storageBucket: 'dummy.appspot.com',
+      messagingSenderId: 'dummy',
+      appId: 'dummy',
+    ),
   );
 
-  if (kDebugMode) {
-    // Android emulator
-    const host = '10.0.2.2';
-    FirebaseDatabase.instance.useDatabaseEmulator(host, 9000);
-    FirebaseAuth.instance.useAuthEmulator(host, 9099);
-    debugPrint('✅ Whispin: Using Firebase Emulator (DB:9000, Auth:9099)');
+  print('🔗 エミュレーター設定開始...');
+
+  // Authエミュレーター設定（確実な方法）
+  try {
+    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    print('✅ Authエミュレーター設定完了: localhost:9099');
+  } catch (e) {
+    print('❌ Authエミュレーター設定エラー: $e');
   }
 
-  runApp(const WhispinApp());
+  // Firestoreエミュレーター設定
+  try {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: false,
+      sslEnabled: false,
+    );
+    print('✅ Firestoreエミュレーター設定完了: localhost:8080');
+  } catch (e) {
+    print('❌ Firestoreエミュレーター設定エラー: $e');
+  }
+
+  // 設定の確認
+  print('🎯 Firebase設定完了、アプリ起動...');
+
+  runApp(const MyApp());
 }
 
-class WhispinApp extends StatelessWidget {
-  const WhispinApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(child: Text('Whispin')),
-      ),
+    return MaterialApp(
+      home: const UserRegisterPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
