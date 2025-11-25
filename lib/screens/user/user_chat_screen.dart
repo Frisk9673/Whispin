@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/chat_provider.dart';
-import '../widgets/message_bubble.dart';
-import '../widgets/message_input_field.dart';
-import '../services/chat_service.dart';
-import '../models/message_model.dart';
+import '../../providers/chat_provider.dart';
+import '../../widgets/message_bubble.dart';
+import '../../widgets/message_input_field.dart';
+import '../../services/chat_service.dart';
+import '../../models/message_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserChatScreen extends StatefulWidget {
