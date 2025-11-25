@@ -9,7 +9,7 @@ class UserModel {
   final double rate;
   final bool premium;
   final int roomCount;
-  final DateTime createdAt;
+  final DateTime? createdAt;
   final DateTime? lastUpdatedPremium;
   final DateTime? deletedAt;
 
@@ -29,21 +29,47 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      telId: map['TEL_ID'],
-      email: map['EmailAddress'],
-      firstName: map['FirstName'],
-      lastName: map['LastName'],
-      nickname: map['Nickname'],
+      telId: map['TEL_ID'] ?? '',
+      email: map['EmailAddress'] ?? '',
+      firstName: map['FirstName'] ?? '',
+      lastName: map['LastName'] ?? '',
+      nickname: map['Nickname'] ?? '',
       rate: (map['Rate'] ?? 0).toDouble(),
       premium: map['Premium'] ?? false,
       roomCount: map['RoomCount'] ?? 0,
-      createdAt: (map['CreatedAt'] as Timestamp).toDate(),
-      lastUpdatedPremium: map['LastUpdated_Premium'] != null
+
+      /// Firestore は Timestamp or null の可能性があるので安全変換
+      createdAt: map['CreateAt'] is Timestamp
+          ? (map['CreateAt'] as Timestamp).toDate()
+          : null,
+
+      lastUpdatedPremium: map['LastUpdated_Premium'] is Timestamp
           ? (map['LastUpdated_Premium'] as Timestamp).toDate()
           : null,
-      deletedAt: map['DeletedAt'] != null
+
+      deletedAt: map['DeletedAt'] is Timestamp
           ? (map['DeletedAt'] as Timestamp).toDate()
           : null,
     );
+  }
+
+  /// Firestore に保存するときの Map 変換（必要なら）
+  Map<String, dynamic> toMap() {
+    return {
+      "TEL_ID": telId,
+      "EmailAddress": email,
+      "FirstName": firstName,
+      "LastName": lastName,
+      "Nickname": nickname,
+      "Rate": rate,
+      "Premium": premium,
+      "RoomCount": roomCount,
+      "CreateAt": createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      "LastUpdated_Premium": lastUpdatedPremium != null
+          ? Timestamp.fromDate(lastUpdatedPremium!)
+          : null,
+      "DeletedAt":
+          deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
+    };
   }
 }

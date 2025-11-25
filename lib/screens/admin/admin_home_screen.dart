@@ -1,13 +1,14 @@
+// screens/admin/admin_home_screen.dart
 import 'package:flutter/material.dart';
-import '../services/admin_auth_service.dart';
-import 'admin_login_page.dart';
+import '../../services/admin_logout_service.dart';
+import 'admin_login_screen.dart';
 
-class AdminHomePage extends StatelessWidget {
-  const AdminHomePage({super.key});
+class AdminHomeScreen extends StatelessWidget {
+  const AdminHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authService = AdminAuthService();
+    final logoutService = AdminLogoutService();
 
     return Scaffold(
       appBar: AppBar(
@@ -16,12 +17,11 @@ class AdminHomePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await authService.logout();
+              await logoutService.logout();
 
-              // ログインページへ戻す
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => const AdminLoginPage()),
+                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                 (_) => false,
               );
             },
