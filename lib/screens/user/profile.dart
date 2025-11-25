@@ -4,10 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'user_chat.dart';
+import 'package:whispin/screens/account_create/account_create_screen.dart';
+import 'package:whispin/services/user_logout_service.dart';
+import 'package:whispin/screens/user/user_chat_screen.dart';
 import '../../widgets/common/header.dart';
-import '../services/logout.dart';
-import 'account_create.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -98,9 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loginEmail =
-        FirebaseAuth.instance.currentUser?.email ?? "未ログイン";
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -197,8 +194,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     _buildButton(
                       'ログアウト',
-                      Colors.red,
-                      () => signOutAndGoToRegister(context),
+                    Colors.red,
+                      () async => await UserLogoutService.logout(context),
                     ),
 
                     const SizedBox(height: 16),

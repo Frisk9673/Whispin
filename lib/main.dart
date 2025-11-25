@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'account_create.dart';
+import 'screens/account_create/account_create_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
