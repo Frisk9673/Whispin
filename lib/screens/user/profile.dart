@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../user_chat.dart';
+import 'user_chat.dart';
 import '../../widgets/common/header.dart';
-import '../../logout.dart';
+import '../services/logout.dart';
 import 'account_create.dart';
 
 class ProfileScreen extends StatefulWidget {

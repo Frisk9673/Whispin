@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'home.dart'; 
-import '../../login.dart'; // ← ログイン画面
+import 'login.dart'; // ← ログイン画面
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
