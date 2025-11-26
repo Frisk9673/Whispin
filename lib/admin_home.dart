@@ -127,7 +127,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             onPressed: () {
                               Navigator.of(context).pushNamed('/contact');
                             },
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.white,
                           ),
                           Spacer(),
                           _circleButton(
@@ -135,7 +135,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             onPressed: () {
                               Navigator.of(context).pushNamed('/premium_log_list');
                             },
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Colors.white,
                           ),
                         ],
                       ),
