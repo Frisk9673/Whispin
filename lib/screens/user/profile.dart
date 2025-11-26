@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:whispin/screens/account_create/account_create_screen.dart';
-import 'package:whispin/services/user_logout_service.dart';
 import 'package:whispin/screens/user/user_chat_screen.dart';
 import '../../widgets/common/header.dart';
 
@@ -18,6 +17,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _selectedImagePath;
+  
+  // ホバー状態を管理する変数
+  bool _isLogoutHovered = false;
+  bool _isDeleteAccountHovered = false;
+  bool _isPremiumHovered = false;
+  bool _isContactHovered = false;
+  bool _isBackButtonHovered = false;
+  bool _isCameraHovered = false;
 
   Future<void> _pickImage() async {
     final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -31,36 +38,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isMobile) ...[
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('写真を撮る'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _getImage(ImageSource.camera);
-                  },
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: ListTile(
+                    leading: const Icon(Icons.camera_alt),
+                    title: const Text('写真を撮る'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _getImage(ImageSource.camera);
+                    },
+                  ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('ライブラリから選択'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _getImage(ImageSource.gallery);
-                  },
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: ListTile(
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text('ライブラリから選択'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _getImage(ImageSource.gallery);
+                    },
+                  ),
                 ),
               ],
               if (isDesktop)
-                ListTile(
-                  leading: const Icon(Icons.folder),
-                  title: const Text('フォルダから選択'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _getImage(ImageSource.gallery);
-                  },
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: ListTile(
+                    leading: const Icon(Icons.folder),
+                    title: const Text('フォルダから選択'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _getImage(ImageSource.gallery);
+                    },
+                  ),
                 ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('キャンセル'),
-                onTap: () => Navigator.pop(context),
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: ListTile(
+                  leading: const Icon(Icons.cancel),
+                  title: const Text('キャンセル'),
+                  onTap: () => Navigator.pop(context),
+                ),
               ),
             ],
           ),
@@ -94,6 +113,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return NetworkImage(_selectedImagePath!);
     }
     return FileImage(File(_selectedImagePath!));
+  }
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const UserRegisterPage()),
+        (_) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ログアウトエラー: $e')),
+      );
+    }
   }
 
   @override
@@ -137,21 +173,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black87,
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 28,
+                          child: MouseRegion(
+                            onEnter: (_) => setState(() => _isCameraHovered = true),
+                            onExit: (_) => setState(() => _isCameraHovered = false),
+                            cursor: SystemMouseCursors.click,
+                            child: Tooltip(
+                              message: 'プロフィール画像を変更',
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _isCameraHovered ? Colors.blue : Colors.black87,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                    boxShadow: _isCameraHovered
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.blue.withOpacity(0.3),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            )
+                                          ]
+                                        : [],
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: _isCameraHovered ? 30 : 28,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -194,183 +247,227 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     _buildButton(
                       'ログアウト',
-                    Colors.red,
-                      () async => await UserLogoutService.logout(context),
+                      _isLogoutHovered ? Colors.red[700]! : Colors.red,
+                      _logout,
+                      (value) => setState(() => _isLogoutHovered = value),
                     ),
 
                     const SizedBox(height: 16),
 
-                    // ----------------------------
-                    // 🔥 アカウント削除
-                    // ----------------------------
-                    _buildButton(
-                      'アカウント削除',
-                      Colors.red,
-                      () async {
-                        final result = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('確認'),
-                            content:
-                                const Text('本当にアカウントを削除しますか？'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('キャンセル'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('はい'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (result != true) return;
-
-                        final email =
-                            FirebaseAuth.instance.currentUser?.email;
-
-                        if (email == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('ログイン情報を取得できません')),
-                          );
-                          return;
-                        }
-
-                        try {
-                          // FirestoreでEmailAddressから検索
-                          final query = await FirebaseFirestore.instance
-                              .collection('User')
-                              .where('EmailAddress', isEqualTo: email)
-                              .limit(1)
-                              .get();
-
-                          if (query.docs.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('ユーザー情報が見つかりません')),
-                            );
-                            return;
-                          }
-
-                          final doc = query.docs.first;
-
-                          // 論理削除
-                          await doc.reference.update({
-                            'DeletedAt': FieldValue.serverTimestamp(),
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('アカウントを削除しました')),
-                          );
-
-                          // ログアウト後 → 登録画面へ
-                          await FirebaseAuth.instance.signOut();
-
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const UserRegisterPage()),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('削除エラー: $e')),
-                          );
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _buildButton(
-  '有料プラン',
-  Colors.blue,
+                    // アカウント削除ボタン
+_buildButton(
+  'アカウント削除',
+  _isDeleteAccountHovered ? Colors.red[700]! : Colors.red,
   () async {
-    final email = FirebaseAuth.instance.currentUser?.email;
-    if (email == null) return;
-
-    // Firestore から Premium を取得
-    final query = await FirebaseFirestore.instance
-        .collection('User')
-        .where('EmailAddress', isEqualTo: email)
-        .limit(1)
-        .get();
-
-    if (query.docs.isEmpty) return;
-
-    final userDoc = query.docs.first;
-    final bool isPremium = userDoc['Premium'] ?? false;
-
-    // ★ Premium 状態によって表示するポップアップを変更する
-    if (!isPremium) {
-      // --- 加入確認ポップアップ ---
-      final result = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("プレミアムプラン加入"),
-          content: const Text("プレミアムに加入しますか？"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("いいえ"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("はい"),
-            ),
+    // 確認ダイアログを表示
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('アカウント削除の確認'),
           ],
+        ),
+        content: const Text('本当にアカウントを削除しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('いいえ'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text(
+              'はい',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // 「いいえ」を選択した場合は何もせず終了
+    if (result != true) return;
+
+    // ローディング表示
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('アカウントを削除中...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final email = user?.email;
+
+      if (email == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ログイン情報を取得できません'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Firestoreでユーザーを検索
+      final query = await FirebaseFirestore.instance
+          .collection('User')
+          .where('EmailAddress', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ユーザー情報が見つかりません'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final doc = query.docs.first;
+
+      // Firestoreで論理削除のみ実行
+      await doc.reference.update({
+        'DeletedAt': FieldValue.serverTimestamp(),
+        'IsDeleted': true,
+        'Status': 'deleted',
+      });
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('アカウントを削除しました'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
 
-      if (result == true) {
-        await userDoc.reference.update({
-          'Premium': true,
-          'LastUpdated_Premium': FieldValue.serverTimestamp(),
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("プレミアムに加入しました！")),
-        );
-      }
+      // ログアウトのみ実行（Authアカウントは削除しない）
+      await FirebaseAuth.instance.signOut();
 
-    } else {
-      // --- 解約確認ポップアップ ---
-      final result = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("プレミアム解約"),
-          content: const Text("本当に解約しますか？"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("いいえ"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("はい"),
-            ),
-          ],
-        ),
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const UserRegisterPage()),
+        (route) => false,
       );
 
-      if (result == true) {
-        await userDoc.reference.update({
-          'Premium': false,
-          'LastUpdated_Premium': FieldValue.serverTimestamp(),
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("プレミアムを解約しました")),
-        );
-      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('削除エラー: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   },
+  (value) => setState(() => _isDeleteAccountHovered = value),
 ),
+
+                    const SizedBox(height: 16),
+
+                    _buildButton(
+                      '有料プラン',
+                      _isPremiumHovered ? Colors.blue[700]! : Colors.blue,
+                      () async {
+                        final email = FirebaseAuth.instance.currentUser?.email;
+                        if (email == null) return;
+
+                        final query = await FirebaseFirestore.instance
+                            .collection('User')
+                            .where('EmailAddress', isEqualTo: email)
+                            .limit(1)
+                            .get();
+
+                        if (query.docs.isEmpty) return;
+
+                        final userDoc = query.docs.first;
+                        final bool isPremium = userDoc['Premium'] ?? false;
+
+                        if (!isPremium) {
+                          final result = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("プレミアムプラン加入"),
+                              content: const Text("プレミアムに加入しますか？"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text("いいえ"),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("はい"),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (result == true) {
+                            await userDoc.reference.update({
+                              'Premium': true,
+                              'LastUpdated_Premium': FieldValue.serverTimestamp(),
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("プレミアムに加入しました！")),
+                            );
+                          }
+                        } else {
+                          final result = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("プレミアム解約"),
+                              content: const Text("本当に解約しますか？"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text("いいえ"),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("はい"),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (result == true) {
+                            await userDoc.reference.update({
+                              'Premium': false,
+                              'LastUpdated_Premium': FieldValue.serverTimestamp(),
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("プレミアムを解約しました")),
+                            );
+                          }
+                        }
+                      },
+                      (value) => setState(() => _isPremiumHovered = value),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     _buildButton(
                       'お問い合わせ',
-                      Colors.blue,
+                      _isContactHovered ? Colors.blue[700]! : Colors.blue,
                       () {
                         Navigator.push(
                           context,
@@ -379,6 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         );
                       },
+                      (value) => setState(() => _isContactHovered = value),
                     ),
                   ],
                 ),
@@ -387,20 +485,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.black87, width: 3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isBackButtonHovered = true),
+                onExit: (_) => setState(() => _isBackButtonHovered = false),
+                cursor: SystemMouseCursors.click,
+                child: Tooltip(
+                  message: '戻る',
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isBackButtonHovered 
+                            ? Colors.grey[100] 
+                            : Colors.white,
+                        side: BorderSide(
+                          color: _isBackButtonHovered ? Colors.blue : Colors.black87,
+                          width: _isBackButtonHovered ? 4 : 3,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: _isBackButtonHovered ? 4 : 0,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back,
+                        size: 40,
+                        color: _isBackButtonHovered ? Colors.blue : Colors.black87,
+                      ),
                     ),
                   ),
-                  child: const Icon(Icons.arrow_back,
-                      size: 40, color: Colors.black87),
                 ),
               ),
             ),
@@ -411,24 +526,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildButton(
-      String text, Color color, VoidCallback onPressed) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
+    String text, 
+    Color color, 
+    VoidCallback onPressed,
+    Function(bool) onHover,
+  ) {
+    return MouseRegion(
+      onEnter: (_) => onHover(true),
+      onExit: (_) => onHover(false),
+      cursor: SystemMouseCursors.click,
+      child: Tooltip(
+        message: text,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            color: color,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ),
