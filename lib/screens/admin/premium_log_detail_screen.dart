@@ -7,6 +7,14 @@ class PremiumLogDetailScreen extends StatelessWidget {
 
   const PremiumLogDetailScreen({super.key, required this.log});
 
+  String formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
@@ -38,7 +46,7 @@ class PremiumLogDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text("契約状況：${log.detail}"),
                 const SizedBox(height: 12),
-                Text("日時：${log.timestamp}"),
+                Text("日時：${formatDate(log.timestamp)}"),
               ],
             ),
           ),

@@ -11,7 +11,19 @@ class PremiumLogService {
         .orderBy('Timestamp', descending: true)
         .get();
 
-    return snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+    // デバッグ: 取得したデータをコンソール出力
+    print('=== fetchLogs snapshot ===');
+    for (var doc in snapshot.docs) {
+      print(doc.data());
+    }
+
+    final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+    print('=== fetchLogs mapped logs ===');
+    for (var log in logs) {
+      print('${log.telId}, ${log.detail}, ${log.timestamp}');
+    }
+
+    return logs;
   }
 
   /// 電話番号でフィルタ
@@ -21,13 +33,32 @@ class PremiumLogService {
         .orderBy('Timestamp', descending: true)
         .get();
 
-    return snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+    // デバッグ: 取得したデータをコンソール出力
+    print('=== fetchLogsByTel snapshot for $tel ===');
+    for (var doc in snapshot.docs) {
+      print(doc.data());
+    }
+
+    final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+    print('=== fetchLogsByTel mapped logs ===');
+    for (var log in logs) {
+      print('${log.telId}, ${log.detail}, ${log.timestamp}');
+    }
+
+    return logs;
   }
 
   /// 対象ユーザ取得
   Future<UserModel?> fetchUser(String tel) async {
     final doc = await _db.collection('User').doc(tel).get();
-    if (!doc.exists) return null;
+
+    print('=== fetchUser for $tel ===');
+    if (!doc.exists) {
+      print('User not found');
+      return null;
+    }
+    print(doc.data());
+
     return UserModel.fromMap(doc.data()!);
   }
 }

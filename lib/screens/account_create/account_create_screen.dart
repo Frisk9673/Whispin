@@ -43,7 +43,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       nickname: nicknameController.text.trim(),
       rate: 0,
       premium: false,
-      roomCount: 3,
+      roomCount: 0,
       createdAt: DateTime.now(),
       lastUpdatedPremium: null,
       deletedAt: null,

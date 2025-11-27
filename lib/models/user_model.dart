@@ -39,8 +39,8 @@ class UserModel {
       roomCount: map['RoomCount'] ?? 0,
 
       /// Firestore は Timestamp or null の可能性があるので安全変換
-      createdAt: map['CreateAt'] is Timestamp
-          ? (map['CreateAt'] as Timestamp).toDate()
+      createdAt: map['CreatedAt'] is Timestamp
+          ? (map['CreatedAt'] as Timestamp).toDate()
           : null,
 
       lastUpdatedPremium: map['LastUpdated_Premium'] is Timestamp
@@ -64,7 +64,7 @@ class UserModel {
       "Rate": rate,
       "Premium": premium,
       "RoomCount": roomCount,
-      "CreateAt": createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      "CreatedAt": createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       "LastUpdated_Premium": lastUpdatedPremium != null
           ? Timestamp.fromDate(lastUpdatedPremium!)
           : null,

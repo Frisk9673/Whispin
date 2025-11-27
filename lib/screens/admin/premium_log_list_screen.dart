@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../providers/premium_log_provider.dart';
 import '../../widgets/admin/premium_log_list_tile.dart';
-import 'premium_log_detail_screen.dart';
 
 class PremiumLogListScreen extends StatefulWidget {
   const PremiumLogListScreen({super.key});
@@ -13,17 +11,19 @@ class PremiumLogListScreen extends StatefulWidget {
 }
 
 class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-    context.read<PremiumLogProvider>().loadLogs();
+
+    // 全件ロード
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PremiumLogProvider>(context, listen: false).loadAllLogs();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<PremiumLogProvider>();
+    final provider = Provider.of<PremiumLogProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,52 +31,32 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
       ),
       body: Column(
         children: [
-          // 🔍 電話番号検索
+          // ======== 検索フォーム ========
           Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: "電話番号で検索",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    provider.searchByTel(_searchController.text.trim());
-                  },
-                  child: const Text("検索"),
-                ),
-              ],
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: "電話番号で検索",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                provider.filterByTel(value.trim());
+              },
             ),
           ),
 
+          // ======== ログ一覧 ========
           Expanded(
-            child: provider.loading
+            child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: provider.logs.length,
-                    itemBuilder: (context, index) {
-                      final log = provider.logs[index];
-                      return PremiumLogListTile(
-                        log: log,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PremiumLogDetailScreen(log: log),
-                            ),
-                          );
+                : provider.logs.isEmpty
+                    ? const Center(child: Text("ログがありません"))
+                    : ListView.builder(
+                        itemCount: provider.logs.length,
+                        itemBuilder: (context, index) {
+                          return PremiumLogListTile(log: provider.logs[index]);
                         },
-                      );
-                    },
-                  ),
+                      ),
           ),
         ],
       ),

@@ -6,25 +6,31 @@ class PremiumLogProvider extends ChangeNotifier {
   final PremiumLogService _service = PremiumLogService();
 
   List<PremiumLog> logs = [];
-  bool loading = false;
+  bool isLoading = false;
 
-  Future<void> loadLogs() async {
-    loading = true;
+  /// 初期ロード / 全件ロード
+  Future<void> loadAllLogs() async {
+    isLoading = true;
     notifyListeners();
 
     logs = await _service.fetchLogs();
 
-    loading = false;
+    isLoading = false;
     notifyListeners();
   }
 
-  Future<void> searchByTel(String tel) async {
-    loading = true;
+  /// 電話番号でフィルタ（空欄なら全件）
+  Future<void> filterByTel(String? tel) async {
+    isLoading = true;
     notifyListeners();
 
-    logs = await _service.fetchLogsByTel(tel);
+    if (tel == null || tel.isEmpty) {
+      logs = await _service.fetchLogs();
+    } else {
+      logs = await _service.fetchLogsByTel(tel);
+    }
 
-    loading = false;
+    isLoading = false;
     notifyListeners();
   }
 }

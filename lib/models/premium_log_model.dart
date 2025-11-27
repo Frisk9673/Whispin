@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class PremiumLog {
   final String telId;
   final DateTime timestamp;
-  final String detail; // "契約" or "解約"
+  final String detail; // 契約 or 解約
 
   PremiumLog({
     required this.telId,
