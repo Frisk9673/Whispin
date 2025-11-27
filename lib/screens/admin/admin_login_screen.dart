@@ -1,3 +1,4 @@
+// screens/admin/admin_login_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/admin_auth_service.dart';
 import '../login/user_login_page.dart';
@@ -13,7 +14,7 @@ class AdminLoginScreen extends StatefulWidget {
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final adminAuth = AdminLoginService(); // 修正済み
+  final adminAuth = AdminLoginService();
 
   bool loading = false;
   String message = "";
@@ -24,18 +25,24 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => message = "メールアドレス または パスワードが未入力です");
+      debugPrint("⚠️ 入力不足: email=$email, password=${password.isNotEmpty}");
       return;
     }
 
     try {
       setState(() => loading = true);
+      debugPrint("🔐 [AdminLogin] ログイン処理開始: $email");
 
       await adminAuth.loginAdmin(email, password, context);
 
+      debugPrint("✅ [AdminLogin] 管理者ログイン成功: $email");
+
     } catch (e) {
       setState(() => message = e.toString());
+      debugPrint("❌ [AdminLogin] ログインエラー: $e");
     } finally {
       setState(() => loading = false);
+      debugPrint("⏹ [AdminLogin] ログイン処理終了: $email");
     }
   }
 

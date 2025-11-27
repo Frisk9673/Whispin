@@ -1,24 +1,44 @@
-// lib/services/user_logout_service.dart
-import 'package:flutter/material.dart';
+// services/admin_logout_service.dart
+import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/account_create/account_create_screen.dart';
+import 'package:flutter/material.dart';
+import '../screens/admin/admin_login_screen.dart';
 
-class UserLogoutService {
-  /// 静的メソッドとしてログアウト処理を提供
-  static Future<void> logout(BuildContext context) async {
+class AdminLogoutService {
+  final _auth = FirebaseAuth.instance;
+
+  Future<void> logout(BuildContext context) async {
+    developer.log("=== AdminLogoutService.logout() 開始 ===");
+
     try {
-      // FirebaseAuth で正式にログアウト
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      debugPrint('ログアウト時にエラー発生: $e');
-    }
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        developer.log("⚠️ 現在ログインユーザーなし");
+      } else {
+        developer.log("ログアウト対象 UID: ${currentUser.uid}");
+      }
 
-    // 履歴を完全に削除して登録画面へ
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const UserRegisterPage()),
-        (_) => false,
+      developer.log("FirebaseAuth.signOut() を実行中...");
+      await _auth.signOut();
+      developer.log("🔵 ログアウト成功");
+
+      if (context.mounted) {
+        developer.log("➡ AdminLoginScreen へ遷移");
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+          (_) => false,
+        );
+      }
+
+    } catch (e, stack) {
+      developer.log(
+        "❌ ログアウトエラー: $e",
+        error: e,
+        stackTrace: stack,
       );
     }
+
+    developer.log("=== AdminLogoutService.logout() 終了 ===\n");
   }
 }

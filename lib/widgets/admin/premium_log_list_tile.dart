@@ -9,13 +9,30 @@ class PremiumLogListTile extends StatelessWidget {
   const PremiumLogListTile({super.key, required this.log});
 
   Future<void> _showDetailDialog(BuildContext context) async {
-    // Firestore からユーザ取得
-    final UserModel? user =
-        await PremiumLogService().fetchUser(log.telId);
+    print('\n=========== [PremiumLogListTile] ===========');
+    print('>>> タイルがタップされました (TEL: ${log.telId})');
+    print('>>> Firestoreからユーザー情報を取得します...');
+    
+    UserModel? user;
 
-    if (user == null) {
+    try {
+      user = await PremiumLogService().fetchUser(log.telId);
+      print('>>> fetchUser 完了');
+    } catch (e) {
+      print('!!! [ERROR] fetchUser 実行中に例外発生: $e');
       return;
     }
+
+    if (user == null) {
+      print('!!! ユーザーが存在しません (TEL: ${log.telId})');
+      print('============================================\n');
+      return;
+    }
+
+    print('>>> ユーザー情報取得成功: '
+        '${user.lastName} ${user.firstName}, Premium: ${user.premium}');
+    print('>>> ダイアログを表示します');
+    print('============================================\n');
 
     final String statusText = user.premium ? "契約中" : "未契約";
 
@@ -27,9 +44,9 @@ class PremiumLogListTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("電話番号: ${user.telId}"),
-            Text("名前: ${user.lastName} ${user.firstName}"),
-            Text("メール: ${user.email}"),
+            Text("電話番号: ${user?.telId}"),
+            Text("名前: ${user?.lastName} ${user?.firstName}"),
+            Text("メール: ${user?.email}"),
             const SizedBox(height: 10),
             Text("現在の契約状況: $statusText"),
             const SizedBox(height: 10),
@@ -40,7 +57,10 @@ class PremiumLogListTile extends StatelessWidget {
         actions: [
           TextButton(
             child: const Text("閉じる"),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              print('>>> ダイアログを閉じました (TEL: ${log.telId})');
+              Navigator.pop(context);
+            },
           )
         ],
       ),
@@ -49,6 +69,8 @@ class PremiumLogListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('>>> ListTile が描画されました (TEL: ${log.telId})');
+
     return ListTile(
       title: Text("TEL: ${log.telId}"),
       subtitle: Text("ログ: ${log.detail}"),

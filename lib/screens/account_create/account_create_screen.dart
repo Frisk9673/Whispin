@@ -1,4 +1,5 @@
-// screens/user_register_screen.dart
+// screens/account_create_screen.dart 
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/account_create_service.dart';
@@ -26,15 +27,21 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   final registerService = UserRegisterService();
 
   Future<void> registerUser() async {
+    developer.log("=== registerUser() 開始 ===");
+
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final telId = telIdController.text.trim();
 
+    developer.log("入力値: email=$email, password=${password.isNotEmpty}, tel=$telId");
+
     if (email.isEmpty || password.isEmpty || telId.isEmpty) {
       setState(() => message = "必須項目が未入力です");
+      developer.log("❌ 必須入力エラー: email or password or tel が空");
       return;
     }
 
+    // UserModel 作成
     final user = UserModel(
       telId: telId,
       email: email,
@@ -49,17 +56,43 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       deletedAt: null,
     );
 
+    developer.log("=== UserModel 作成完了 ===");
+    developer.log("TEL_ID: ${user.telId}");
+    developer.log("Email: ${user.email}");
+    developer.log("Name: ${user.lastName} ${user.firstName}");
+    developer.log("Nickname: ${user.nickname}");
+    developer.log("Premium: ${user.premium}");
+    developer.log("RoomCount: ${user.roomCount}");
+    developer.log("CreateAt: ${user.createdAt}");
+    developer.log("=================================");
+
     try {
       setState(() => loading = true);
 
+      developer.log("registerService.register() を実行します…");
+
       await registerService.register(user, password);
+
+      developer.log("🎉 registerService.register() 成功！");
+      developer.log("RoomJoinScreen へ遷移します…");
+
+      if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
       );
-    } catch (e) {
+
+      developer.log("=== registerUser() 正常終了 ===\n");
+
+    } catch (e, stack) {
+      developer.log("❌ registerUser() エラー発生: $e",
+          error: e, stackTrace: stack);
+
       setState(() => message = e.toString());
+
+      developer.log("=== registerUser() 異常終了 ===\n");
+
     } finally {
       setState(() => loading = false);
     }

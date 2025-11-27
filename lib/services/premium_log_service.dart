@@ -7,58 +7,103 @@ class PremiumLogService {
 
   /// Log_Premium 全件取得
   Future<List<PremiumLog>> fetchLogs() async {
-    final snapshot = await _db.collection('Log_Premium')
-        .orderBy('Timestamp', descending: true)
-        .get();
+    print("\n\n===============================");
+    print("🔥 [fetchLogs] プレミアムログ全件取得 開始");
+    print("===============================");
 
-    // デバッグ: 取得したデータをコンソール出力
-    print('=== fetchLogs snapshot ===');
-    for (var doc in snapshot.docs) {
-      print(doc.data());
+    try {
+      final snapshot = await _db.collection('Log_Premium')
+          .orderBy('Timestamp', descending: true)
+          .get();
+
+      print("📌 Firestore 取得件数: ${snapshot.docs.length}");
+
+      for (var doc in snapshot.docs) {
+        print("▶ ドキュメント: ${doc.data()}");
+      }
+
+      final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+
+      print("📌 マッピング後ログ件数: ${logs.length}");
+      for (var log in logs) {
+        print(
+            "✔ TEL_ID: ${log.telId} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
+      }
+
+      print("✅ [fetchLogs] 完了");
+      print("===============================\n\n");
+
+      return logs;
+    } catch (e) {
+      print("❌ [fetchLogs] エラー発生: $e");
+      print("===============================\n\n");
+      rethrow;
     }
-
-    final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
-    print('=== fetchLogs mapped logs ===');
-    for (var log in logs) {
-      print('${log.telId}, ${log.detail}, ${log.timestamp}');
-    }
-
-    return logs;
   }
 
   /// 電話番号でフィルタ
   Future<List<PremiumLog>> fetchLogsByTel(String tel) async {
-    final snapshot = await _db.collection('Log_Premium')
-        .where('ID', isEqualTo: tel)
-        .orderBy('Timestamp', descending: true)
-        .get();
+    print("\n\n===============================");
+    print("🔍 [fetchLogsByTel] 電話番号検索: $tel");
+    print("===============================");
 
-    // デバッグ: 取得したデータをコンソール出力
-    print('=== fetchLogsByTel snapshot for $tel ===');
-    for (var doc in snapshot.docs) {
-      print(doc.data());
+    try {
+      final snapshot = await _db.collection('Log_Premium')
+          .where('ID', isEqualTo: tel)
+          .orderBy('Timestamp', descending: true)
+          .get();
+
+      print("📌 取得件数: ${snapshot.docs.length}");
+
+      for (var doc in snapshot.docs) {
+        print("▶ ドキュメント: ${doc.data()}");
+      }
+
+      final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
+
+      print("📌 マッピング後ログ件数: ${logs.length}");
+      for (var log in logs) {
+        print(
+            "✔ TEL_ID: ${log.telId} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
+      }
+
+      print("✅ [fetchLogsByTel] 完了");
+      print("===============================\n\n");
+
+      return logs;
+    } catch (e) {
+      print("❌ [fetchLogsByTel] エラー発生: $e");
+      print("===============================\n\n");
+      rethrow;
     }
-
-    final logs = snapshot.docs.map((d) => PremiumLog.fromMap(d.data())).toList();
-    print('=== fetchLogsByTel mapped logs ===');
-    for (var log in logs) {
-      print('${log.telId}, ${log.detail}, ${log.timestamp}');
-    }
-
-    return logs;
   }
 
   /// 対象ユーザ取得
   Future<UserModel?> fetchUser(String tel) async {
-    final doc = await _db.collection('User').doc(tel).get();
+    print("\n\n===============================");
+    print("👤 [fetchUser] ユーザ取得 TEL_ID: $tel");
+    print("===============================");
 
-    print('=== fetchUser for $tel ===');
-    if (!doc.exists) {
-      print('User not found');
-      return null;
+    try {
+      final doc = await _db.collection('User').doc(tel).get();
+
+      if (!doc.exists) {
+        print("❌ ユーザデータなし");
+        print("===============================\n\n");
+        return null;
+      }
+
+      print("📌 取得ユーザデータ:");
+      print(doc.data());
+
+      print("✅ [fetchUser] 完了");
+      print("===============================\n\n");
+
+      return UserModel.fromMap(doc.data()!);
+    } catch (e) {
+      print("❌ [fetchUser] エラー発生: $e");
+      print("===============================\n\n");
+      rethrow;
     }
-    print(doc.data());
-
-    return UserModel.fromMap(doc.data()!);
   }
 }

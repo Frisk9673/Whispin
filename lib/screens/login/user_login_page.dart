@@ -23,18 +23,28 @@ class _UserLoginPageState extends State<UserLoginPage> {
   String message = '';
 
   Future<void> _login() async {
+    print("===== [UserLoginPage] _login() 開始 =====");
+    print("入力されたメール: ${emailController.text}");
+    
     try {
-      // 1. Firebase Authでログイン
-      await authService.loginUser(
+      print("▶ FirebaseAuth でログイン処理中...");
+
+      final loginResult = await authService.loginUser(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      if (!mounted) return;
+      print("✔ Auth ログイン成功: $loginResult");
 
-      // 2. 論理削除チェック
+      if (!mounted) {
+        print("⚠️ 画面非表示状態で終了");
+        return;
+      }
+
+      // 論理削除チェック
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        print("▶ Firestore からユーザ情報取得中: ${user.email}");
         final query = await FirebaseFirestore.instance
             .collection('User')
             .where('EmailAddress', isEqualTo: user.email)
@@ -44,24 +54,32 @@ class _UserLoginPageState extends State<UserLoginPage> {
         if (query.docs.isNotEmpty) {
           final userData = query.docs.first.data();
           final isDeleted = userData['IsDeleted'] ?? false;
-          
+          print("取得したユーザ情報: $userData");
+
           if (isDeleted) {
-            // 論理削除済みの場合はログアウトしてエラーメッセージ表示
+            print("❌ 論理削除済みアカウントです");
             await FirebaseAuth.instance.signOut();
             setState(() => message = "このアカウントは削除済みです");
+            print("⚠️ ログイン中断: 論理削除アカウント");
             return;
           }
+        } else {
+          print("⚠️ ユーザ情報がFirestoreに存在しません");
         }
       }
 
-      // 3. 正常ログイン処理
+      print("▶ 正常ログイン → RoomJoinScreen へ遷移");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
       );
 
+      print("===== [UserLoginPage] _login() 正常終了 =====");
+
     } catch (e) {
+      print("❌ ログイン処理で例外発生: $e");
       setState(() => message = "ログインエラー: $e");
+      print("===== _login() 異常終了 =====");
     }
   }
 
