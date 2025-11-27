@@ -5,7 +5,6 @@ import '../../widgets/message_bubble.dart';
 import '../../widgets/message_input_field.dart';
 import '../../services/chat_service.dart';
 import '../../models/message_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
@@ -39,21 +38,21 @@ class _UserChatScreenState extends State<UserChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<List<Message>>(
               stream: _service.messageStream(provider.chatId!),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final docs = snapshot.data!.docs;
+                final messages = snapshot.data!;
 
                 return ListView(
                   padding: const EdgeInsets.all(16),
-                  children: docs.map((msg) {
+                  children: messages.map((msg) {
                     return MessageBubble(
-                      isAdmin: msg["IsAdmin"],
-                      text: msg["Text"],
+                      isAdmin: msg.isAdmin,
+                      text: msg.text,
                     );
                   }).toList(),
                 );

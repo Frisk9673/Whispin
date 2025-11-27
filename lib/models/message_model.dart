@@ -18,11 +18,21 @@ class Message {
   factory Message.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Message(
-      id: data["ID"],
-      isAdmin: data["IsAdmin"],
-      text: data["Text"],
+      id: doc.id, // ← doc.id を使う方が安全
+      isAdmin: data["IsAdmin"] ?? false,
+      text: data["Text"] ?? "",
       createdAt: data["CreatedAt"] ?? Timestamp.now(),
       read: data["Read"] ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "ID": id,
+      "IsAdmin": isAdmin,
+      "Text": text,
+      "CreatedAt": createdAt,
+      "Read": read,
+    };
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/message_model.dart';
 
 class ChatService {
   final _db = FirebaseFirestore.instance;
@@ -11,7 +12,6 @@ class ChatService {
 
     final tel = user.phoneNumber ?? user.email ?? "unknown";
 
-    // 既存チェック
     final check = await _db
         .collection("QuestionChat")
         .where("UserID", isEqualTo: tel)
@@ -22,7 +22,6 @@ class ChatService {
       return check.docs.first.id;
     }
 
-    // 新規作成
     final doc = await _db.collection("QuestionChat").add({
       "UserID": tel,
       "AdminID": null,
@@ -33,7 +32,7 @@ class ChatService {
     return doc.id;
   }
 
-  // メッセージ送信
+  // モデルを利用してメッセージ送信
   Future<void> sendMessage({
     required String chatId,
     required String text,
@@ -44,28 +43,31 @@ class ChatService {
         .collection("Messages")
         .doc();
 
-    await msgRef.set({
-      "ID": msgRef.id,
-      "IsAdmin": false,
-      "Text": text,
-      "CreatedAt": FieldValue.serverTimestamp(),
-      "Read": false,
-    });
+    final message = Message(
+      id: msgRef.id,
+      isAdmin: false,
+      text: text,
+      createdAt: Timestamp.now(),
+      read: false,
+    );
 
-    // 最新メッセージ更新
+    await msgRef.set(message.toJson());
+
     await _db.collection("QuestionChat").doc(chatId).update({
       "LastMessage": text,
       "UpdatedAt": FieldValue.serverTimestamp(),
     });
   }
 
-  // メッセージ一覧ストリーム
-  Stream<QuerySnapshot> messageStream(String chatId) {
+  // モデルを返すストリームに変更
+  Stream<List<Message>> messageStream(String chatId) {
     return _db
         .collection("QuestionChat")
         .doc(chatId)
         .collection("Messages")
         .orderBy("CreatedAt")
-        .snapshots();
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Message.fromFirestore(doc)).toList());
   }
 }
