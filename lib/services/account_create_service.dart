@@ -9,16 +9,15 @@ class UserRegisterService {
 
   Future<bool> register(UserModel user, String password) async {
     print("===== [UserRegisterService] register() 開始 =====");
-    print("入力されたユーザー情報:");
-    print("  email: ${user.email}");
-    print("  telId: ${user.telId}");
-    print("  lastName: ${user.lastName}");
-    print("  firstName: ${user.firstName}");
-    print("  nickname: ${user.nickname}");
-    print("  premium: ${user.premium}");
-    print("  createdAt(Local): ${user.createdAt}");
 
     try {
+      // ==== 入力値ログ ====
+      print("▶ 入力されたユーザーデータ（UserModel → toMap）:");
+      user.toMap().forEach((key, value) {
+        print("  $key: $value");
+      });
+      print("=============================================");
+
       print("▶ FirebaseAuth にユーザー作成リクエスト送信中...");
 
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -31,15 +30,52 @@ class UserRegisterService {
 
       print("▶ Firestore(User/${user.telId}) にユーザーデータ登録中...");
 
-      await _firestore.collection('User').doc(user.telId).set({
+      final inputData = {
         ...user.toMap(),
         "CreateAt": FieldValue.serverTimestamp(),
-      });
+      };
 
-      print("✔ Firestore 登録完了! (User/${user.telId})");
+      await _firestore.collection('User').doc(user.telId).set(inputData);
+
+      print("✔ Firestore 登録完了!");
+
+      // ==== Firestore から取得して整合性チェック ====
+      print("▶ Firestore(User/${user.telId}) の保存済みデータ取得中...");
+
+      final doc = await _firestore.collection('User').doc(user.telId).get();
+
+      if (!doc.exists) {
+        print("⚠ Firestore にデータが存在しません！（保存失敗の可能性）");
+        return false;
+      }
+
+      print("===== Firestore に保存された実データ =====");
+      final savedData = doc.data()!;
+      savedData.forEach((key, value) {
+        print("  $key: $value");
+      });
+      print("=========================================");
+
+      // ==== 自動整合性チェック ====
+      print("===== 自動整合性チェック開始 =====");
+
+      for (final entry in user.toMap().entries) {
+        final key = entry.key;
+        final inputValue = entry.value;
+        final savedValue = savedData[key];
+
+        if (inputValue == savedValue) {
+          print("✔ OK: $key → 一致 ($inputValue)");
+        } else {
+          print("❌ NG: $key → 不一致");
+          print("     入力値: $inputValue");
+          print("     Firestore値: $savedValue");
+        }
+      }
+
+      print("===== 自動整合性チェック終了 =====");
 
       print("===== [UserRegisterService] register() 正常終了 =====");
-
       return true;
 
     } on FirebaseAuthException catch (e) {
