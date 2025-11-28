@@ -385,83 +385,102 @@ _buildButton(
                     const SizedBox(height: 16),
 
                     _buildButton(
-                      '有料プラン',
-                      _isPremiumHovered ? Colors.blue[700]! : Colors.blue,
-                      () async {
-                        final email = FirebaseAuth.instance.currentUser?.email;
-                        if (email == null) return;
+  '有料プラン',
+  _isPremiumHovered ? Colors.blue[700]! : Colors.blue,
+  () async {
+    final email = FirebaseAuth.instance.currentUser?.email;
+    if (email == null) return;
 
-                        final query = await FirebaseFirestore.instance
-                            .collection('User')
-                            .where('EmailAddress', isEqualTo: email)
-                            .limit(1)
-                            .get();
+    final query = await FirebaseFirestore.instance
+        .collection('User')
+        .where('EmailAddress', isEqualTo: email)
+        .limit(1)
+        .get();
 
-                        if (query.docs.isEmpty) return;
+    if (query.docs.isEmpty) return;
 
-                        final userDoc = query.docs.first;
-                        final bool isPremium = userDoc['Premium'] ?? false;
+    final userDoc = query.docs.first;
+    final bool isPremium = userDoc['Premium'] ?? false;
 
-                        if (!isPremium) {
-                          final result = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("プレミアムプラン加入"),
-                              content: const Text("プレミアムに加入しますか？"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text("いいえ"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text("はい"),
-                                ),
-                              ],
-                            ),
-                          );
+    if (!isPremium) {
+      // 加入処理
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("プレミアムプラン加入"),
+          content: const Text("プレミアムに加入しますか？"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("いいえ"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("はい"),
+            ),
+          ],
+        ),
+      );
 
-                          if (result == true) {
-                            await userDoc.reference.update({
-                              'Premium': true,
-                              'LastUpdated_Premium': FieldValue.serverTimestamp(),
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("プレミアムに加入しました！")),
-                            );
-                          }
-                        } else {
-                          final result = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("プレミアム解約"),
-                              content: const Text("本当に解約しますか？"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text("いいえ"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text("はい"),
-                                ),
-                              ],
-                            ),
-                          );
+      if (result == true) {
+        await userDoc.reference.update({
+          'Premium': true,
+          'LastUpdated_Premium': FieldValue.serverTimestamp(),
+        });
 
-                          if (result == true) {
-                            await userDoc.reference.update({
-                              'Premium': false,
-                              'LastUpdated_Premium': FieldValue.serverTimestamp(),
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("プレミアムを解約しました")),
-                            );
-                          }
-                        }
-                      },
-                      (value) => setState(() => _isPremiumHovered = value),
-                    ),
+        // Log_Premium に履歴追加
+        await FirebaseFirestore.instance.collection('Log_Premium').add({
+          'ID': email,
+          'Timestamp': FieldValue.serverTimestamp(),
+          'Detail': '加入',
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("プレミアムに加入しました！")),
+        );
+      }
+    } else {
+      // 解約処理
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("プレミアム解約"),
+          content: const Text("本当に解約しますか？"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("いいえ"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("はい"),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        await userDoc.reference.update({
+          'Premium': false,
+          'LastUpdated_Premium': FieldValue.serverTimestamp(),
+        });
+
+        // Log_Premium に履歴追加
+        await FirebaseFirestore.instance.collection('Log_Premium').add({
+          'ID': email,
+          'Timestamp': FieldValue.serverTimestamp(),
+          'Detail': '解約',
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("プレミアムを解約しました")),
+        );
+      }
+    }
+  },
+  (value) => setState(() => _isPremiumHovered = value),
+),
+
 
                     const SizedBox(height: 16),
 
