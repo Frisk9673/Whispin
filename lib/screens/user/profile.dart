@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:whispin/screens/account_create/account_create_screen.dart';
-import 'package:whispin/screens/user/user_chat_screen.dart';
+import 'package:whispin/screens/user/question_chat_user.dart';
 import '../../widgets/common/header.dart';
 
 class ProfileScreen extends StatefulWidget {

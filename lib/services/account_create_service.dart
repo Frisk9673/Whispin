@@ -1,7 +1,7 @@
 // services/account_create_service.dart 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/user_model.dart';
+import '../models/user.dart';
 
 class UserRegisterService {
   final _auth = FirebaseAuth.instance;
@@ -21,28 +21,30 @@ class UserRegisterService {
       print("▶ FirebaseAuth にユーザー作成リクエスト送信中...");
 
       final credential = await _auth.createUserWithEmailAndPassword(
-        email: user.email,
+        email: user.id,      // 修正: email → id
         password: password,
       );
 
       print("✔ Auth 登録成功!");
       print("  UID: ${credential.user?.uid}");
 
-      print("▶ Firestore(User/${user.telId}) にユーザーデータ登録中...");
+      final docId = user.phoneNumber ?? user.id; // doc id を安全に決定
+
+      print("▶ Firestore(User/$docId) にユーザーデータ登録中...");
 
       final inputData = {
         ...user.toMap(),
-        "CreateAt": FieldValue.serverTimestamp(),
+        "createdAt": FieldValue.serverTimestamp(), // 修正: createdAt に統一
       };
 
-      await _firestore.collection('User').doc(user.telId).set(inputData);
+      await _firestore.collection('User').doc(docId).set(inputData);
 
       print("✔ Firestore 登録完了!");
 
       // ==== Firestore から取得して整合性チェック ====
-      print("▶ Firestore(User/${user.telId}) の保存済みデータ取得中...");
+      print("▶ Firestore(User/$docId) の保存済みデータ取得中...");
 
-      final doc = await _firestore.collection('User').doc(user.telId).get();
+      final doc = await _firestore.collection('User').doc(docId).get();
 
       if (!doc.exists) {
         print("⚠ Firestore にデータが存在しません！（保存失敗の可能性）");

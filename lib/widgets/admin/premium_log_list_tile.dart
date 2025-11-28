@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/premium_log_model.dart';
 import '../../services/premium_log_service.dart';
-import '../../models/user_model.dart';
+import '../../models/user.dart';
 
 class PremiumLogListTile extends StatelessWidget {
   final PremiumLog log;
@@ -12,10 +12,11 @@ class PremiumLogListTile extends StatelessWidget {
     print('\n=========== [PremiumLogListTile] ===========');
     print('>>> タイルがタップされました (TEL: ${log.telId})');
     print('>>> Firestoreからユーザー情報を取得します...');
-    
+
     UserModel? user;
 
     try {
+      // fetchUser も統合版 UserModel に合わせて phoneNumber で検索
       user = await PremiumLogService().fetchUser(log.telId);
       print('>>> fetchUser 完了');
     } catch (e) {
@@ -44,9 +45,9 @@ class PremiumLogListTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("電話番号: ${user?.telId}"),
-            Text("名前: ${user?.lastName} ${user?.firstName}"),
-            Text("メール: ${user?.email}"),
+            Text("電話番号: ${user?.phoneNumber ?? '不明'}"),
+            Text("名前: ${user?.lastName ?? ''} ${user?.firstName ?? ''}"),
+            Text("メール: ${user?.id}"),
             const SizedBox(height: 10),
             Text("現在の契約状況: $statusText"),
             const SizedBox(height: 10),

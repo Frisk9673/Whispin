@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/chat_service.dart';
+import '../services/question_chat.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatService _service = ChatService();

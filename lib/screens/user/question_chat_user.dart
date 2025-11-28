@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../widgets/message_bubble.dart';
 import '../../widgets/message_input_field.dart';
-import '../../services/chat_service.dart';
-import '../../models/message_model.dart';
+import '../../services/question_chat.dart';
+import '../../models/question_message.dart';
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});

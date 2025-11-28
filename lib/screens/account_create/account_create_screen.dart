@@ -1,7 +1,7 @@
 // screens/account_create_screen.dart 
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import '../../models/user_model.dart';
+import '../../models/user.dart';
 import '../../services/account_create_service.dart';
 import '../../screens/user/home.dart';
 import '../login/user_login_page.dart';
@@ -43,12 +43,12 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
     // UserModel 作成
     final user = UserModel(
-      telId: telId,
-      email: email,
+      phoneNumber: telId, // telId → phoneNumber に変更
+      id: email,          // email → id に変更
       firstName: firstNameController.text.trim(),
       lastName: lastNameController.text.trim(),
       nickname: nicknameController.text.trim(),
-      rate: 0,
+      rate: 0.0,          // double に合わせる
       premium: false,
       roomCount: 0,
       createdAt: DateTime.now(),
@@ -56,9 +56,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       deletedAt: null,
     );
 
+
     developer.log("=== UserModel 作成完了 ===");
-    developer.log("TEL_ID: ${user.telId}");
-    developer.log("Email: ${user.email}");
+    developer.log("TEL_ID: ${user.phoneNumber}");
+    developer.log("Email: ${user.id}");
     developer.log("Name: ${user.lastName} ${user.firstName}");
     developer.log("Nickname: ${user.nickname}");
     developer.log("Premium: ${user.premium}");

@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
+import '../models/user.dart';
 import '../models/premium_log_model.dart';
 
 class PremiumLogService {
