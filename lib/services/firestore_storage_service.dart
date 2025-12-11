@@ -133,56 +133,56 @@ class FirestoreStorageService implements StorageService {
       // ユーザー読み込み
       final usersSnapshot = await _firestore.collection('users').get();
       _users = usersSnapshot.docs
-          .map((doc) => User.fromJson(doc.data()))
+          .map((doc) => User.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_users.length} users');
       
       // チャットルーム読み込み
       final roomsSnapshot = await _firestore.collection('rooms').get();
       _rooms = roomsSnapshot.docs
-          .map((doc) => ChatRoom.fromJson(doc.data()))
+          .map((doc) => ChatRoom.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_rooms.length} rooms');
       
       // メッセージ読み込み
       final messagesSnapshot = await _firestore.collection('messages').get();
       _messages = messagesSnapshot.docs
-          .map((doc) => Message.fromJson(doc.data()))
+          .map((doc) => Message.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_messages.length} messages');
       
       // フレンドシップ読み込み
       final friendshipsSnapshot = await _firestore.collection('friendships').get();
       _friendships = friendshipsSnapshot.docs
-          .map((doc) => Friendship.fromJson(doc.data()))
+          .map((doc) => Friendship.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_friendships.length} friendships');
       
       // フレンドリクエスト読み込み
       final friendRequestsSnapshot = await _firestore.collection('friendRequests').get();
       _friendRequests = friendRequestsSnapshot.docs
-          .map((doc) => FriendRequest.fromJson(doc.data()))
+          .map((doc) => FriendRequest.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_friendRequests.length} friend requests');
       
       // 評価読み込み
       final evaluationsSnapshot = await _firestore.collection('evaluations').get();
       _evaluations = evaluationsSnapshot.docs
-          .map((doc) => UserEvaluation.fromJson(doc.data()))
+          .map((doc) => UserEvaluation.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_evaluations.length} evaluations');
       
       // 延長リクエスト読み込み
       final extensionRequestsSnapshot = await _firestore.collection('extensionRequests').get();
       _extensionRequests = extensionRequestsSnapshot.docs
-          .map((doc) => ExtensionRequest.fromJson(doc.data()))
+          .map((doc) => ExtensionRequest.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_extensionRequests.length} extension requests');
       
       // ブロック読み込み
       final blocksSnapshot = await _firestore.collection('blocks').get();
       _blocks = blocksSnapshot.docs
-          .map((doc) => Block.fromJson(doc.data()))
+          .map((doc) => Block.fromMap(doc.data()))
           .toList();
       print('📥 Loaded ${_blocks.length} blocks');
       
@@ -208,7 +208,7 @@ class FirestoreStorageService implements StorageService {
       for (var user in _users) {
         batch.set(
           _firestore.collection('users').doc(user.id),
-          user.toJson(),
+          user.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -217,7 +217,7 @@ class FirestoreStorageService implements StorageService {
       for (var room in _rooms) {
         batch.set(
           _firestore.collection('rooms').doc(room.id),
-          room.toJson(),
+          room.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -226,7 +226,7 @@ class FirestoreStorageService implements StorageService {
       for (var message in _messages) {
         batch.set(
           _firestore.collection('messages').doc(message.id),
-          message.toJson(),
+          message.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -235,7 +235,7 @@ class FirestoreStorageService implements StorageService {
       for (var friendship in _friendships) {
         batch.set(
           _firestore.collection('friendships').doc(friendship.id),
-          friendship.toJson(),
+          friendship.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -244,7 +244,7 @@ class FirestoreStorageService implements StorageService {
       for (var request in _friendRequests) {
         batch.set(
           _firestore.collection('friendRequests').doc(request.id),
-          request.toJson(),
+          request.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -253,7 +253,7 @@ class FirestoreStorageService implements StorageService {
       for (var evaluation in _evaluations) {
         batch.set(
           _firestore.collection('evaluations').doc(evaluation.id),
-          evaluation.toJson(),
+          evaluation.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -262,7 +262,7 @@ class FirestoreStorageService implements StorageService {
       for (var request in _extensionRequests) {
         batch.set(
           _firestore.collection('extensionRequests').doc(request.id),
-          request.toJson(),
+          request.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -271,7 +271,7 @@ class FirestoreStorageService implements StorageService {
       for (var block in _blocks) {
         batch.set(
           _firestore.collection('blocks').doc(block.id),
-          block.toJson(),
+          block.toMap(),
           SetOptions(merge: true),
         );
       }
@@ -339,49 +339,49 @@ class FirestoreStorageService implements StorageService {
     
     // ユーザー変更監視
     _usersSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
-      _users = snapshot.docs.map((doc) => User.fromJson(doc.data())).toList();
+      _users = snapshot.docs.map((doc) => User.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // チャットルーム変更監視
     _roomsSubscription = _firestore.collection('rooms').snapshots().listen((snapshot) {
-      _rooms = snapshot.docs.map((doc) => ChatRoom.fromJson(doc.data())).toList();
+      _rooms = snapshot.docs.map((doc) => ChatRoom.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // メッセージ変更監視
     _messagesSubscription = _firestore.collection('messages').snapshots().listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
+      _messages = snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // フレンドシップ変更監視
     _friendshipsSubscription = _firestore.collection('friendships').snapshots().listen((snapshot) {
-      _friendships = snapshot.docs.map((doc) => Friendship.fromJson(doc.data())).toList();
+      _friendships = snapshot.docs.map((doc) => Friendship.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // フレンドリクエスト変更監視
     _friendRequestsSubscription = _firestore.collection('friendRequests').snapshots().listen((snapshot) {
-      _friendRequests = snapshot.docs.map((doc) => FriendRequest.fromJson(doc.data())).toList();
+      _friendRequests = snapshot.docs.map((doc) => FriendRequest.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // 評価変更監視
     _evaluationsSubscription = _firestore.collection('evaluations').snapshots().listen((snapshot) {
-      _evaluations = snapshot.docs.map((doc) => UserEvaluation.fromJson(doc.data())).toList();
+      _evaluations = snapshot.docs.map((doc) => UserEvaluation.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // 延長リクエスト変更監視
     _extensionRequestsSubscription = _firestore.collection('extensionRequests').snapshots().listen((snapshot) {
-      _extensionRequests = snapshot.docs.map((doc) => ExtensionRequest.fromJson(doc.data())).toList();
+      _extensionRequests = snapshot.docs.map((doc) => ExtensionRequest.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
     // ブロック変更監視
     _blocksSubscription = _firestore.collection('blocks').snapshots().listen((snapshot) {
-      _blocks = snapshot.docs.map((doc) => Block.fromJson(doc.data())).toList();
+      _blocks = snapshot.docs.map((doc) => Block.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     

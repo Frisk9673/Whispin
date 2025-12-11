@@ -39,7 +39,8 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _loadRoom();
     if (_currentRoom != null) {
-      widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
+      widget.chatService
+          .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
     _startUpdateTimer();
   }
@@ -61,25 +62,23 @@ class _ChatScreenState extends State<ChatScreen> {
         .where((m) => m.roomId == widget.roomId)
         .toList();
 
-    _myMessage = roomMessages
-        .where((m) => m.senderId == currentUserId)
-        .fold<Message?>(
-          null,
-          (prev, curr) => prev == null ||
-                  curr.timestamp.isAfter(prev.timestamp)
-              ? curr
-              : prev,
-        );
+    _myMessage =
+        roomMessages.where((m) => m.userId == currentUserId).fold<Message?>(
+              null,
+              (prev, curr) =>
+                  prev == null || curr.timestamp.isAfter(prev.timestamp)
+                      ? curr
+                      : prev,
+            );
 
-    _partnerMessage = roomMessages
-        .where((m) => m.senderId != currentUserId)
-        .fold<Message?>(
-          null,
-          (prev, curr) => prev == null ||
-                  curr.timestamp.isAfter(prev.timestamp)
-              ? curr
-              : prev,
-        );
+    _partnerMessage =
+        roomMessages.where((m) => m.userId != currentUserId).fold<Message?>(
+              null,
+              (prev, curr) =>
+                  prev == null || curr.timestamp.isAfter(prev.timestamp)
+                      ? curr
+                      : prev,
+            );
   }
 
   void _startUpdateTimer() {
@@ -90,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _loadRoom();
-      
+
       if (_currentRoom == null) {
         timer.cancel();
         if (mounted) {
@@ -98,7 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         return;
       }
-      
+
       _loadMessages();
 
       final currentUserId = widget.authService.currentUser?.id ?? '';
@@ -106,7 +105,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ? _currentRoom!.id2
           : _currentRoom!.id1;
 
-      if (partnerId.isEmpty && !_partnerHasLeft) {
+      if ((partnerId?.isEmpty ?? true) && !_partnerHasLeft) {
         setState(() {
           _partnerHasLeft = true;
         });
@@ -123,7 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {});
     });
   }
-  
+
   void _handleRoomDisappeared() {
     showDialog(
       context: context,
@@ -154,7 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _formatRemainingTime() {
     if (_currentRoom == null) return '0:00';
-    
+
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
 
@@ -169,7 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _canRequestExtension() {
     if (_currentRoom == null) return false;
-    
+
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
     return remaining.inMinutes <= 2 &&
@@ -188,6 +187,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await widget.chatService.sendMessage(
       widget.roomId,
       widget.authService.currentUser!.id,
+      widget.authService.currentUser!.nickname,
       _messageController.text.trim(),
     );
 
@@ -197,14 +197,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _requestExtension() async {
-    final success = await widget.chatService.requestExtension(
-      widget.roomId,
-      widget.authService.currentUser!.id,
-    );
+    try {
+      final request = await widget.chatService.requestExtension(
+        widget.roomId,
+        widget.authService.currentUser!.id,
+      );
 
-    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('延長リクエストを送信しました')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
       );
     }
   }
@@ -277,9 +281,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _showEvaluationDialog() async {
     final currentUserId = widget.authService.currentUser?.id ?? '';
-    final partnerId = _currentRoom!.id1 == currentUserId
+
+    final rawPartnerId = (_currentRoom!.id1 == currentUserId
         ? _currentRoom!.id2
-        : _currentRoom!.id1;
+        : _currentRoom!.id1);
+
+    final partnerId = rawPartnerId ?? '';
 
     if (partnerId.isEmpty) return;
 
@@ -383,8 +390,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    _partnerMessage?.content ??
-                                        'ユーザーを待っています...',
+                                    _partnerMessage?.text ?? 'ユーザーを待っています...',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -419,7 +425,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    _myMessage?.content ?? '',
+                                    _myMessage?.text ?? '',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),

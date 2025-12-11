@@ -15,7 +15,7 @@ class FriendRequest {
     this.respondedAt,
   });
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'senderId': senderId,
     'receiverId': receiverId,
@@ -24,7 +24,7 @@ class FriendRequest {
     'respondedAt': respondedAt?.toIso8601String(),
   };
 
-  factory FriendRequest.fromJson(Map<String, dynamic> json) => FriendRequest(
+  factory FriendRequest.fromMap(Map<String, dynamic> json) => FriendRequest(
     id: json['id'] as String,
     senderId: json['senderId'] as String,
     receiverId: json['receiverId'] as String,

@@ -41,8 +41,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       return;
     }
 
-    // UserModel 作成
-    final user = UserModel(
+    // User 作成
+    final user = User(
       phoneNumber: telId, // telId → phoneNumber に変更
       id: email,          // email → id に変更
       firstName: firstNameController.text.trim(),
@@ -57,7 +57,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     );
 
 
-    developer.log("=== UserModel 作成完了 ===");
+    developer.log("=== User 作成完了 ===");
     developer.log("TEL_ID: ${user.phoneNumber}");
     developer.log("Email: ${user.id}");
     developer.log("Name: ${user.lastName} ${user.firstName}");

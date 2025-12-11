@@ -14,7 +14,7 @@ class UserEvaluation {
     required this.createdAt,
   });
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'evaluatorId': evaluatorId,
     'evaluatedId': evaluatedId,
@@ -22,7 +22,7 @@ class UserEvaluation {
     'createdAt': createdAt.toIso8601String(),
   };
   
-  factory UserEvaluation.fromJson(Map<String, dynamic> json) => UserEvaluation(
+  factory UserEvaluation.fromMap(Map<String, dynamic> json) => UserEvaluation(
     id: json['id'] as String,
     evaluatorId: json['evaluatorId'] as String,
     evaluatedId: json['evaluatedId'] as String,

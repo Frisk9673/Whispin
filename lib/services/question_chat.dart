@@ -51,7 +51,7 @@ class ChatService {
       read: false,
     );
 
-    await msgRef.set(message.toJson());
+    await msgRef.set(message.toMap());
 
     await _db.collection("QuestionChat").doc(chatId).update({
       "LastMessage": text,

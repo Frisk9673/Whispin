@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class UserModel {
+class User{
   final String id; // Email (Primary Key)
   final String password; // hashed password (JSON 用)
   final String firstName;
@@ -15,7 +15,7 @@ class UserModel {
   final DateTime? lastUpdatedPremium;
   final DateTime? deletedAt;
 
-  UserModel({
+  User({
     required this.id,
     this.password = '',
     this.firstName = '',
@@ -39,7 +39,7 @@ class UserModel {
   bool get isDeleted => deletedAt != null;
 
   // ===== Firestore + JSON 両対応の fromMap =====
-  factory UserModel.fromMap(Map<String, dynamic> map) {
+  factory User.fromMap(Map<String, dynamic> map) {
     DateTime? _toDate(dynamic v) {
       if (v == null) return null;
       if (v is Timestamp) return v.toDate();
@@ -47,7 +47,7 @@ class UserModel {
       return null;
     }
 
-    return UserModel(
+    return User(
       id: map['id'] ??
           map['EmailAddress'] ??
           '', // Firestore 旧形式もサポート

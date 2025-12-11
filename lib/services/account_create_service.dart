@@ -1,18 +1,18 @@
 // services/account_create_service.dart 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fba;
 import '../models/user.dart';
 
 class UserRegisterService {
-  final _auth = FirebaseAuth.instance;
+  final _auth = fba.FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
 
-  Future<bool> register(UserModel user, String password) async {
+  Future<bool> register(User user, String password) async {
     print("===== [UserRegisterService] register() 開始 =====");
 
     try {
       // ==== 入力値ログ ====
-      print("▶ 入力されたユーザーデータ（UserModel → toMap）:");
+      print("▶ 入力されたユーザーデータ（User → toMap）:");
       user.toMap().forEach((key, value) {
         print("  $key: $value");
       });
@@ -80,7 +80,7 @@ class UserRegisterService {
       print("===== [UserRegisterService] register() 正常終了 =====");
       return true;
 
-    } on FirebaseAuthException catch (e) {
+    } on fba.FirebaseAuthException catch (e) {
       print("❌ FirebaseAuthException 発生: ${e.code}");
       print("===== register() 異常終了（Auth エラー） =====");
       throw "Auth エラー: ${e.code}";

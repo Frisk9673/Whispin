@@ -13,7 +13,7 @@ class Friendship {
     required this.createdAt,
   });
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'userId': userId,
     'friendId': friendId,
@@ -21,7 +21,7 @@ class Friendship {
     'createdAt': createdAt.toIso8601String(),
   };
   
-  factory Friendship.fromJson(Map<String, dynamic> json) => Friendship(
+  factory Friendship.fromMap(Map<String, dynamic> json) => Friendship(
     id: json['id'] as String,
     userId: json['userId'] as String,
     friendId: json['friendId'] as String,

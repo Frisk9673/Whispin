@@ -26,7 +26,7 @@ class Message {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       "ID": id,
       "IsAdmin": isAdmin,

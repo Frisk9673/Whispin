@@ -38,63 +38,63 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  Future<void> _handleSubmit() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+Future<void> _handleSubmit() async {
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
 
-    try {
-      bool success;
-      if (_isLogin) {
-        success = await widget.authService.login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      } else {
-        if (_firstNameController.text.trim().isEmpty ||
-            _lastNameController.text.trim().isEmpty ||
-            _nicknameController.text.trim().isEmpty) {
-          setState(() {
-            _errorMessage = 'すべての項目を入力してください';
-            _isLoading = false;
-          });
-          return;
-        }
+  try {
+    bool success = false;
 
-        success = await widget.authService.signup(
-          _emailController.text.trim(),
-          _passwordController.text,
-          _firstNameController.text.trim(),
-          _lastNameController.text.trim(),
-          _nicknameController.text.trim(),
-        );
-      }
+    if (_isLogin) {
+      // login() は User を返すので User を受け取る
+      final user = await widget.authService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
-      if (success && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(
-              authService: widget.authService,
-              storageService: widget.storageService,
-            ),
+      // user が null でなければ成功
+      success = user != null;
+    } else {
+      // signup も User を返す
+      final newUser = await widget.authService.signup(
+        _emailController.text.trim(),
+        _firstNameController.text.trim(),
+        _lastNameController.text.trim(),
+        _nicknameController.text.trim(),
+        _passwordController.text,
+        _passwordController.text,
+      );
+
+      success = newUser != null;
+    }
+
+    if (success && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+            authService: widget.authService,
+            storageService: widget.storageService,
           ),
-        );
-      } else {
-        setState(() {
-          _errorMessage = _isLogin
-              ? 'メールアドレスまたはパスワードが正しくありません'
-              : 'サインアップに失敗しました';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
+        ),
+      );
+    } else {
       setState(() {
-        _errorMessage = 'エラーが発生しました: $e';
+        _errorMessage = _isLogin
+            ? 'メールアドレスまたはパスワードが正しくありません'
+            : 'サインアップに失敗しました';
         _isLoading = false;
       });
     }
+  } catch (e) {
+    setState(() {
+      _errorMessage = 'エラーが発生しました: $e';
+      _isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -2,7 +2,7 @@ class ChatRoom {
   final String id; // roomId (Primary Key)
   final String topic; // 話題 (formerly 'name')
   final int status; // 状態: 0=待機, 1=会話, 2=終了
-  final String id1; // 作成者 (creator user ID)
+  final String? id1; // 作成者 (creator user ID)
   final String? id2; // 参加者 (participant user ID, nullable)
   final String? comment1; // コメント1 (creator's comment, nullable)
   final String? comment2; // コメント2 (participant's comment, nullable)
@@ -27,10 +27,9 @@ class ChatRoom {
   
   // Backward compatibility: get userIds array from id1/id2
   List<String> get userIds {
-    final ids = <String>[id1];
-    if (id2 != null && id2!.isNotEmpty) {
-      ids.add(id2!);
-    }
+    final ids = <String>[];
+    if (id1 != null && id1!.isNotEmpty) ids.add(id1!);
+    if (id2 != null && id2!.isNotEmpty) ids.add(id2!);
     return ids;
   }
   
@@ -50,7 +49,7 @@ class ChatRoom {
   // Backward compatibility: 'name' field
   String get name => topic;
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'topic': topic,
     'status': status,
@@ -67,7 +66,7 @@ class ChatRoom {
     'userIds': userIds,
   };
   
-  factory ChatRoom.fromJson(Map<String, dynamic> json) {
+  factory ChatRoom.fromMap(Map<String, dynamic> json) {
     // Backward compatibility: support old 'userIds' array format
     String id1Value;
     String? id2Value;

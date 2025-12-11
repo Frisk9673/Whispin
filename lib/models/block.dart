@@ -12,8 +12,25 @@ class Block {
     this.active = true,
     required this.createdAt,
   });
+
+  /// 👍 copyWith を追加
+  Block copyWith({
+    String? id,
+    String? blockerId,
+    String? blockedId,
+    bool? active,
+    DateTime? createdAt,
+  }) {
+    return Block(
+      id: id ?? this.id,
+      blockerId: blockerId ?? this.blockerId,
+      blockedId: blockedId ?? this.blockedId,
+      active: active ?? this.active,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'blockerId': blockerId,
     'blockedId': blockedId,
@@ -21,7 +38,7 @@ class Block {
     'createdAt': createdAt.toIso8601String(),
   };
   
-  factory Block.fromJson(Map<String, dynamic> json) => Block(
+  factory Block.fromMap(Map<String, dynamic> json) => Block(
     id: json['id'] as String,
     blockerId: json['blockerId'] as String,
     blockedId: json['blockedId'] as String,

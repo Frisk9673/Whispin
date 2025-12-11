@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/chat_service.dart';
-import '../models/chat_room.dart';
-import '../models/friendship.dart';
-import '../models/block.dart';
 import 'auth_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -36,9 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updatePendingFriendRequests() {
     final currentUserId = widget.authService.currentUser?.id ?? '';
-    final count = widget.storageService.friendships
-        .where((f) => f.receiverId == currentUserId && f.status == 'pending')
+    final count = widget.storageService.friendRequests
+        .where((r) => r.receiverId == currentUserId && r.isPending)
         .length;
+
     setState(() {
       _pendingFriendRequestCount = count;
     });
@@ -72,17 +70,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showAvailableRooms() {
     final currentUserId = widget.authService.currentUser?.id ?? '';
-    final availableRooms = widget.storageService.rooms
-        .where((room) {
-          final hasOpenSlot = (room.id1.isEmpty && room.id2.isNotEmpty) ||
-              (room.id2.isEmpty && room.id1.isNotEmpty);
-          final notMyRoom = room.id1 != currentUserId && room.id2 != currentUserId;
-          final now = DateTime.now();
-          final notExpired = room.expiresAt.isAfter(now);
-          
-          return hasOpenSlot && notMyRoom && notExpired;
-        })
-        .toList();
+    final availableRooms = widget.storageService.rooms.where((room) {
+      final hasOpenSlot =
+          ((room.id1 ?? '').isEmpty && (room.id2 ?? '').isNotEmpty) ||
+              ((room.id2 ?? '').isEmpty && (room.id1 ?? '').isNotEmpty);
+      final notMyRoom = room.id1 != currentUserId && room.id2 != currentUserId;
+      final now = DateTime.now();
+      final notExpired = room.expiresAt.isAfter(now);
+
+      return hasOpenSlot && notMyRoom && notExpired;
+    }).toList();
 
     showDialog(
       context: context,
@@ -97,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: availableRooms.length,
                   itemBuilder: (context, index) {
                     final room = availableRooms[index];
-                    final creator = room.id1.isNotEmpty ? room.id1 : room.id2;
+                    final creator = (room.id1 ?? '').isNotEmpty ? room.id1 ?? '' : room.id2 ?? '';
                     return ListTile(
                       title: Text(room.topic),
                       subtitle: Text('作成者: $creator'),
@@ -136,8 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentUserId = widget.authService.currentUser?.id ?? '';
     final friends = widget.storageService.friendships
         .where((f) =>
-            f.status == 'accepted' &&
-            (f.senderId == currentUserId || f.receiverId == currentUserId))
+            f.active &&
+            (f.userId == currentUserId || f.friendId == currentUserId))
         .toList();
 
     showDialog(
@@ -153,9 +150,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: friends.length,
                   itemBuilder: (context, index) {
                     final friendship = friends[index];
-                    final friendId = friendship.senderId == currentUserId
-                        ? friendship.receiverId
-                        : friendship.senderId;
+                    final friendId = friendship.userId == currentUserId
+                        ? friendship.friendId
+                        : friendship.userId;
+
                     return ListTile(
                       leading: CircleAvatar(
                         child: Icon(Icons.person),
@@ -199,7 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: Text(block.blockedId),
                       trailing: TextButton(
                         onPressed: () async {
-                          final idx = widget.storageService.blocks.indexOf(block);
+                          final idx =
+                              widget.storageService.blocks.indexOf(block);
                           widget.storageService.blocks[idx] =
                               block.copyWith(active: false);
                           await widget.storageService.save();

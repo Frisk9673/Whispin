@@ -79,7 +79,7 @@ class PremiumLogService {
   }
 
   /// 対象ユーザ取得
-  Future<UserModel?> fetchUser(String tel) async {
+  Future<User?> fetchUser(String tel) async {
     print("\n\n===============================");
     print("👤 [fetchUser] ユーザ取得 TEL_ID: $tel");
     print("===============================");
@@ -99,7 +99,7 @@ class PremiumLogService {
       print("✅ [fetchUser] 完了");
       print("===============================\n\n");
 
-      return UserModel.fromMap(doc.data()!);
+      return User.fromMap(doc.data()!);
     } catch (e) {
       print("❌ [fetchUser] エラー発生: $e");
       print("===============================\n\n");

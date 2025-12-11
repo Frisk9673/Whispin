@@ -16,7 +16,7 @@ class LocalAuthUser {
     required this.createdAt,
   });
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'email': email,
     'username': username,
     'salt': salt,
@@ -25,7 +25,7 @@ class LocalAuthUser {
     'createdAt': createdAt.toIso8601String(),
   };
   
-  factory LocalAuthUser.fromJson(Map<String, dynamic> json) => LocalAuthUser(
+  factory LocalAuthUser.fromMap(Map<String, dynamic> json) => LocalAuthUser(
     email: json['email'] as String,
     username: json['username'] as String,
     salt: json['salt'] as String,

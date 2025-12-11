@@ -13,10 +13,10 @@ class PremiumLogListTile extends StatelessWidget {
     print('>>> タイルがタップされました (TEL: ${log.telId})');
     print('>>> Firestoreからユーザー情報を取得します...');
 
-    UserModel? user;
+    User? user;
 
     try {
-      // fetchUser も統合版 UserModel に合わせて phoneNumber で検索
+      // fetchUser も統合版 User に合わせて phoneNumber で検索
       user = await PremiumLogService().fetchUser(log.telId);
       print('>>> fetchUser 完了');
     } catch (e) {

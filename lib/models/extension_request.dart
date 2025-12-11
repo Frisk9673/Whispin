@@ -13,7 +13,7 @@ class ExtensionRequest {
     required this.createdAt,
   });
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'roomId': roomId,
     'requesterId': requesterId,
@@ -21,7 +21,7 @@ class ExtensionRequest {
     'createdAt': createdAt.toIso8601String(),
   };
   
-  factory ExtensionRequest.fromJson(Map<String, dynamic> json) => ExtensionRequest(
+  factory ExtensionRequest.fromMap(Map<String, dynamic> json) => ExtensionRequest(
     id: json['id'] as String,
     roomId: json['roomId'] as String,
     requesterId: json['requesterId'] as String,

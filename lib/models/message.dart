@@ -15,7 +15,7 @@ class Message {
     required this.timestamp,
   });
   
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'roomId': roomId,
     'userId': userId,
@@ -24,7 +24,7 @@ class Message {
     'timestamp': timestamp.toIso8601String(),
   };
   
-  factory Message.fromJson(Map<String, dynamic> json) => Message(
+  factory Message.fromMap(Map<String, dynamic> json) => Message(
     id: json['id'] as String,
     roomId: json['roomId'] as String,
     userId: json['userId'] as String,
