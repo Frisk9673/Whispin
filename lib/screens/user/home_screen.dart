@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import '../services/storage_service.dart';
-import '../services/chat_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/storage_service.dart';
+import '../../services/chat_service.dart';
 import 'auth_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';

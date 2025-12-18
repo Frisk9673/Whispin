@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../models/chat_room.dart';
-import '../models/message.dart';
 import '../models/extension_request.dart';
 import 'storage_service.dart';
 
@@ -29,6 +28,8 @@ class ChatService {
       topic: roomName,
       id1: '',
       id2: currentUserId,
+      comment1: null, // ← 初期値
+      comment2: null, // ← 初期値
       createdAt: now,
       expiresAt: expiresAt,
       extensionCount: 0,
@@ -96,7 +97,6 @@ class ChatService {
     _extensionPollingTimers.remove(roomId);
     
     _storageService.rooms.removeWhere((r) => r.id == roomId);
-    _storageService.messages.removeWhere((m) => m.roomId == roomId);
     _storageService.extensionRequests.removeWhere((e) => e.roomId == roomId);
     
     await _storageService.save();
@@ -116,30 +116,26 @@ class ChatService {
     });
   }
   
-  Future<void> sendMessage(String roomId, String userId, String username, String text) async {
+  // sendMessage メソッドを comment 更新に変更
+  Future<void> sendMessage(String roomId, String userId, String text) async {
     if (text.isEmpty || text.length > 100) {
       throw Exception('メッセージは1〜100文字で入力してください');
     }
     
-    final existingMessageIndex = _storageService.messages.indexWhere(
-      (m) => m.roomId == roomId && m.userId == userId,
-    );
-    
-    final newMessage = Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      roomId: roomId,
-      userId: userId,
-      username: username,
-      text: text,
-      timestamp: DateTime.now(),
-    );
-    
-    if (existingMessageIndex != -1) {
-      _storageService.messages[existingMessageIndex] = newMessage;
-    } else {
-      _storageService.messages.add(newMessage);
+    final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
+    if (roomIndex == -1) {
+      throw Exception('ルームが見つかりません');
     }
     
+    final room = _storageService.rooms[roomIndex];
+    
+    // id1 のユーザーなら comment1 を更新、id2 なら comment2 を更新
+    final updatedRoom = room.copyWith(
+      comment1: userId == room.id1 ? text : room.comment1,
+      comment2: userId == room.id2 ? text : room.comment2,
+    );
+    
+    _storageService.rooms[roomIndex] = updatedRoom;
     await _storageService.save();
   }
   

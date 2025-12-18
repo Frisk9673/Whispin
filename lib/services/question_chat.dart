@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/question_message.dart';
 
-class ChatService {
+class QuestionChatService {
   final _db = FirebaseFirestore.instance;
 
   // チャット作成 or 取得
@@ -32,7 +32,6 @@ class ChatService {
     return doc.id;
   }
 
-  // モデルを利用してメッセージ送信
   Future<void> sendMessage({
     required String chatId,
     required String text,

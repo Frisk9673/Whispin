@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import '../services/chat_service.dart';
-import '../services/storage_service.dart';
-import '../models/chat_room.dart';
-import '../models/message.dart';
-import '../widgets/evaluation_dialog.dart';
+import '../../services/auth_service.dart';
+import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
+import '../../models/chat_room.dart';
+import '../../widgets/evaluation_dialog.dart';
 import 'home_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -30,8 +29,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   Timer? _updateTimer;
   ChatRoom? _currentRoom;
-  Message? _myMessage;
-  Message? _partnerMessage;
   bool _partnerHasLeft = false;
 
   @override
@@ -39,8 +36,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _loadRoom();
     if (_currentRoom != null) {
-      widget.chatService
-          .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
+      widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
     _startUpdateTimer();
   }
@@ -50,35 +46,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentRoom = widget.storageService.rooms.firstWhere(
         (r) => r.id == widget.roomId,
       );
-      _loadMessages();
     } catch (e) {
       print('Error loading room: $e');
     }
-  }
-
-  void _loadMessages() {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    final roomMessages = widget.storageService.messages
-        .where((m) => m.roomId == widget.roomId)
-        .toList();
-
-    _myMessage =
-        roomMessages.where((m) => m.userId == currentUserId).fold<Message?>(
-              null,
-              (prev, curr) =>
-                  prev == null || curr.timestamp.isAfter(prev.timestamp)
-                      ? curr
-                      : prev,
-            );
-
-    _partnerMessage =
-        roomMessages.where((m) => m.userId != currentUserId).fold<Message?>(
-              null,
-              (prev, curr) =>
-                  prev == null || curr.timestamp.isAfter(prev.timestamp)
-                      ? curr
-                      : prev,
-            );
   }
 
   void _startUpdateTimer() {
@@ -89,7 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _loadRoom();
-
+      
       if (_currentRoom == null) {
         timer.cancel();
         if (mounted) {
@@ -97,8 +67,6 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         return;
       }
-
-      _loadMessages();
 
       final currentUserId = widget.authService.currentUser?.id ?? '';
       final partnerId = _currentRoom!.id1 == currentUserId
@@ -122,7 +90,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {});
     });
   }
-
+  
   void _handleRoomDisappeared() {
     showDialog(
       context: context,
@@ -153,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _formatRemainingTime() {
     if (_currentRoom == null) return '0:00';
-
+    
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
 
@@ -168,7 +136,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _canRequestExtension() {
     if (_currentRoom == null) return false;
-
+    
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
     return remaining.inMinutes <= 2 &&
@@ -187,18 +155,17 @@ class _ChatScreenState extends State<ChatScreen> {
     await widget.chatService.sendMessage(
       widget.roomId,
       widget.authService.currentUser!.id,
-      widget.authService.currentUser!.nickname,
       _messageController.text.trim(),
     );
 
     _messageController.clear();
-    _loadMessages();
+    _loadRoom();
     setState(() {});
   }
 
   Future<void> _requestExtension() async {
     try {
-      final request = await widget.chatService.requestExtension(
+      await widget.chatService.requestExtension(
         widget.roomId,
         widget.authService.currentUser!.id,
       );
@@ -316,6 +283,17 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
+    final currentUserId = widget.authService.currentUser?.id ?? '';
+    
+    // 自分のコメントと相手のコメントを取得
+    final myComment = _currentRoom!.id1 == currentUserId 
+        ? _currentRoom!.comment1 
+        : _currentRoom!.comment2;
+    
+    final partnerComment = _currentRoom!.id1 == currentUserId 
+        ? _currentRoom!.comment2 
+        : _currentRoom!.comment1;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentRoom!.topic),
@@ -390,7 +368,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    _partnerMessage?.text ?? 'ユーザーを待っています...',
+                                    partnerComment ?? 'ユーザーを待っています...',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -425,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    _myMessage?.text ?? '',
+                                    myComment ?? '',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),

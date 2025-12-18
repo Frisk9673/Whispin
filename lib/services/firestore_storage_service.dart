@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'storage_service.dart';
 import '../models/user.dart';
 import '../models/chat_room.dart';
-import '../models/message.dart';
+// import '../models/message.dart'; ← 削除
 import '../models/friendship.dart';
 import '../models/friend_request.dart';
 import '../models/user_evaluation.dart';
@@ -12,17 +12,13 @@ import '../models/extension_request.dart';
 import '../models/block.dart';
 import '../models/local_auth_user.dart';
 
-/// Firestore を使用したデータ永続化サービス
-/// 
-/// Firebase Cloud Firestore を使用してデータを保存・読み込みします。
-/// リアルタイム更新をサポートし、複数デバイス間でのデータ同期が可能です。
 class FirestoreStorageService implements StorageService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // データストア
   List<User> _users = [];
   List<ChatRoom> _rooms = [];
-  List<Message> _messages = [];
+  // List<Message> _messages = []; ← 削除
   List<LocalAuthUser> _authUsers = [];
   List<Friendship> _friendships = [];
   List<FriendRequest> _friendRequests = [];
@@ -34,14 +30,13 @@ class FirestoreStorageService implements StorageService {
   // リアルタイム更新用のStreamSubscription
   StreamSubscription? _usersSubscription;
   StreamSubscription? _roomsSubscription;
-  StreamSubscription? _messagesSubscription;
+  // StreamSubscription? _messagesSubscription; ← 削除
   StreamSubscription? _friendshipsSubscription;
   StreamSubscription? _friendRequestsSubscription;
   StreamSubscription? _evaluationsSubscription;
   StreamSubscription? _extensionRequestsSubscription;
   StreamSubscription? _blocksSubscription;
   
-  // 変更通知用（オプション）
   final _changeController = StreamController<void>.broadcast();
   Stream<void> get onChanged => _changeController.stream;
   
@@ -57,11 +52,11 @@ class FirestoreStorageService implements StorageService {
   @override
   set rooms(List<ChatRoom> value) => _rooms = value;
   
-  @override
-  List<Message> get messages => _messages;
+  // @override ← 削除
+  // List<Message> get messages => _messages;
   
-  @override
-  set messages(List<Message> value) => _messages = value;
+  // @override ← 削除
+  // set messages(List<Message> value) => _messages = value;
   
   @override
   List<LocalAuthUser> get authUsers => _authUsers;
@@ -112,7 +107,6 @@ class FirestoreStorageService implements StorageService {
   Future<void> initialize() async {
     print('📦 Initializing FirestoreStorageService...');
     
-    // Firestoreエミュレータ接続（開発環境）
     if (kDebugMode) {
       try {
         _firestore.useFirestoreEmulator('localhost', 8080);
@@ -144,12 +138,12 @@ class FirestoreStorageService implements StorageService {
           .toList();
       print('📥 Loaded ${_rooms.length} rooms');
       
-      // メッセージ読み込み
-      final messagesSnapshot = await _firestore.collection('messages').get();
-      _messages = messagesSnapshot.docs
-          .map((doc) => Message.fromMap(doc.data()))
-          .toList();
-      print('📥 Loaded ${_messages.length} messages');
+      // メッセージ読み込み ← 削除
+      // final messagesSnapshot = await _firestore.collection('messages').get();
+      // _messages = messagesSnapshot.docs
+      //     .map((doc) => Message.fromMap(doc.data()))
+      //     .toList();
+      // print('📥 Loaded ${_messages.length} messages');
       
       // フレンドシップ読み込み
       final friendshipsSnapshot = await _firestore.collection('friendships').get();
@@ -186,7 +180,6 @@ class FirestoreStorageService implements StorageService {
           .toList();
       print('📥 Loaded ${_blocks.length} blocks');
       
-      // 現在のユーザーID読み込み
       await _loadCurrentUserId();
       
       print('✅ Firestore data loaded successfully');
@@ -199,7 +192,7 @@ class FirestoreStorageService implements StorageService {
   @override
   Future<void> save() async {
     print('💾 Saving data to Firestore...');
-    print('   Data counts: Users: ${_users.length}, Rooms: ${_rooms.length}, Messages: ${_messages.length}, Friendships: ${_friendships.length}, Evaluations: ${_evaluations.length}, ExtensionRequests: ${_extensionRequests.length}, Blocks: ${_blocks.length}');
+    print('   Data counts: Users: ${_users.length}, Rooms: ${_rooms.length}, Friendships: ${_friendships.length}, Evaluations: ${_evaluations.length}, ExtensionRequests: ${_extensionRequests.length}, Blocks: ${_blocks.length}');
     
     try {
       final batch = _firestore.batch();
@@ -222,14 +215,14 @@ class FirestoreStorageService implements StorageService {
         );
       }
       
-      // メッセージ保存
-      for (var message in _messages) {
-        batch.set(
-          _firestore.collection('messages').doc(message.id),
-          message.toMap(),
-          SetOptions(merge: true),
-        );
-      }
+      // メッセージ保存 ← 削除
+      // for (var message in _messages) {
+      //   batch.set(
+      //     _firestore.collection('messages').doc(message.id),
+      //     message.toMap(),
+      //     SetOptions(merge: true),
+      //   );
+      // }
       
       // フレンドシップ保存
       for (var friendship in _friendships) {
@@ -293,11 +286,10 @@ class FirestoreStorageService implements StorageService {
     try {
       final batch = _firestore.batch();
       
-      // すべてのコレクションをクリア
       final collections = [
         'users',
         'rooms',
-        'messages',
+        // 'messages', ← 削除
         'friendships',
         'friendRequests',
         'evaluations',
@@ -314,10 +306,9 @@ class FirestoreStorageService implements StorageService {
       
       await batch.commit();
       
-      // ローカルデータもクリア
       _users.clear();
       _rooms.clear();
-      _messages.clear();
+      // _messages.clear(); ← 削除
       _friendships.clear();
       _friendRequests.clear();
       _evaluations.clear();
@@ -333,53 +324,45 @@ class FirestoreStorageService implements StorageService {
     }
   }
   
-  /// リアルタイム更新のリスニングを開始
   void startListening() {
     print('👂 Starting real-time listeners...');
     
-    // ユーザー変更監視
     _usersSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
       _users = snapshot.docs.map((doc) => User.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // チャットルーム変更監視
     _roomsSubscription = _firestore.collection('rooms').snapshots().listen((snapshot) {
       _rooms = snapshot.docs.map((doc) => ChatRoom.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // メッセージ変更監視
-    _messagesSubscription = _firestore.collection('messages').snapshots().listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList();
-      _changeController.add(null);
-    });
+    // メッセージ変更監視 ← 削除
+    // _messagesSubscription = _firestore.collection('messages').snapshots().listen((snapshot) {
+    //   _messages = snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList();
+    //   _changeController.add(null);
+    // });
     
-    // フレンドシップ変更監視
     _friendshipsSubscription = _firestore.collection('friendships').snapshots().listen((snapshot) {
       _friendships = snapshot.docs.map((doc) => Friendship.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // フレンドリクエスト変更監視
     _friendRequestsSubscription = _firestore.collection('friendRequests').snapshots().listen((snapshot) {
       _friendRequests = snapshot.docs.map((doc) => FriendRequest.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // 評価変更監視
     _evaluationsSubscription = _firestore.collection('evaluations').snapshots().listen((snapshot) {
       _evaluations = snapshot.docs.map((doc) => UserEvaluation.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // 延長リクエスト変更監視
     _extensionRequestsSubscription = _firestore.collection('extensionRequests').snapshots().listen((snapshot) {
       _extensionRequests = snapshot.docs.map((doc) => ExtensionRequest.fromMap(doc.data())).toList();
       _changeController.add(null);
     });
     
-    // ブロック変更監視
     _blocksSubscription = _firestore.collection('blocks').snapshots().listen((snapshot) {
       _blocks = snapshot.docs.map((doc) => Block.fromMap(doc.data())).toList();
       _changeController.add(null);
@@ -388,13 +371,12 @@ class FirestoreStorageService implements StorageService {
     print('✅ Real-time listeners started');
   }
   
-  /// リスニングを停止
   void stopListening() {
     print('🛑 Stopping real-time listeners...');
     
     _usersSubscription?.cancel();
     _roomsSubscription?.cancel();
-    _messagesSubscription?.cancel();
+    // _messagesSubscription?.cancel(); ← 削除
     _friendshipsSubscription?.cancel();
     _friendRequestsSubscription?.cancel();
     _evaluationsSubscription?.cancel();
@@ -404,7 +386,6 @@ class FirestoreStorageService implements StorageService {
     print('✅ Real-time listeners stopped');
   }
   
-  /// 現在のユーザーIDを保存
   Future<void> _saveCurrentUserId() async {
     if (_currentUser != null) {
       await _firestore.collection('_system').doc('currentUser').set({
@@ -416,7 +397,6 @@ class FirestoreStorageService implements StorageService {
     }
   }
   
-  /// 現在のユーザーIDを読み込み
   Future<void> _loadCurrentUserId() async {
     try {
       final doc = await _firestore.collection('_system').doc('currentUser').get();
@@ -435,7 +415,6 @@ class FirestoreStorageService implements StorageService {
     }
   }
   
-  /// リソースのクリーンアップ
   void dispose() {
     stopListening();
     _changeController.close();

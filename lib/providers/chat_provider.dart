@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/question_chat.dart';
 
 class ChatProvider extends ChangeNotifier {
-  final ChatService _service = ChatService();
+  final QuestionChatService _service = QuestionChatService();
 
   String? chatId;
   bool loading = true;

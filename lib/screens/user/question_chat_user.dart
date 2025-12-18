@@ -15,7 +15,7 @@ class UserChatScreen extends StatefulWidget {
 
 class _UserChatScreenState extends State<UserChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final ChatService _service = ChatService();
+  final QuestionChatService _service = QuestionChatService();
 
   @override
   void initState() {
