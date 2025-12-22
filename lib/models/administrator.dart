@@ -1,4 +1,3 @@
-// models/administrator.dart
 class Administrator {
   final String email;
   final String password;

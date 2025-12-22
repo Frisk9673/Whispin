@@ -10,14 +10,14 @@ class PremiumLogListTile extends StatelessWidget {
 
   Future<void> _showDetailDialog(BuildContext context) async {
     print('\n=========== [PremiumLogListTile] ===========');
-    print('>>> タイルがタップされました (TEL: ${log.telId})');
+    print('>>> タイルがタップされました (TEL: ${log.email})');
     print('>>> Firestoreからユーザー情報を取得します...');
 
     User? user;
 
     try {
       // fetchUser も統合版 User に合わせて phoneNumber で検索
-      user = await PremiumLogService().fetchUser(log.telId);
+      user = await PremiumLogService().fetchUser(log.email);
       print('>>> fetchUser 完了');
     } catch (e) {
       print('!!! [ERROR] fetchUser 実行中に例外発生: $e');
@@ -25,7 +25,7 @@ class PremiumLogListTile extends StatelessWidget {
     }
 
     if (user == null) {
-      print('!!! ユーザーが存在しません (TEL: ${log.telId})');
+      print('!!! ユーザーが存在しません (TEL: ${log.email})');
       print('============================================\n');
       return;
     }
@@ -59,7 +59,7 @@ class PremiumLogListTile extends StatelessWidget {
           TextButton(
             child: const Text("閉じる"),
             onPressed: () {
-              print('>>> ダイアログを閉じました (TEL: ${log.telId})');
+              print('>>> ダイアログを閉じました (TEL: ${log.email})');
               Navigator.pop(context);
             },
           )
@@ -70,10 +70,10 @@ class PremiumLogListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('>>> ListTile が描画されました (TEL: ${log.telId})');
+    print('>>> ListTile が描画されました (TEL: ${log.email})');
 
     return ListTile(
-      title: Text("TEL: ${log.telId}"),
+      title: Text("TEL: ${log.email}"),
       subtitle: Text("ログ: ${log.detail}"),
       trailing: Text(log.timestamp.toString()),
       onTap: () => _showDetailDialog(context),

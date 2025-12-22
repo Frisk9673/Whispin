@@ -27,7 +27,7 @@ class PremiumLogService {
       print("📌 マッピング後ログ件数: ${logs.length}");
       for (var log in logs) {
         print(
-            "✔ TEL_ID: ${log.telId} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
+            "✔ TEL_ID: ${log.email} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
       }
 
       print("✅ [fetchLogs] 完了");
@@ -64,7 +64,7 @@ class PremiumLogService {
       print("📌 マッピング後ログ件数: ${logs.length}");
       for (var log in logs) {
         print(
-            "✔ TEL_ID: ${log.telId} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
+            "✔ TEL_ID: ${log.email} / DETAIL: ${log.detail} / TIME: ${log.timestamp}");
       }
 
       print("✅ [fetchLogsByTel] 完了");

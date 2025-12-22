@@ -28,12 +28,12 @@ class ChatService {
       topic: roomName,
       id1: '',
       id2: currentUserId,
-      comment1: null, // ← 初期値
-      comment2: null, // ← 初期値
       createdAt: now,
       expiresAt: expiresAt,
       extensionCount: 0,
       extension: 2,
+      comment1: '',  // 初期化
+      comment2: '',  // 初期化
     );
     
     _storageService.rooms.add(newRoom);
@@ -116,8 +116,17 @@ class ChatService {
     });
   }
   
-  // sendMessage メソッドを comment 更新に変更
-  Future<void> sendMessage(String roomId, String userId, String text) async {
+  /// コメントを送信（comment1 または comment2 を更新）
+  /// 
+  /// [roomId] ルームID
+  /// [userId] ユーザーID
+  /// [text] コメント内容（1〜100文字）
+  Future<void> sendComment(String roomId, String userId, String text) async {
+    print('💬 [ChatService] sendComment 開始');
+    print('   roomId: $roomId');
+    print('   userId: $userId');
+    print('   text: $text');
+    
     if (text.isEmpty || text.length > 100) {
       throw Exception('メッセージは1〜100文字で入力してください');
     }
@@ -129,14 +138,48 @@ class ChatService {
     
     final room = _storageService.rooms[roomIndex];
     
-    // id1 のユーザーなら comment1 を更新、id2 なら comment2 を更新
-    final updatedRoom = room.copyWith(
-      comment1: userId == room.id1 ? text : room.comment1,
-      comment2: userId == room.id2 ? text : room.comment2,
-    );
+    // ユーザーが id1 か id2 かを判定してコメントを更新
+    ChatRoom updatedRoom;
+    
+    if (room.id1 == userId) {
+      updatedRoom = room.copyWith(comment1: text);
+      print('   → comment1 を更新');
+    } else if (room.id2 == userId) {
+      updatedRoom = room.copyWith(comment2: text);
+      print('   → comment2 を更新');
+    } else {
+      throw Exception('このルームのメンバーではありません');
+    }
     
     _storageService.rooms[roomIndex] = updatedRoom;
     await _storageService.save();
+    
+    print('✅ [ChatService] sendComment 完了');
+  }
+  
+  /// 特定ルームのコメントを取得
+  /// 
+  /// 戻り値: {userId1: comment1, userId2: comment2}
+  Map<String, String> getRoomComments(String roomId) {
+    final room = _storageService.rooms.firstWhere(
+      (r) => r.id == roomId,
+      orElse: () => ChatRoom(
+        id: '',
+        topic: '',
+        id1: '',
+        createdAt: DateTime.now(),
+        expiresAt: DateTime.now(),
+      ),
+    );
+    
+    if (room.id.isEmpty) return {};
+    
+    return {
+      if (room.id1 != null && room.id1!.isNotEmpty)
+        room.id1!: room.comment1 ?? '',
+      if (room.id2 != null && room.id2!.isNotEmpty)
+        room.id2!: room.comment2 ?? '',
+    };
   }
   
   Future<ExtensionRequest> requestExtension(String roomId, String requesterId) async {

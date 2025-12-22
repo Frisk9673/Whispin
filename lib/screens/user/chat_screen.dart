@@ -36,7 +36,8 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _loadRoom();
     if (_currentRoom != null) {
-      widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
+      widget.chatService
+          .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
     _startUpdateTimer();
   }
@@ -47,9 +48,45 @@ class _ChatScreenState extends State<ChatScreen> {
         (r) => r.id == widget.roomId,
       );
     } catch (e) {
-      print('Error loading room: $e');
+      print('❌ [ChatScreen] Error loading room: $e');
     }
   }
+
+  // ===== コメント取得ロジック =====
+
+  /// 自分のコメントを取得
+  String _getMyComment() {
+    if (_currentRoom == null) return '';
+
+    final currentUserId = widget.authService.currentUser?.id ?? '';
+
+    if (_currentRoom!.id1 == currentUserId) {
+      return _currentRoom!.comment1 ?? '';
+    } else if (_currentRoom!.id2 == currentUserId) {
+      return _currentRoom!.comment2 ?? '';
+    }
+
+    return '';
+  }
+
+  /// 相手のコメントを取得
+  String _getPartnerComment() {
+    if (_currentRoom == null) return 'ユーザーを待っています...';
+
+    final currentUserId = widget.authService.currentUser?.id ?? '';
+
+    if (_currentRoom!.id1 == currentUserId) {
+      // 自分が id1 なら、相手は id2
+      return _currentRoom!.comment2 ?? 'ユーザーを待っています...';
+    } else if (_currentRoom!.id2 == currentUserId) {
+      // 自分が id2 なら、相手は id1
+      return _currentRoom!.comment1 ?? 'ユーザーを待っています...';
+    }
+
+    return 'ユーザーを待っています...';
+  }
+
+  // ===== 更新タイマー =====
 
   void _startUpdateTimer() {
     _updateTimer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -59,7 +96,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _loadRoom();
-      
+
       if (_currentRoom == null) {
         timer.cancel();
         if (mounted) {
@@ -90,7 +127,9 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {});
     });
   }
-  
+
+  // ===== ルーム状態ハンドラー =====
+
   void _handleRoomDisappeared() {
     showDialog(
       context: context,
@@ -117,85 +156,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
-  }
-
-  String _formatRemainingTime() {
-    if (_currentRoom == null) return '0:00';
-    
-    final now = DateTime.now();
-    final remaining = _currentRoom!.expiresAt.difference(now);
-
-    if (remaining.isNegative) {
-      return '0:00';
-    }
-
-    final minutes = remaining.inMinutes;
-    final seconds = remaining.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  bool _canRequestExtension() {
-    if (_currentRoom == null) return false;
-    
-    final now = DateTime.now();
-    final remaining = _currentRoom!.expiresAt.difference(now);
-    return remaining.inMinutes <= 2 &&
-        _currentRoom!.extensionCount < _currentRoom!.extension;
-  }
-
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-    if (_messageController.text.trim().length > 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('メッセージは100文字以内で入力してください')),
-      );
-      return;
-    }
-
-    await widget.chatService.sendMessage(
-      widget.roomId,
-      widget.authService.currentUser!.id,
-      _messageController.text.trim(),
-    );
-
-    _messageController.clear();
-    _loadRoom();
-    setState(() {});
-  }
-
-  Future<void> _requestExtension() async {
-    try {
-      await widget.chatService.requestExtension(
-        widget.roomId,
-        widget.authService.currentUser!.id,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('延長リクエストを送信しました')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
-  }
-
-  Future<void> _handleLeave() async {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    await widget.chatService.leaveRoom(widget.roomId, currentUserId);
-
-    if (mounted) {
-      await _showEvaluationDialog();
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(
-            authService: widget.authService,
-            storageService: widget.storageService,
-          ),
-        ),
-        (route) => false,
-      );
-    }
   }
 
   void _handleRoomExpired() {
@@ -246,6 +206,105 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // ===== タイマー関連 =====
+
+  String _formatRemainingTime() {
+    if (_currentRoom == null) return '0:00';
+
+    final now = DateTime.now();
+    final remaining = _currentRoom!.expiresAt.difference(now);
+
+    if (remaining.isNegative) {
+      return '0:00';
+    }
+
+    final minutes = remaining.inMinutes;
+    final seconds = remaining.inSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  bool _canRequestExtension() {
+    if (_currentRoom == null) return false;
+
+    final now = DateTime.now();
+    final remaining = _currentRoom!.expiresAt.difference(now);
+    return remaining.inMinutes <= 2 &&
+        _currentRoom!.extensionCount < _currentRoom!.extension;
+  }
+
+  // ===== メッセージ送信 =====
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+    if (_messageController.text.trim().length > 100) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('メッセージは100文字以内で入力してください')),
+      );
+      return;
+    }
+
+    try {
+      // ChatService.sendComment() を使用
+      await widget.chatService.sendComment(
+        widget.roomId,
+        widget.authService.currentUser!.id,
+        _messageController.text.trim(),
+      );
+
+      _messageController.clear();
+      _loadRoom(); // ルーム情報を再読み込み
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('送信エラー: $e')),
+      );
+    }
+  }
+
+  // ===== 延長リクエスト =====
+
+  Future<void> _requestExtension() async {
+    try {
+      await widget.chatService.requestExtension(
+        widget.roomId,
+        widget.authService.currentUser!.id,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('延長リクエストを送信しました')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('エラー: $e')),
+      );
+    }
+  }
+
+  // ===== 退出処理 =====
+
+  Future<void> _handleLeave() async {
+    final currentUserId = widget.authService.currentUser?.id ?? '';
+    await widget.chatService.leaveRoom(widget.roomId, currentUserId);
+
+    if (mounted) {
+      await _showEvaluationDialog();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+            authService: widget.authService,
+            storageService: widget.storageService,
+          ),
+        ),
+        (route) => false,
+      );
+    }
+  }
+
+  // ===== 評価ダイアログ =====
+
   Future<void> _showEvaluationDialog() async {
     final currentUserId = widget.authService.currentUser?.id ?? '';
 
@@ -268,12 +327,16 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // ===== クリーンアップ =====
+
   @override
   void dispose() {
     _updateTimer?.cancel();
     _messageController.dispose();
     super.dispose();
   }
+
+  // ===== UI =====
 
   @override
   Widget build(BuildContext context) {
@@ -282,17 +345,6 @@ class _ChatScreenState extends State<ChatScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    
-    // 自分のコメントと相手のコメントを取得
-    final myComment = _currentRoom!.id1 == currentUserId 
-        ? _currentRoom!.comment1 
-        : _currentRoom!.comment2;
-    
-    final partnerComment = _currentRoom!.id1 == currentUserId 
-        ? _currentRoom!.comment2 
-        : _currentRoom!.comment1;
 
     return Scaffold(
       appBar: AppBar(
@@ -344,6 +396,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 padding: EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    // 相手のメッセージパネル
                     Expanded(
                       child: Card(
                         elevation: 4,
@@ -368,7 +421,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    partnerComment ?? 'ユーザーを待っています...',
+                                    _getPartnerComment(),
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -379,6 +432,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     SizedBox(height: 16),
+
+                    // 自分のメッセージパネル
                     Expanded(
                       child: Card(
                         elevation: 4,
@@ -403,7 +458,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
-                                    myComment ?? '',
+                                    _getMyComment(),
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -418,6 +473,8 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
+
+          // メッセージ入力欄
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
