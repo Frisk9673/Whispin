@@ -20,31 +20,36 @@ class ChatService {
     }
     
     final roomId = DateTime.now().millisecondsSinceEpoch.toString();
-    final now = DateTime.now();
-    final expiresAt = now.add(Duration(minutes: 10));
+    
+    // 🔧 修正: startedAt を遠い未来にする(仮の日時を入れない)
+    // 2人揃った時点で正式に設定される
+    final farFuture = DateTime.now().add(Duration(days: 365)); // 仮の遠い未来
     
     final newRoom = ChatRoom(
       id: roomId,
       topic: roomName,
-      id1: '',
-      id2: currentUserId,
-      startedAt: now,
-      expiresAt: expiresAt,
+      status: 0, // 待機中
+      id1: currentUserId,
+      id2: null, // 参加者待ち
+      startedAt: farFuture, // 🔧 仮の値(2人揃ったら更新)
+      expiresAt: farFuture,  // 🔧 仮の値(2人揃ったら10分後に更新)
       extensionCount: 0,
       extension: 2,
-      comment1: '',  // 初期化
-      comment2: '',  // 初期化
+      comment1: '',
+      comment2: '',
     );
     
     _storageService.rooms.add(newRoom);
     await _storageService.save();
     
-    startRoomTimer(roomId, expiresAt);
+    // 🔧 タイマーは2人揃ってから開始するので、ここでは開始しない
     
     return newRoom;
   }
   
   Future<ChatRoom?> joinRoom(String roomId, String currentUserId) async {
+    print('🚪 [ChatService] joinRoom 開始: roomId=$roomId, userId=$currentUserId');
+    
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
     if (roomIndex == -1) {
       throw Exception('ルームが見つかりません');
@@ -52,15 +57,48 @@ class ChatService {
     
     final room = _storageService.rooms[roomIndex];
     
-    if (room.id1?.isEmpty ?? true) {
-      final updatedRoom = room.copyWith(id1: currentUserId);
+    // 🔧 2人目が参加したらチャット開始
+    final now = DateTime.now();
+    final expiresAt = now.add(Duration(minutes: 10));
+    
+    ChatRoom updatedRoom;
+    
+    if (room.id2?.isEmpty ?? true) {
+      // id2 スロットが空いている場合
+      updatedRoom = room.copyWith(
+        id2: currentUserId,
+        status: 1,        // 🔧 会話中に変更
+        startedAt: now,   // 🔧 チャット開始時刻を記録
+        expiresAt: expiresAt, // 🔧 10分後に設定
+      );
+      
+      print('✅ [ChatService] 2人目が参加 → チャット開始');
+      print('   startedAt: $now');
+      print('   expiresAt: $expiresAt');
+      
       _storageService.rooms[roomIndex] = updatedRoom;
       await _storageService.save();
+      
+      // 🔧 タイマー開始
+      startRoomTimer(roomId, expiresAt);
+      
       return updatedRoom;
-    } else if (room.id2?.isEmpty ?? true) {
-      final updatedRoom = room.copyWith(id2: currentUserId);
+    } else if (room.id1?.isEmpty ?? true) {
+      // id1 スロットが空いている場合（まれなケース）
+      updatedRoom = room.copyWith(
+        id1: currentUserId,
+        status: 1,
+        startedAt: now,
+        expiresAt: expiresAt,
+      );
+      
+      print('✅ [ChatService] id1スロットに参加 → チャット開始');
+      
       _storageService.rooms[roomIndex] = updatedRoom;
       await _storageService.save();
+      
+      startRoomTimer(roomId, expiresAt);
+      
       return updatedRoom;
     }
     

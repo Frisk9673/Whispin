@@ -105,11 +105,24 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
+      // 🔧 修正: startedAt が遠い未来 = まだチャット開始していない(待機中)
+      final isChatStarted = _currentRoom!.startedAt.isBefore(
+        DateTime.now().add(Duration(days: 300))
+      );
+
+      if (!isChatStarted) {
+        // チャット開始前(待機中)は退出監視しない
+        setState(() {});
+        return;
+      }
+
+      // 🔧 ここからはチャット開始後の処理
       final currentUserId = widget.authService.currentUser?.id ?? '';
       final partnerId = _currentRoom!.id1 == currentUserId
           ? _currentRoom!.id2
           : _currentRoom!.id1;
 
+      // 相手が退出したかチェック
       if ((partnerId?.isEmpty ?? true) && !_partnerHasLeft) {
         setState(() {
           _partnerHasLeft = true;
@@ -117,6 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _showPartnerLeftDialog();
       }
 
+      // 時間切れチェック
       final now = DateTime.now();
       if (_currentRoom!.expiresAt.isBefore(now)) {
         timer.cancel();
@@ -209,8 +223,18 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== タイマー関連 =====
 
   String _formatRemainingTime() {
-    if (_currentRoom == null) return '0:00';
+    if (_currentRoom == null) return '待機中';
 
+    // チャット開始前(待機中)かチェック
+    final isChatStarted = _currentRoom!.startedAt.isBefore(
+      DateTime.now().add(Duration(days: 300))
+    );
+
+    if (!isChatStarted) {
+      return '待機中';
+    }
+
+    // チャット開始後は残り時間を表示
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
 
@@ -225,6 +249,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _canRequestExtension() {
     if (_currentRoom == null) return false;
+
+    // チャット開始前は延長ボタンを表示しない
+    final isChatStarted = _currentRoom!.startedAt.isBefore(
+      DateTime.now().add(Duration(days: 300))
+    );
+
+    if (!isChatStarted) return false;
 
     final now = DateTime.now();
     final remaining = _currentRoom!.expiresAt.difference(now);
@@ -346,6 +377,11 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
+    // チャット開始前かチェック
+    final isChatStarted = _currentRoom!.startedAt.isBefore(
+      DateTime.now().add(Duration(days: 300))
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentRoom!.topic),
@@ -353,6 +389,7 @@ class _ChatScreenState extends State<ChatScreen> {
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
+          // タイマー表示（待機中は「待機中」と表示）
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Center(
@@ -361,16 +398,20 @@ class _ChatScreenState extends State<ChatScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  // 待機中は色を変える（オプション）
+                  color: isChatStarted ? Colors.white : Colors.white70,
                 ),
               ),
             ),
           ),
+          // 延長ボタン（チャット開始後かつ条件を満たす場合のみ表示）
           if (_canRequestExtension())
             IconButton(
               icon: Icon(Icons.access_time),
               onPressed: _requestExtension,
               tooltip: '延長リクエスト',
             ),
+          // 退出ボタン
           IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: _handleLeave,
@@ -380,6 +421,28 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          // 待機中メッセージを表示（オプション）
+          if (!isChatStarted)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12),
+              color: Colors.orange.shade100,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.hourglass_empty, color: Colors.orange.shade700),
+                  SizedBox(width: 8),
+                  Text(
+                    '相手の参加を待っています...',
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
           Expanded(
             child: Container(
               decoration: BoxDecoration(
