@@ -81,8 +81,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ルーム作成'),
-        backgroundColor: Color(0xFF667EEA),
+        title: const Text('ルーム作成'),
+        backgroundColor: const Color(0xFF667EEA),
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -91,40 +91,40 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF667EEA).withOpacity(0.1),
-              Color(0xFF764BA2).withOpacity(0.1),
+              const Color(0xFF667EEA).withOpacity(0.1),
+              const Color(0xFF764BA2).withOpacity(0.1),
             ],
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 40),
-                Icon(
+                const SizedBox(height: 40),
+                const Icon(
                   Icons.add_circle_outline,
                   size: 80,
                   color: Color(0xFF667EEA),
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 Text(
                   '新しいルームを作成',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Color(0xFF667EEA),
+                        color: const Color(0xFF667EEA),
                         fontWeight: FontWeight.bold,
                       ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 40),
+                const SizedBox(height: 40),
                 Card(
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -133,8 +133,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           decoration: InputDecoration(
                             labelText: 'ルーム名',
                             hintText: 'チャットのテーマを入力',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.title),
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.title),
                             counterText: '${_topicController.text.length}/30',
                           ),
                           maxLength: 30,
@@ -143,9 +143,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           },
                         ),
                         if (_errorMessage != null) ...[
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(8),
@@ -157,19 +157,19 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                             ),
                           ),
                         ],
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _isLoading ? null : _handleCreateRoom,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF667EEA),
+                            backgroundColor: const Color(0xFF667EEA),
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: _isLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
@@ -178,7 +178,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                                         AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : Text(
+                              : const Text(
                                   'ルームを作成',
                                   style: TextStyle(fontSize: 16),
                                 ),
@@ -187,7 +187,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Card(
                   elevation: 2,
                   color: Colors.blue.shade50,
@@ -195,14 +195,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             Icon(Icons.info_outline, color: Colors.blue.shade700),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               'ルーム情報',
                               style: TextStyle(
@@ -212,7 +212,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           '• 最大2人まで参加可能\n'
                           '• 10分間のチャット時間\n'

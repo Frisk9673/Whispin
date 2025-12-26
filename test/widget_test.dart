@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:whispin/services/firestore_storage_service.dart';
+import 'package:whispin/services/auth_service.dart';
 import 'package:whispin/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    // モックサービスを作成
+    final storageService = FirestoreStorageService();
+    await storageService.initialize();
+    
+    final authService = AuthService(storageService);
+    await authService.initialize();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Build our app with services
+    await tester.pumpWidget(
+      MyApp(
+        authService: authService,
+        storageService: storageService,
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // アプリが起動することを確認
+    expect(find.byType(MaterialApp), findsOneWidget);
+    
+    // UserRegisterPage が表示されることを確認（ログインしていない場合）
+    expect(find.text('ユーザー登録'), findsOneWidget);
   });
 }

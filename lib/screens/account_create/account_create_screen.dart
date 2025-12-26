@@ -1,9 +1,11 @@
-// screens/account_create_screen.dart 
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../services/account_create_service.dart';
-import '../../screens/user/home.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_storage_service.dart';
+import '../../screens/user/home_screen.dart';
 import '../login/user_login_page.dart';
 
 class UserRegisterPage extends StatefulWidget {
@@ -56,7 +58,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       deletedAt: null,
     );
 
-
     developer.log("=== User 作成完了 ===");
     developer.log("TEL_ID: ${user.phoneNumber}");
     developer.log("Email: ${user.id}");
@@ -75,13 +76,22 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       await registerService.register(user, password);
 
       developer.log("🎉 registerService.register() 成功！");
-      developer.log("RoomJoinScreen へ遷移します…");
+      developer.log("HomeScreen へ遷移します…");
 
       if (!mounted) return;
 
+      // Services を Provider から取得
+      final authService = context.read<AuthService>();
+      final storageService = context.read<FirestoreStorageService>();
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            authService: authService,
+            storageService: storageService,
+          ),
+        ),
       );
 
       developer.log("=== registerUser() 正常終了 ===\n");

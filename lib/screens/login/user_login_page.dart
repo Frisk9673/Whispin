@@ -1,10 +1,12 @@
-// lib/screens/login/user_login_page.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 import '../../services/user_auth_service.dart';
-import '../../screens/user/home.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_storage_service.dart';
+import '../../screens/user/home_screen.dart';
 import '../account_create/account_create_screen.dart';
 import '../admin/admin_login_screen.dart';
 
@@ -18,7 +20,7 @@ class UserLoginPage extends StatefulWidget {
 class _UserLoginPageState extends State<UserLoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final authService = UserAuthService();
+  final userAuthService = UserAuthService();
 
   String message = '';
 
@@ -29,7 +31,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
     try {
       print("▶ FirebaseAuth でログイン処理中...");
 
-      final loginResult = await authService.loginUser(
+      final loginResult = await userAuthService.loginUser(
         email: emailController.text,
         password: passwordController.text,
       );
@@ -68,10 +70,20 @@ class _UserLoginPageState extends State<UserLoginPage> {
         }
       }
 
-      print("▶ 正常ログイン → RoomJoinScreen へ遷移");
+      print("▶ 正常ログイン → HomeScreen へ遷移");
+      
+      // Services を Provider から取得
+      final authService = context.read<AuthService>();
+      final storageService = context.read<FirestoreStorageService>();
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RoomJoinScreen()),
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            authService: authService,
+            storageService: storageService,
+          ),
+        ),
       );
 
       print("===== [UserLoginPage] _login() 正常終了 =====");
