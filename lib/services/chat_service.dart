@@ -28,7 +28,7 @@ class ChatService {
       topic: roomName,
       id1: '',
       id2: currentUserId,
-      createdAt: now,
+      startedAt: now,
       expiresAt: expiresAt,
       extensionCount: 0,
       extension: 2,
@@ -167,7 +167,7 @@ class ChatService {
         id: '',
         topic: '',
         id1: '',
-        createdAt: DateTime.now(),
+        startedAt: DateTime.now(),
         expiresAt: DateTime.now(),
       ),
     );

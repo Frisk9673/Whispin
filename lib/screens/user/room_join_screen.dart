@@ -100,7 +100,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       await _firestore.collection('rooms').doc(roomId).update({
         'id2': currentUserEmail,
         'status': 1, // 会話中に変更
-        'createdAt': Timestamp.fromDate(now), // チャット開始時刻
+        'startedAt': Timestamp.fromDate(now), // チャット開始時刻
         'expiresAt': Timestamp.fromDate(expiresAt), // 10分後
       });
 

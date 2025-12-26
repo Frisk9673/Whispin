@@ -71,7 +71,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         comment2: null,
         extensionCount: 0,
         extension: 2, // 延長上限2回
-        createdAt: now, // 仮の作成日時（2人揃った時に更新）
+        startedAt: now, // 仮の作成日時（2人揃った時に更新）
         expiresAt: now.add(const Duration(hours: 24)), // 仮の期限（2人揃った時に10分後に更新）
       );
 
