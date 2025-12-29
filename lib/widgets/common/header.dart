@@ -7,7 +7,6 @@ class CommonHeader extends StatelessWidget {
   final VoidCallback? onProfilePressed;
   final bool showSettingsButton;
   final bool showProfileButton;
-  final BuildContext? context; // ナビゲーション用にcontextを追加
 
   const CommonHeader({
     super.key,
@@ -16,16 +15,7 @@ class CommonHeader extends StatelessWidget {
     this.onProfilePressed,
     this.showSettingsButton = true,
     this.showProfileButton = true,
-    this.context, // contextをオプショナルに
   });
-
-  // プロフィール画面へ遷移するメソッド
-  void _navigateToProfile(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +36,9 @@ class CommonHeader extends StatelessWidget {
             children: [
               if (showSettingsButton)
                 _buildHeaderButton(
+                  context: context,
                   icon: Icons.settings,
                   onPressed: onSettingsPressed ?? () {
-                    // 設定ボタンのデフォルト動作
                     print('⚙️ 設定ボタンが押されました');
                   },
                 ),
@@ -56,10 +46,17 @@ class CommonHeader extends StatelessWidget {
                 const SizedBox(width: 12),
               if (showProfileButton)
                 _buildHeaderButton(
+                  context: context,
                   icon: Icons.account_circle,
                   onPressed: onProfilePressed ?? () {
-                    // プロフィールボタンのデフォルト動作 - プロフィール画面へ遷移
-                    _navigateToProfile(context);
+                    // デフォルト動作: ProfileScreenへ遷移
+                    print('👤 プロフィールボタンが押されました');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
                   },
                 ),
             ],
@@ -70,6 +67,7 @@ class CommonHeader extends StatelessWidget {
   }
 
   Widget _buildHeaderButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onPressed,
   }) {

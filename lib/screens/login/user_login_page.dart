@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/user_auth_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_storage_service.dart';
+import '../../providers/user_provider.dart';
 import '../../screens/user/home_screen.dart';
 import '../account_create/account_create_screen.dart';
 import '../admin/admin_login_screen.dart';
@@ -23,11 +24,17 @@ class _UserLoginPageState extends State<UserLoginPage> {
   final userAuthService = UserAuthService();
 
   String message = '';
+  bool _isLoading = false; // ← 追加
 
   Future<void> _login() async {
     print("===== [UserLoginPage] _login() 開始 =====");
     print("入力されたメール: ${emailController.text}");
     
+    setState(() {
+      _isLoading = true;
+      message = '';
+    });
+
     try {
       print("▶ FirebaseAuth でログイン処理中...");
 
@@ -61,7 +68,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
           if (isDeleted) {
             print("❌ 論理削除済みアカウントです");
             await FirebaseAuth.instance.signOut();
-            setState(() => message = "このアカウントは削除済みです");
+            setState(() {
+              message = "このアカウントは削除済みです";
+              _isLoading = false;
+            });
             print("⚠️ ログイン中断: 論理削除アカウント");
             return;
           }
@@ -70,6 +80,21 @@ class _UserLoginPageState extends State<UserLoginPage> {
         }
       }
 
+      // ✅ UserProviderでユーザー情報を読み込む
+      print("▶ UserProviderでユーザー情報読み込み開始...");
+      final userProvider = context.read<UserProvider>();
+      await userProvider.loadUserData();
+
+      if (userProvider.error != null) {
+        print("❌ UserProvider読み込みエラー: ${userProvider.error}");
+        setState(() {
+          message = "ユーザー情報の読み込みに失敗しました";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      print("✅ UserProvider読み込み完了");
       print("▶ 正常ログイン → HomeScreen へ遷移");
       
       // Services を Provider から取得
@@ -90,7 +115,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
     } catch (e) {
       print("❌ ログイン処理で例外発生: $e");
-      setState(() => message = "ログインエラー: $e");
+      setState(() {
+        message = "ログインエラー: $e";
+        _isLoading = false;
+      });
       print("===== _login() 異常終了 =====");
     }
   }
@@ -106,17 +134,40 @@ class _UserLoginPageState extends State<UserLoginPage> {
             TextField(
               controller: emailController,
               decoration: const InputDecoration(labelText: 'メールアドレス'),
+              enabled: !_isLoading, // ← 追加
             ),
             TextField(
               controller: passwordController,
               decoration: const InputDecoration(labelText: 'パスワード'),
               obscureText: true,
+              enabled: !_isLoading, // ← 追加
             ),
             const SizedBox(height: 20),
 
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('ログイン'),
+            // ✅ ローディング表示付きログインボタン
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading
+                    ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('ログイン中...'),
+                        ],
+                      )
+                    : const Text('ログイン'),
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -124,7 +175,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
             const SizedBox(height: 10),
             TextButton(
-              onPressed: () {
+              onPressed: _isLoading ? null : () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const UserRegisterPage()),
@@ -134,7 +185,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
             ),
 
             TextButton(
-              onPressed: () {
+              onPressed: _isLoading ? null : () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AdminLoginScreen()),

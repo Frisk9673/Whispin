@@ -10,11 +10,18 @@ import 'services/chat_service.dart';
 import 'screens/account_create/account_create_screen.dart';
 import 'screens/user/home_screen.dart';
 import 'providers/chat_provider.dart';
+import 'providers/user_provider.dart';
+import 'utils/navigation_logger.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  print('\n╔═════════════════════════════════════════════════╗');
+  print('║          🚀 Whispin アプリ起動中...          ║');
+  print('╚═════════════════════════════════════════════════╝\n');
+
   // Firebase初期化
+  print('📦 Firebase 初期化中...');
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: 'dummy', 
@@ -25,22 +32,26 @@ Future<void> main() async {
       appId: 'dummy',
     ),
   );
+  print('✅ Firebase 初期化完了\n');
 
   // エミュレーター設定
   try {
+    print('🔧 Firebase エミュレーター接続中...');
     await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: false,
       sslEnabled: false,
     );
-    print('🔧 Connected to Firebase Emulators');
+    print('✅ エミュレーター接続完了');
+    print('   - Auth: localhost:9099');
+    print('   - Firestore: localhost:8080\n');
   } catch (e) {
-    print('❌ エミュレーター設定エラー: $e');
+    print('❌ エミュレーター設定エラー: $e\n');
   }
 
   // Services層の初期化
-  print('📦 Initializing Services...');
+  print('📦 Services 初期化中...');
   final storageService = FirestoreStorageService();
   await storageService.initialize();
   await storageService.load();
@@ -51,13 +62,17 @@ Future<void> main() async {
 
   final chatService = ChatService(storageService);
 
-  print('✅ Services initialized successfully');
+  print('✅ Services 初期化完了\n');
+
+  print('╔═════════════════════════════════════════════════╗');
+  print('║          ✨ アプリ起動準備完了！             ║');
+  print('╚═════════════════════════════════════════════════╝\n');
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        // Services を Provider で提供
+        ChangeNotifierProvider(create: (_) => UserProvider()),
         Provider<FirestoreStorageService>.value(value: storageService),
         Provider<AuthService>.value(value: authService),
         Provider<ChatService>.value(value: chatService),
@@ -93,6 +108,10 @@ class MyApp extends StatelessWidget {
           secondary: const Color(0xFF764BA2),
         ),
       ),
+      // ✅ NavigatorObserversにNavigationLoggerを追加
+      navigatorObservers: [
+        NavigationLogger(),
+      ],
       home: authService.isLoggedIn()
           ? HomeScreen(
               authService: authService,

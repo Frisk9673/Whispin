@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/chat_service.dart';
+import '../../providers/user_provider.dart';
 import 'auth_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
+import 'profile.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthService authService;
@@ -29,6 +32,50 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _chatService = ChatService(widget.storageService);
     _updatePendingFriendRequests();
+    
+    // ✅ UserProviderの状態をチェックして、未読み込みなら読み込む
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndLoadUserData();
+    });
+  }
+
+  /// UserProviderの状態をチェックして必要なら読み込む
+  Future<void> _checkAndLoadUserData() async {
+    print('\n=== HomeScreen: UserProvider状態確認 ===');
+    
+    final userProvider = context.read<UserProvider>();
+    
+    if (userProvider.currentUser == null && !userProvider.isLoading) {
+      print('⚠️ ユーザー情報が未読み込み → 読み込みを開始');
+      
+      await userProvider.loadUserData();
+      
+      if (userProvider.error != null) {
+        print('❌ ユーザー情報読み込みエラー: ${userProvider.error}');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('ユーザー情報の読み込みに失敗しました: ${userProvider.error}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        print('✅ ユーザー情報読み込み完了');
+        print('   名前: ${userProvider.currentUser?.fullName}');
+        print('   プレミアム: ${userProvider.currentUser?.premium}');
+      }
+    } else if (userProvider.currentUser != null) {
+      print('✅ ユーザー情報は既に読み込み済み');
+      print('   名前: ${userProvider.currentUser?.fullName}');
+      print('   プレミアム: ${userProvider.currentUser?.premium}');
+    } else {
+      print('⏳ ユーザー情報読み込み中...');
+    }
+    
+    print('=== HomeScreen: 状態確認完了 ===\n');
   }
 
   void _updatePendingFriendRequests() {
@@ -43,6 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleLogout() async {
+    // ✅ UserProviderをクリア
+    context.read<UserProvider>().clearUser();
+    
     await widget.authService.logout();
     if (mounted) {
       Navigator.of(context).pushReplacement(
@@ -225,6 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ UserProviderを監視
+    final userProvider = context.watch<UserProvider>();
     final currentUser = widget.authService.currentUser;
 
     return Scaffold(
@@ -261,38 +313,47 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
+          // ✅ プロフィールボタン
           IconButton(
             icon: Icon(Icons.person),
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('プロフィール'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('名前: ${currentUser?.fullName ?? ''}'),
-                      SizedBox(height: 8),
-                      Text('ニックネーム: ${currentUser?.displayName ?? ''}'),
-                      SizedBox(height: 8),
-                      Text('メール: ${currentUser?.id ?? ''}'),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: _handleLogout,
-                      child: Text('ログアウト', style: TextStyle(color: Colors.red)),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text('閉じる'),
-                    ),
-                  ],
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
                 ),
               );
             },
           ),
+          // ✅ プレミアムバッジ表示（任意）
+          if (userProvider.isPremium)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.diamond, size: 16, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Premium',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
       body: Container(
