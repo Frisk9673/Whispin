@@ -1,34 +1,32 @@
-import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../screens/admin/admin_home_screen.dart';
+import '../utils/app_logger.dart';
 
 class AdminLoginService {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+  static const String _logName = 'AdminLoginService';
 
   /// 管理者ログイン処理
   Future<bool> login(String email, String password) async {
-    developer.log("=== AdminLoginService.login() 開始 ===");
-    developer.log("入力メール: $email");
+    logger.section('login() 開始', name: _logName);
+    logger.info('入力メール: $email', name: _logName);
 
     try {
-      // -------------------------------
       // Firebase Auth ログイン
-      // -------------------------------
-      developer.log("FirebaseAuth にログイン中...");
+      logger.start('FirebaseAuth にログイン中...', name: _logName);
+      
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
 
-      developer.log("Auth ログイン成功: UID=${credential.user?.uid}");
+      logger.success('Auth ログイン成功: UID=${credential.user?.uid}', name: _logName);
 
-      // -------------------------------
       // Firestore 管理者チェック
-      // -------------------------------
-      developer.log("Firestore administrator/$email を確認中...");
+      logger.start('Firestore administrator/$email を確認中...', name: _logName);
 
       final adminDoc = await _firestore
           .collection('administrator')
@@ -36,22 +34,17 @@ class AdminLoginService {
           .get();
 
       if (!adminDoc.exists) {
-        // ❌ Firestore に存在しない → 管理者ではない
-        developer.log("❌ Firestore 管理者情報なし → 権限拒否: $email");
-
-        // Firebase Authは成功してるのでここでログアウト
+        logger.error('Firestore 管理者情報なし → 権限拒否: $email', name: _logName);
+        
         await _auth.signOut();
-
-        developer.log("FirebaseAuth サインアウト完了（不正管理者ログイン拒否）");
+        logger.info('FirebaseAuth サインアウト完了（不正管理者ログイン拒否）', name: _logName);
 
         return false;
       }
 
-      developer.log("✔ Firestore 管理者チェック OK: $email");
+      logger.success('Firestore 管理者チェック OK: $email', name: _logName);
 
-      // -------------------------------
       // 最終ログインを更新
-      // -------------------------------
       await _firestore
           .collection('administrator')
           .doc(email)
@@ -60,15 +53,15 @@ class AdminLoginService {
             SetOptions(merge: true),
           );
 
-      developer.log("最終ログイン時刻 更新完了");
-
-      developer.log("=== AdminLoginService.login() 正常終了（true） ===");
+      logger.info('最終ログイン時刻 更新完了', name: _logName);
+      logger.section('login() 正常終了（true）', name: _logName);
 
       return true;
 
     } catch (e, stack) {
-      developer.log(
-        "❌ ログイン処理エラー: $e",
+      logger.error(
+        'ログイン処理エラー: $e',
+        name: _logName,
         error: e,
         stackTrace: stack,
       );
@@ -80,12 +73,12 @@ class AdminLoginService {
   /// 画面遷移込みの管理者ログイン処理
   Future<void> loginAdmin(
       String email, String password, BuildContext context) async {
-    developer.log("=== loginAdmin() 開始 === メール: $email");
+    logger.section('loginAdmin() 開始 - メール: $email', name: _logName);
 
     final ok = await login(email, password);
 
     if (!ok) {
-      developer.log("❌ 管理者ログイン失敗（Auth 失敗 or Firestore 権限なし）: $email");
+      logger.error('管理者ログイン失敗（Auth 失敗 or Firestore 権限なし）: $email', name: _logName);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,10 +89,8 @@ class AdminLoginService {
       return;
     }
 
-    // -------------------------------
     // ここに到達したら100%成功
-    // -------------------------------
-    developer.log("✅ 管理者ログイン成功: $email → AdminHomeScreen へ遷移");
+    logger.success('管理者ログイン成功: $email → AdminHomeScreen へ遷移', name: _logName);
 
     if (context.mounted) {
       Navigator.pushReplacement(

@@ -1,34 +1,36 @@
-import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
+import '../utils/app_logger.dart';
 
 class AdminLogoutService {
   final _auth = FirebaseAuth.instance;
+  static const String _logName = 'AdminLogoutService';
 
   Future<void> logout() async {
-    developer.log("=== AdminLogoutService.logout() 開始 ===");
+    logger.section('logout() 開始', name: _logName);
 
     try {
       final currentUser = _auth.currentUser;
 
       if (currentUser == null) {
-        developer.log("⚠️ 現在ログインしているユーザーがいません（すでにログアウト状態）");
+        logger.warning('現在ログインしているユーザーがいません（すでにログアウト状態）', name: _logName);
       } else {
-        developer.log("ログアウト対象 UID: ${currentUser.uid}");
+        logger.info('ログアウト対象 UID: ${currentUser.uid}', name: _logName);
       }
 
-      developer.log("FirebaseAuth.signOut() を実行します...");
+      logger.start('FirebaseAuth.signOut() を実行します...', name: _logName);
       await _auth.signOut();
 
-      developer.log("🔵 ログアウト成功しました！");
-      developer.log("=== AdminLogoutService.logout() 完了 ===\n");
+      logger.success('ログアウト成功しました！', name: _logName);
+      logger.section('logout() 完了', name: _logName);
 
     } catch (e, stack) {
-      developer.log(
-        "❌ ログアウト処理中にエラー発生: $e",
+      logger.error(
+        'ログアウト処理中にエラー発生: $e',
+        name: _logName,
         error: e,
         stackTrace: stack,
       );
-      developer.log("=== AdminLogoutService.logout() 強制終了（エラー） ===\n");
+      logger.section('logout() 強制終了（エラー）', name: _logName);
     }
   }
 }

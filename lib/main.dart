@@ -12,16 +12,18 @@ import 'screens/user/home_screen.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'utils/navigation_logger.dart';
+import 'utils/app_logger.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  print('\n╔═════════════════════════════════════════════════╗');
-  print('║          🚀 Whispin アプリ起動中...          ║');
-  print('╚═════════════════════════════════════════════════╝\n');
+  // ログシステムの初期化
+  await logger.initialize();
+
+  logger.section('🚀 Whispin アプリ起動中...', name: 'Main');
 
   // Firebase初期化
-  print('📦 Firebase 初期化中...');
+  logger.start('Firebase 初期化中...', name: 'Main');
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: 'dummy', 
@@ -32,26 +34,26 @@ Future<void> main() async {
       appId: 'dummy',
     ),
   );
-  print('✅ Firebase 初期化完了\n');
+  logger.success('Firebase 初期化完了', name: 'Main');
 
   // エミュレーター設定
   try {
-    print('🔧 Firebase エミュレーター接続中...');
+    logger.start('Firebase エミュレーター接続中...', name: 'Main');
     await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: false,
       sslEnabled: false,
     );
-    print('✅ エミュレーター接続完了');
-    print('   - Auth: localhost:9099');
-    print('   - Firestore: localhost:8080\n');
+    logger.success('エミュレーター接続完了', name: 'Main');
+    logger.info('  - Auth: localhost:9099', name: 'Main');
+    logger.info('  - Firestore: localhost:8080', name: 'Main');
   } catch (e) {
-    print('❌ エミュレーター設定エラー: $e\n');
+    logger.error('エミュレーター設定エラー: $e', name: 'Main', error: e);
   }
 
   // Services層の初期化
-  print('📦 Services 初期化中...');
+  logger.start('Services 初期化中...', name: 'Main');
   final storageService = FirestoreStorageService();
   await storageService.initialize();
   await storageService.load();
@@ -62,11 +64,8 @@ Future<void> main() async {
 
   final chatService = ChatService(storageService);
 
-  print('✅ Services 初期化完了\n');
-
-  print('╔═════════════════════════════════════════════════╗');
-  print('║          ✨ アプリ起動準備完了！             ║');
-  print('╚═════════════════════════════════════════════════╝\n');
+  logger.success('Services 初期化完了', name: 'Main');
+  logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
   runApp(
     MultiProvider(
@@ -108,7 +107,6 @@ class MyApp extends StatelessWidget {
           secondary: const Color(0xFF764BA2),
         ),
       ),
-      // ✅ NavigatorObserversにNavigationLoggerを追加
       navigatorObservers: [
         NavigationLogger(),
       ],

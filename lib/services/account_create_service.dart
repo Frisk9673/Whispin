@@ -1,65 +1,66 @@
-// services/account_create_service.dart 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fba;
 import '../models/user.dart';
+import '../utils/app_logger.dart';
 
 class UserRegisterService {
   final _auth = fba.FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+  static const String _logName = 'UserRegisterService';
 
   Future<bool> register(User user, String password) async {
-    print("===== [UserRegisterService] register() 開始 =====");
+    logger.section('register() 開始', name: _logName);
 
     try {
-      // ==== 入力値ログ ====
-      print("▶ 入力されたユーザーデータ（User → toMap）:");
+      // 入力値ログ
+      logger.info('入力されたユーザーデータ（User → toMap）:', name: _logName);
       user.toMap().forEach((key, value) {
-        print("  $key: $value");
+        logger.info('  $key: $value', name: _logName);
       });
-      print("=============================================");
+      logger.info('=============================================', name: _logName);
 
-      print("▶ FirebaseAuth にユーザー作成リクエスト送信中...");
+      logger.start('FirebaseAuth にユーザー作成リクエスト送信中...', name: _logName);
 
       final credential = await _auth.createUserWithEmailAndPassword(
-        email: user.id,      // 修正: email → id
+        email: user.id,
         password: password,
       );
 
-      print("✔ Auth 登録成功!");
-      print("  UID: ${credential.user?.uid}");
+      logger.success('Auth 登録成功!', name: _logName);
+      logger.info('  UID: ${credential.user?.uid}', name: _logName);
 
-      final docId = user.phoneNumber ?? user.id; // doc id を安全に決定
+      final docId = user.phoneNumber ?? user.id;
 
-      print("▶ Firestore(User/$docId) にユーザーデータ登録中...");
+      logger.start('Firestore(User/$docId) にユーザーデータ登録中...', name: _logName);
 
       final inputData = {
         ...user.toMap(),
-        "createdAt": FieldValue.serverTimestamp(), // 修正: createdAt に統一
+        "createdAt": FieldValue.serverTimestamp(),
       };
 
       await _firestore.collection('User').doc(docId).set(inputData);
 
-      print("✔ Firestore 登録完了!");
+      logger.success('Firestore 登録完了!', name: _logName);
 
-      // ==== Firestore から取得して整合性チェック ====
-      print("▶ Firestore(User/$docId) の保存済みデータ取得中...");
+      // Firestore から取得して整合性チェック
+      logger.start('Firestore(User/$docId) の保存済みデータ取得中...', name: _logName);
 
       final doc = await _firestore.collection('User').doc(docId).get();
 
       if (!doc.exists) {
-        print("⚠ Firestore にデータが存在しません！（保存失敗の可能性）");
+        logger.warning('Firestore にデータが存在しません！（保存失敗の可能性）', name: _logName);
         return false;
       }
 
-      print("===== Firestore に保存された実データ =====");
+      logger.section('Firestore に保存された実データ', name: _logName);
       final savedData = doc.data()!;
       savedData.forEach((key, value) {
-        print("  $key: $value");
+        logger.info('  $key: $value', name: _logName);
       });
-      print("=========================================");
+      logger.info('=========================================', name: _logName);
 
-      // ==== 自動整合性チェック ====
-      print("===== 自動整合性チェック開始 =====");
+      // 自動整合性チェック
+      logger.section('自動整合性チェック開始', name: _logName);
 
       for (final entry in user.toMap().entries) {
         final key = entry.key;
@@ -67,27 +68,33 @@ class UserRegisterService {
         final savedValue = savedData[key];
 
         if (inputValue == savedValue) {
-          print("✔ OK: $key → 一致 ($inputValue)");
+          logger.success('$key → 一致 ($inputValue)', name: _logName);
         } else {
-          print("❌ NG: $key → 不一致");
-          print("     入力値: $inputValue");
-          print("     Firestore値: $savedValue");
+          logger.warning('$key → 不一致', name: _logName);
+          logger.info('     入力値: $inputValue', name: _logName);
+          logger.info('     Firestore値: $savedValue', name: _logName);
         }
       }
 
-      print("===== 自動整合性チェック終了 =====");
-
-      print("===== [UserRegisterService] register() 正常終了 =====");
+      logger.section('自動整合性チェック終了', name: _logName);
+      logger.section('register() 正常終了', name: _logName);
       return true;
 
     } on fba.FirebaseAuthException catch (e) {
-      print("❌ FirebaseAuthException 発生: ${e.code}");
-      print("===== register() 異常終了（Auth エラー） =====");
+      logger.error('FirebaseAuthException 発生: ${e.code}', 
+        name: _logName, 
+        error: e,
+      );
+      logger.section('register() 異常終了（Auth エラー）', name: _logName);
       throw "Auth エラー: ${e.code}";
 
-    } catch (e) {
-      print("❌ その他のエラー発生: $e");
-      print("===== register() 異常終了 =====");
+    } catch (e, stack) {
+      logger.error('その他のエラー発生: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
+      logger.section('register() 異常終了', name: _logName);
       throw "登録エラー: $e";
     }
   }

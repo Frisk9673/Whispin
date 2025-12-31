@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import '../models/user.dart' as app_user;
+import '../utils/app_logger.dart';
 
 class UserProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
+  static const String _logName = 'UserProvider';
 
   app_user.User? _currentUser;
-  DocumentReference? _userDocRef; // ドキュメント参照を保持
+  DocumentReference? _userDocRef;
   bool _isLoading = false;
   String? _error;
 
@@ -19,7 +21,7 @@ class UserProvider extends ChangeNotifier {
 
   /// ログイン時にユーザー情報を読み込む
   Future<void> loadUserData() async {
-    print('\n=== UserProvider.loadUserData() 開始 ===');
+    logger.section('loadUserData() 開始', name: _logName);
 
     _isLoading = true;
     _error = null;
@@ -28,7 +30,7 @@ class UserProvider extends ChangeNotifier {
     try {
       final authUser = _auth.currentUser;
       if (authUser == null) {
-        print('❌ Firebase Auth ユーザーが存在しません');
+        logger.error('Firebase Auth ユーザーが存在しません', name: _logName);
         _error = 'ログインしていません';
         _isLoading = false;
         notifyListeners();
@@ -37,21 +39,21 @@ class UserProvider extends ChangeNotifier {
 
       final email = authUser.email;
       if (email == null) {
-        print('❌ メールアドレスが取得できません');
+        logger.error('メールアドレスが取得できません', name: _logName);
         _error = 'メールアドレスが取得できません';
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      print('📧 ログインユーザー: $email');
-      print('🔍 Firestoreでユーザー検索中...');
+      logger.info('ログインユーザー: $email', name: _logName);
+      logger.start('Firestoreでユーザー検索中...', name: _logName);
 
       DocumentSnapshot? userDoc;
 
       // 方法1: EmailAddressフィールドで検索
       try {
-        print('  → 検索方法1: EmailAddress フィールドで検索');
+        logger.debug('検索方法1: EmailAddress フィールドで検索', name: _logName);
         final query = await _firestore
             .collection('User')
             .where('EmailAddress', isEqualTo: email)
@@ -61,16 +63,16 @@ class UserProvider extends ChangeNotifier {
         if (query.docs.isNotEmpty) {
           userDoc = query.docs.first;
           _userDocRef = userDoc.reference;
-          print('  ✅ EmailAddress で発見: ${userDoc.id}');
+          logger.success('EmailAddress で発見: ${userDoc.id}', name: _logName);
         }
       } catch (e) {
-        print('  ⚠️ EmailAddress検索失敗: $e');
+        logger.warning('EmailAddress検索失敗: $e', name: _logName);
       }
 
       // 方法2: idフィールドで検索
       if (userDoc == null) {
         try {
-          print('  → 検索方法2: id フィールドで検索');
+          logger.debug('検索方法2: id フィールドで検索', name: _logName);
           final query = await _firestore
               .collection('User')
               .where('id', isEqualTo: email)
@@ -80,17 +82,17 @@ class UserProvider extends ChangeNotifier {
           if (query.docs.isNotEmpty) {
             userDoc = query.docs.first;
             _userDocRef = userDoc.reference;
-            print('  ✅ id で発見: ${userDoc.id}');
+            logger.success('id で発見: ${userDoc.id}', name: _logName);
           }
         } catch (e) {
-          print('  ⚠️ id検索失敗: $e');
+          logger.warning('id検索失敗: $e', name: _logName);
         }
       }
 
       // 方法3: emailフィールドで検索
       if (userDoc == null) {
         try {
-          print('  → 検索方法3: email フィールドで検索');
+          logger.debug('検索方法3: email フィールドで検索', name: _logName);
           final query = await _firestore
               .collection('User')
               .where('email', isEqualTo: email)
@@ -100,53 +102,52 @@ class UserProvider extends ChangeNotifier {
           if (query.docs.isNotEmpty) {
             userDoc = query.docs.first;
             _userDocRef = userDoc.reference;
-            print('  ✅ email で発見: ${userDoc.id}');
+            logger.success('email で発見: ${userDoc.id}', name: _logName);
           }
         } catch (e) {
-          print('  ⚠️ email検索失敗: $e');
+          logger.warning('email検索失敗: $e', name: _logName);
         }
       }
 
       // 方法4: ドキュメントIDとして直接取得
       if (userDoc == null) {
         try {
-          print('  → 検索方法4: ドキュメントID($email)で直接取得');
+          logger.debug('検索方法4: ドキュメントID($email)で直接取得', name: _logName);
           userDoc = await _firestore.collection('User').doc(email).get();
 
           if (userDoc.exists) {
             _userDocRef = userDoc.reference;
-            print('  ✅ ドキュメントIDで発見: ${userDoc.id}');
+            logger.success('ドキュメントIDで発見: ${userDoc.id}', name: _logName);
           } else {
             userDoc = null;
           }
         } catch (e) {
-          print('  ⚠️ ドキュメントID取得失敗: $e');
+          logger.warning('ドキュメントID取得失敗: $e', name: _logName);
         }
       }
 
       // デバッグ: Userコレクション全体を確認
       if (userDoc == null) {
-        print('\n📋 デバッグ: Userコレクションの全ドキュメントを確認');
+        logger.section('デバッグ: Userコレクションの全ドキュメントを確認', name: _logName);
         try {
           final allUsers = await _firestore.collection('User').limit(5).get();
-
-          print('  総ドキュメント数: ${allUsers.docs.length}');
+          logger.info('総ドキュメント数: ${allUsers.docs.length}', name: _logName);
 
           for (var doc in allUsers.docs) {
-            print('  ドキュメントID: ${doc.id}');
+            logger.info('ドキュメントID: ${doc.id}', name: _logName);
             final data = doc.data();
-            print('    フィールド一覧:');
+            logger.info('  フィールド一覧:', name: _logName);
             data.forEach((key, value) {
-              print('      $key: $value');
+              logger.info('    $key: $value', name: _logName);
             });
           }
         } catch (e) {
-          print('  ❌ デバッグ取得エラー: $e');
+          logger.error('デバッグ取得エラー: $e', name: _logName, error: e);
         }
       }
 
       if (userDoc == null || !userDoc.exists) {
-        print('❌ ユーザー情報が見つかりません');
+        logger.error('ユーザー情報が見つかりません', name: _logName);
         _error = 'ユーザー情報が見つかりません';
         _isLoading = false;
         notifyListeners();
@@ -155,24 +156,23 @@ class UserProvider extends ChangeNotifier {
 
       // ユーザーデータを変換
       final userData = userDoc.data() as Map<String, dynamic>;
-      print('📄 取得したユーザーデータ:');
+      logger.section('取得したユーザーデータ', name: _logName);
       userData.forEach((key, value) {
-        print('  $key: $value');
+        logger.info('  $key: $value', name: _logName);
       });
 
       _currentUser = app_user.User.fromMap(userData);
 
-      print('✅ ユーザー情報読み込み完了');
-      print('  名前: ${_currentUser!.fullName}');
-      print('  ニックネーム: ${_currentUser!.displayName}');
-      print('  プレミアム: ${_currentUser!.premium}');
-      print('=== UserProvider.loadUserData() 完了 ===\n');
+      logger.success('ユーザー情報読み込み完了', name: _logName);
+      logger.info('  名前: ${_currentUser!.fullName}', name: _logName);
+      logger.info('  ニックネーム: ${_currentUser!.displayName}', name: _logName);
+      logger.info('  プレミアム: ${_currentUser!.premium}', name: _logName);
+      logger.section('loadUserData() 完了', name: _logName);
 
       _isLoading = false;
       notifyListeners();
     } catch (e, stack) {
-      print('❌ エラー発生: $e');
-      print('スタックトレース: $stack');
+      logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
       _error = 'ユーザー情報の読み込みに失敗しました: $e';
       _isLoading = false;
       notifyListeners();
@@ -181,10 +181,10 @@ class UserProvider extends ChangeNotifier {
 
   /// プレミアムステータスを更新
   Future<void> updatePremiumStatus(bool isPremium) async {
-    print('\n=== UserProvider.updatePremiumStatus($isPremium) 開始 ===');
+    logger.section('updatePremiumStatus($isPremium) 開始', name: _logName);
 
     if (_userDocRef == null) {
-      print('❌ ユーザードキュメント参照がありません');
+      logger.error('ユーザードキュメント参照がありません', name: _logName);
       throw Exception('ユーザー情報が読み込まれていません');
     }
 
@@ -197,11 +197,10 @@ class UserProvider extends ChangeNotifier {
         'lastUpdatedPremium': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Firestore更新完了');
+      logger.success('Firestore更新完了', name: _logName);
 
       // ローカルのユーザー情報も更新
       if (_currentUser != null) {
-        // User モデルに copyWith がない場合は再作成
         _currentUser = app_user.User(
           id: _currentUser!.id,
           password: _currentUser!.password,
@@ -210,14 +209,14 @@ class UserProvider extends ChangeNotifier {
           nickname: _currentUser!.nickname,
           phoneNumber: _currentUser!.phoneNumber,
           rate: _currentUser!.rate,
-          premium: isPremium, // 更新
+          premium: isPremium,
           roomCount: _currentUser!.roomCount,
           createdAt: _currentUser!.createdAt,
-          lastUpdatedPremium: DateTime.now(), // 更新
+          lastUpdatedPremium: DateTime.now(),
           deletedAt: _currentUser!.deletedAt,
         );
 
-        print('✅ ローカルユーザー情報更新完了');
+        logger.success('ローカルユーザー情報更新完了', name: _logName);
         notifyListeners();
       }
 
@@ -228,18 +227,17 @@ class UserProvider extends ChangeNotifier {
         'Detail': isPremium ? '加入' : '解約',
       });
 
-      print('📝 Log_Premium に${isPremium ? "加入" : "解約"}ログ追加完了');
-      print('=== UserProvider.updatePremiumStatus() 完了 ===\n');
+      logger.info('Log_Premium に${isPremium ? "加入" : "解約"}ログ追加完了', name: _logName);
+      logger.section('updatePremiumStatus() 完了', name: _logName);
     } catch (e, stack) {
-      print('❌ エラー発生: $e');
-      print('スタックトレース: $stack');
+      logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
 
   /// ユーザー情報をクリア（ログアウト時）
   void clearUser() {
-    print('🗑️ UserProvider.clearUser() - ユーザー情報をクリア');
+    logger.info('clearUser() - ユーザー情報をクリア', name: _logName);
     _currentUser = null;
     _userDocRef = null;
     _error = null;
