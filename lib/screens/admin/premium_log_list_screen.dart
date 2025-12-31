@@ -1,8 +1,8 @@
-// screens/admin/premium_log_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/premium_log_provider.dart';
 import '../../widgets/admin/premium_log_list_tile.dart';
+import '../../utils/app_logger.dart';
 
 class PremiumLogListScreen extends StatefulWidget {
   const PremiumLogListScreen({super.key});
@@ -13,12 +13,13 @@ class PremiumLogListScreen extends StatefulWidget {
 
 class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   final TextEditingController _controller = TextEditingController();
+  static const String _logName = 'PremiumLogListScreen';
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      print("\n=== PremiumLogListScreen: 初期ロード開始 ===");
+      logger.section('初期ロード開始', name: _logName);
       Provider.of<PremiumLogProvider>(context, listen: false).loadAllLogs();
     });
   }
@@ -47,28 +48,33 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                 ),
                 const SizedBox(width: 10),
 
-                // 🔍 検索ボタン追加
+                // 検索ボタン
                 ElevatedButton(
                   onPressed: () async {
                     final tel = _controller.text.trim();
 
-                    print("\n=== [SEARCH BUTTON] 電話番号検索 ===");
-                    print("入力値: '$tel'");
+                    logger.section('電話番号検索', name: _logName);
+                    logger.info('入力値: "$tel"', name: _logName);
+                    
                     await provider.filterByTel(tel);
-                    print("=== [SEARCH BUTTON] 検索完了 ===\n");
+                    
+                    logger.section('検索完了', name: _logName);
                   },
                   child: const Text("検索"),
                 ),
 
                 const SizedBox(width: 10),
 
-                // 🧹 クリアボタン（全件に戻す）
+                // クリアボタン（全件に戻す）
                 OutlinedButton(
                   onPressed: () async {
                     _controller.clear();
-                    print("\n=== [CLEAR BUTTON] 全件表示に戻す ===");
+                    
+                    logger.section('全件表示に戻す', name: _logName);
+                    
                     await provider.loadAllLogs();
-                    print("=== [CLEAR BUTTON] 完了 ===\n");
+                    
+                    logger.section('完了', name: _logName);
                   },
                   child: const Text("クリア"),
                 ),

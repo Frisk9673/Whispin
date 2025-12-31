@@ -2,38 +2,42 @@ import 'package:flutter/material.dart';
 import '../../models/premium_log_model.dart';
 import '../../services/premium_log_service.dart';
 import '../../models/user.dart';
+import '../../utils/app_logger.dart';
 
 class PremiumLogListTile extends StatelessWidget {
   final PremiumLog log;
+  static const String _logName = 'PremiumLogListTile';
 
   const PremiumLogListTile({super.key, required this.log});
 
   Future<void> _showDetailDialog(BuildContext context) async {
-    print('\n=========== [PremiumLogListTile] ===========');
-    print('>>> タイルがタップされました (TEL: ${log.email})');
-    print('>>> Firestoreからユーザー情報を取得します...');
+    logger.section('タイルタップ', name: _logName);
+    logger.info('TEL: ${log.email}', name: _logName);
+    logger.start('Firestoreからユーザー情報を取得します...', name: _logName);
 
     User? user;
 
     try {
-      // fetchUser も統合版 User に合わせて phoneNumber で検索
       user = await PremiumLogService().fetchUser(log.email);
-      print('>>> fetchUser 完了');
-    } catch (e) {
-      print('!!! [ERROR] fetchUser 実行中に例外発生: $e');
+      logger.success('fetchUser 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('fetchUser 実行中に例外発生: $e', 
+        name: _logName, 
+        error: e, 
+        stackTrace: stack,
+      );
       return;
     }
 
     if (user == null) {
-      print('!!! ユーザーが存在しません (TEL: ${log.email})');
-      print('============================================\n');
+      logger.warning('ユーザーが存在しません (TEL: ${log.email})', name: _logName);
+      logger.section('処理終了', name: _logName);
       return;
     }
 
-    print('>>> ユーザー情報取得成功: '
-        '${user.lastName} ${user.firstName}, Premium: ${user.premium}');
-    print('>>> ダイアログを表示します');
-    print('============================================\n');
+    logger.info('ユーザー情報取得成功: ${user.lastName} ${user.firstName}, Premium: ${user.premium}',
+        name: _logName);
+    logger.start('ダイアログを表示します', name: _logName);
 
     final String statusText = user.premium ? "契約中" : "未契約";
 
@@ -59,18 +63,20 @@ class PremiumLogListTile extends StatelessWidget {
           TextButton(
             child: const Text("閉じる"),
             onPressed: () {
-              print('>>> ダイアログを閉じました (TEL: ${log.email})');
+              logger.info('ダイアログを閉じました (TEL: ${log.email})', name: _logName);
               Navigator.pop(context);
             },
           )
         ],
       ),
     );
+    
+    logger.section('処理完了', name: _logName);
   }
 
   @override
   Widget build(BuildContext context) {
-    print('>>> ListTile が描画されました (TEL: ${log.email})');
+    logger.debug('ListTile が描画されました (TEL: ${log.email})', name: _logName);
 
     return ListTile(
       title: Text("TEL: ${log.email}"),

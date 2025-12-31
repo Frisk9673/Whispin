@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'app_logger.dart';
 
 /// ページ遷移をログに記録するNavigatorObserver
 class NavigationLogger extends NavigatorObserver {
+  static const String _logName = 'Navigation';
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     final currentPage = _getRouteName(route);
     final previousPage = _getRouteName(previousRoute);
     
-    print('\n┌─────────────────────────────────────────────────');
-    print('│ 📱 ページ遷移: PUSH');
-    print('├─────────────────────────────────────────────────');
-    print('│ 前のページ: ${previousPage ?? "(なし)"}');
-    print('│ 新しいページ: $currentPage');
-    print('│ 時刻: ${DateTime.now().toString().substring(11, 19)}');
-    print('└─────────────────────────────────────────────────\n');
+    logger.section('📱 ページ遷移: PUSH', name: _logName);
+    logger.info('前のページ: ${previousPage ?? "(なし)"}', name: _logName);
+    logger.info('新しいページ: $currentPage', name: _logName);
+    logger.info('時刻: ${DateTime.now().toString().substring(11, 19)}', name: _logName);
     
     super.didPush(route, previousRoute);
   }
@@ -23,13 +23,10 @@ class NavigationLogger extends NavigatorObserver {
     final currentPage = _getRouteName(route);
     final previousPage = _getRouteName(previousRoute);
     
-    print('\n┌─────────────────────────────────────────────────');
-    print('│ 📱 ページ遷移: POP (戻る)');
-    print('├─────────────────────────────────────────────────');
-    print('│ 閉じたページ: $currentPage');
-    print('│ 戻り先ページ: ${previousPage ?? "(なし)"}');
-    print('│ 時刻: ${DateTime.now().toString().substring(11, 19)}');
-    print('└─────────────────────────────────────────────────\n');
+    logger.section('📱 ページ遷移: POP (戻る)', name: _logName);
+    logger.info('閉じたページ: $currentPage', name: _logName);
+    logger.info('戻り先ページ: ${previousPage ?? "(なし)"}', name: _logName);
+    logger.info('時刻: ${DateTime.now().toString().substring(11, 19)}', name: _logName);
     
     super.didPop(route, previousRoute);
   }
@@ -39,13 +36,10 @@ class NavigationLogger extends NavigatorObserver {
     final newPage = _getRouteName(newRoute);
     final oldPage = _getRouteName(oldRoute);
     
-    print('\n┌─────────────────────────────────────────────────');
-    print('│ 📱 ページ遷移: REPLACE (置き換え)');
-    print('├─────────────────────────────────────────────────');
-    print('│ 古いページ: ${oldPage ?? "(なし)"}');
-    print('│ 新しいページ: ${newPage ?? "(なし)"}');
-    print('│ 時刻: ${DateTime.now().toString().substring(11, 19)}');
-    print('└─────────────────────────────────────────────────\n');
+    logger.section('📱 ページ遷移: REPLACE (置き換え)', name: _logName);
+    logger.info('古いページ: ${oldPage ?? "(なし)"}', name: _logName);
+    logger.info('新しいページ: ${newPage ?? "(なし)"}', name: _logName);
+    logger.info('時刻: ${DateTime.now().toString().substring(11, 19)}', name: _logName);
     
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
   }
@@ -55,13 +49,10 @@ class NavigationLogger extends NavigatorObserver {
     final removedPage = _getRouteName(route);
     final previousPage = _getRouteName(previousRoute);
     
-    print('\n┌─────────────────────────────────────────────────');
-    print('│ 📱 ページ遷移: REMOVE (削除)');
-    print('├─────────────────────────────────────────────────');
-    print('│ 削除されたページ: $removedPage');
-    print('│ 前のページ: ${previousPage ?? "(なし)"}');
-    print('│ 時刻: ${DateTime.now().toString().substring(11, 19)}');
-    print('└─────────────────────────────────────────────────\n');
+    logger.section('📱 ページ遷移: REMOVE (削除)', name: _logName);
+    logger.info('削除されたページ: $removedPage', name: _logName);
+    logger.info('前のページ: ${previousPage ?? "(なし)"}', name: _logName);
+    logger.info('時刻: ${DateTime.now().toString().substring(11, 19)}', name: _logName);
     
     super.didRemove(route, previousRoute);
   }

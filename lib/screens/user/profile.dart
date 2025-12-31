@@ -9,6 +9,7 @@ import 'package:whispin/screens/account_create/account_create_screen.dart';
 import 'package:whispin/screens/user/question_chat_user.dart';
 import '../../widgets/common/header.dart';
 import '../../providers/user_provider.dart';
+import '../../utils/app_logger.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _selectedImagePath;
+  static const String _logName = 'ProfileScreen';
   
   // ホバー状態を管理する変数
   bool _isLogoutHovered = false;
@@ -414,11 +416,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ✅ プレミアム処理を別メソッドに分離
+  /// プレミアム処理を別メソッドに分離
   Future<void> _handlePremiumButton(
       BuildContext context, UserProvider userProvider) async {
-    print('=== プレミアムボタン押下 ===');
-    print('現在のステータス: ${userProvider.isPremium ? "プレミアム" : "通常"}');
+    logger.section('プレミアムボタン押下', name: _logName);
+    logger.info('現在のステータス: ${userProvider.isPremium ? "プレミアム" : "通常"}', name: _logName);
 
     final isPremium = userProvider.isPremium;
 
@@ -472,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (result != true) {
-      print('⏹️ ユーザーがキャンセルしました\n');
+      logger.info('ユーザーがキャンセルしました', name: _logName);
       return;
     }
 
@@ -492,8 +494,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     try {
-      // ✅ UserProviderで更新
+      // UserProviderで更新
+      logger.start('UserProviderでプレミアムステータス更新中...', name: _logName);
       await userProvider.updatePremiumStatus(!isPremium);
+      logger.success('プレミアムステータス更新完了', name: _logName);
 
       // ローディングを閉じる
       Navigator.pop(context);
@@ -513,9 +517,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-      print('🎉 処理完了\n');
-    } catch (e) {
-      print('❌ エラー発生: $e');
+      logger.success('処理完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('エラー発生: $e', 
+        name: _logName, 
+        error: e, 
+        stackTrace: stack,
+      );
 
       // ローディングを閉じる
       Navigator.pop(context);

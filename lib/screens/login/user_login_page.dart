@@ -10,6 +10,7 @@ import '../../providers/user_provider.dart';
 import '../../screens/user/home_screen.dart';
 import '../account_create/account_create_screen.dart';
 import '../admin/admin_login_screen.dart';
+import '../../utils/app_logger.dart';
 
 class UserLoginPage extends StatefulWidget {
   const UserLoginPage({super.key});
@@ -24,11 +25,12 @@ class _UserLoginPageState extends State<UserLoginPage> {
   final userAuthService = UserAuthService();
 
   String message = '';
-  bool _isLoading = false; // ← 追加
+  bool _isLoading = false;
+  static const String _logName = 'UserLoginPage';
 
   Future<void> _login() async {
-    print("===== [UserLoginPage] _login() 開始 =====");
-    print("入力されたメール: ${emailController.text}");
+    logger.section('_login() 開始', name: _logName);
+    logger.info('入力されたメール: ${emailController.text}', name: _logName);
     
     setState(() {
       _isLoading = true;
@@ -36,24 +38,24 @@ class _UserLoginPageState extends State<UserLoginPage> {
     });
 
     try {
-      print("▶ FirebaseAuth でログイン処理中...");
+      logger.start('FirebaseAuth でログイン処理中...', name: _logName);
 
       final loginResult = await userAuthService.loginUser(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      print("✔ Auth ログイン成功: $loginResult");
+      logger.success('Auth ログイン成功: $loginResult', name: _logName);
 
       if (!mounted) {
-        print("⚠️ 画面非表示状態で終了");
+        logger.warning('画面非表示状態で終了', name: _logName);
         return;
       }
 
       // 論理削除チェック
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        print("▶ Firestore からユーザ情報取得中: ${user.email}");
+        logger.start('Firestore からユーザ情報取得中: ${user.email}', name: _logName);
         final query = await FirebaseFirestore.instance
             .collection('User')
             .where('EmailAddress', isEqualTo: user.email)
@@ -63,30 +65,30 @@ class _UserLoginPageState extends State<UserLoginPage> {
         if (query.docs.isNotEmpty) {
           final userData = query.docs.first.data();
           final isDeleted = userData['IsDeleted'] ?? false;
-          print("取得したユーザ情報: $userData");
+          logger.info('取得したユーザ情報: $userData', name: _logName);
 
           if (isDeleted) {
-            print("❌ 論理削除済みアカウントです");
+            logger.error('論理削除済みアカウントです', name: _logName);
             await FirebaseAuth.instance.signOut();
             setState(() {
               message = "このアカウントは削除済みです";
               _isLoading = false;
             });
-            print("⚠️ ログイン中断: 論理削除アカウント");
+            logger.warning('ログイン中断: 論理削除アカウント', name: _logName);
             return;
           }
         } else {
-          print("⚠️ ユーザ情報がFirestoreに存在しません");
+          logger.warning('ユーザ情報がFirestoreに存在しません', name: _logName);
         }
       }
 
-      // ✅ UserProviderでユーザー情報を読み込む
-      print("▶ UserProviderでユーザー情報読み込み開始...");
+      // UserProviderでユーザー情報を読み込む
+      logger.start('UserProviderでユーザー情報読み込み開始...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData();
 
       if (userProvider.error != null) {
-        print("❌ UserProvider読み込みエラー: ${userProvider.error}");
+        logger.error('UserProvider読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
           message = "ユーザー情報の読み込みに失敗しました";
           _isLoading = false;
@@ -94,8 +96,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
         return;
       }
 
-      print("✅ UserProvider読み込み完了");
-      print("▶ 正常ログイン → HomeScreen へ遷移");
+      logger.success('UserProvider読み込み完了', name: _logName);
+      logger.start('正常ログイン → HomeScreen へ遷移', name: _logName);
       
       // Services を Provider から取得
       final authService = context.read<AuthService>();
@@ -111,15 +113,19 @@ class _UserLoginPageState extends State<UserLoginPage> {
         ),
       );
 
-      print("===== [UserLoginPage] _login() 正常終了 =====");
+      logger.section('_login() 正常終了', name: _logName);
 
-    } catch (e) {
-      print("❌ ログイン処理で例外発生: $e");
+    } catch (e, stack) {
+      logger.error('ログイン処理で例外発生: $e', 
+        name: _logName, 
+        error: e, 
+        stackTrace: stack,
+      );
       setState(() {
         message = "ログインエラー: $e";
         _isLoading = false;
       });
-      print("===== _login() 異常終了 =====");
+      logger.section('_login() 異常終了', name: _logName);
     }
   }
 
@@ -134,17 +140,17 @@ class _UserLoginPageState extends State<UserLoginPage> {
             TextField(
               controller: emailController,
               decoration: const InputDecoration(labelText: 'メールアドレス'),
-              enabled: !_isLoading, // ← 追加
+              enabled: !_isLoading,
             ),
             TextField(
               controller: passwordController,
               decoration: const InputDecoration(labelText: 'パスワード'),
               obscureText: true,
-              enabled: !_isLoading, // ← 追加
+              enabled: !_isLoading,
             ),
             const SizedBox(height: 20),
 
-            // ✅ ローディング表示付きログインボタン
+            // ローディング表示付きログインボタン
             SizedBox(
               width: double.infinity,
               height: 50,

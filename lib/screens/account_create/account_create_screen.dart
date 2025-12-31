@@ -1,13 +1,13 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../services/account_create_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_storage_service.dart';
-import '../../providers/user_provider.dart'; // ← 追加
+import '../../providers/user_provider.dart';
 import '../../screens/user/home_screen.dart';
 import '../login/user_login_page.dart';
+import '../../utils/app_logger.dart';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
@@ -28,19 +28,20 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   String message = '';
 
   final registerService = UserRegisterService();
+  static const String _logName = 'UserRegisterPage';
 
   Future<void> registerUser() async {
-    developer.log("=== registerUser() 開始 ===");
+    logger.section('registerUser() 開始', name: _logName);
 
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final telId = telIdController.text.trim();
 
-    developer.log("入力値: email=$email, password=${password.isNotEmpty}, tel=$telId");
+    logger.info('入力値: email=$email, password=${password.isNotEmpty ? "入力済" : "未入力"}, tel=$telId', name: _logName);
 
     if (email.isEmpty || password.isEmpty || telId.isEmpty) {
       setState(() => message = "必須項目が未入力です");
-      developer.log("❌ 必須入力エラー: email or password or tel が空");
+      logger.error('必須入力エラー: email or password or tel が空', name: _logName);
       return;
     }
 
@@ -59,37 +60,36 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       deletedAt: null,
     );
 
-    developer.log("=== User 作成完了 ===");
-    developer.log("TEL_ID: ${user.phoneNumber}");
-    developer.log("Email: ${user.id}");
-    developer.log("Name: ${user.lastName} ${user.firstName}");
-    developer.log("Nickname: ${user.nickname}");
-    developer.log("Premium: ${user.premium}");
-    developer.log("RoomCount: ${user.roomCount}");
-    developer.log("CreateAt: ${user.createdAt}");
-    developer.log("=================================");
+    logger.section('User 作成完了', name: _logName);
+    logger.info('TEL_ID: ${user.phoneNumber}', name: _logName);
+    logger.info('Email: ${user.id}', name: _logName);
+    logger.info('Name: ${user.lastName} ${user.firstName}', name: _logName);
+    logger.info('Nickname: ${user.nickname}', name: _logName);
+    logger.info('Premium: ${user.premium}', name: _logName);
+    logger.info('RoomCount: ${user.roomCount}', name: _logName);
+    logger.info('CreateAt: ${user.createdAt}', name: _logName);
 
     try {
       setState(() => loading = true);
 
-      developer.log("registerService.register() を実行します…");
+      logger.start('registerService.register() を実行します…', name: _logName);
 
       await registerService.register(user, password);
 
-      developer.log("🎉 registerService.register() 成功！");
+      logger.success('registerService.register() 成功！', name: _logName);
 
       if (!mounted) {
-        developer.log("⚠️ 画面非表示状態で終了");
+        logger.warning('画面非表示状態で終了', name: _logName);
         return;
       }
 
-      // ✅ UserProviderでユーザー情報を読み込む
-      developer.log("▶ UserProviderでユーザー情報読み込み開始...");
+      // UserProviderでユーザー情報を読み込む
+      logger.start('UserProviderでユーザー情報読み込み開始...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData();
 
       if (userProvider.error != null) {
-        developer.log("❌ UserProvider読み込みエラー: ${userProvider.error}");
+        logger.error('UserProvider読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
           message = "ユーザー情報の読み込みに失敗しました";
           loading = false;
@@ -97,12 +97,12 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         return;
       }
 
-      developer.log("✅ UserProvider読み込み完了");
-      developer.log("  名前: ${userProvider.currentUser?.fullName}");
-      developer.log("  ニックネーム: ${userProvider.currentUser?.displayName}");
-      developer.log("  プレミアム: ${userProvider.currentUser?.premium}");
+      logger.success('UserProvider読み込み完了', name: _logName);
+      logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
+      logger.info('  ニックネーム: ${userProvider.currentUser?.displayName}', name: _logName);
+      logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
 
-      developer.log("▶ HomeScreen へ遷移します…");
+      logger.start('HomeScreen へ遷移します…', name: _logName);
       
       // Services を Provider から取得
       final authService = context.read<AuthService>();
@@ -118,15 +118,15 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         ),
       );
 
-      developer.log("=== registerUser() 正常終了 ===\n");
+      logger.section('registerUser() 正常終了', name: _logName);
 
     } catch (e, stack) {
-      developer.log("❌ registerUser() エラー発生: $e",
-          error: e, stackTrace: stack);
+      logger.error('registerUser() エラー発生: $e',
+          name: _logName, error: e, stackTrace: stack);
 
       setState(() => message = e.toString());
 
-      developer.log("=== registerUser() 異常終了 ===\n");
+      logger.section('registerUser() 異常終了', name: _logName);
 
     } finally {
       if (mounted) {
@@ -178,7 +178,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ ローディング表示付き登録ボタン
+            // ローディング表示付き登録ボタン
             SizedBox(
               width: double.infinity,
               height: 50,

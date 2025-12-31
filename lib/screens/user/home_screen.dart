@@ -8,6 +8,7 @@ import 'auth_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
 import 'profile.dart';
+import '../../utils/app_logger.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthService authService;
@@ -24,6 +25,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const String _logName = 'HomeScreen';
+  
   late ChatService _chatService;
   int _pendingFriendRequestCount = 0;
 
@@ -33,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _chatService = ChatService(widget.storageService);
     _updatePendingFriendRequests();
     
-    // ✅ UserProviderの状態をチェックして、未読み込みなら読み込む
+    // UserProviderの状態をチェックして、未読み込みなら読み込む
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
     });
@@ -41,17 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// UserProviderの状態をチェックして必要なら読み込む
   Future<void> _checkAndLoadUserData() async {
-    print('\n=== HomeScreen: UserProvider状態確認 ===');
+    logger.section('UserProvider状態確認', name: _logName);
     
     final userProvider = context.read<UserProvider>();
     
     if (userProvider.currentUser == null && !userProvider.isLoading) {
-      print('⚠️ ユーザー情報が未読み込み → 読み込みを開始');
+      logger.warning('ユーザー情報が未読み込み → 読み込みを開始', name: _logName);
       
       await userProvider.loadUserData();
       
       if (userProvider.error != null) {
-        print('❌ ユーザー情報読み込みエラー: ${userProvider.error}');
+        logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -63,19 +66,19 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } else {
-        print('✅ ユーザー情報読み込み完了');
-        print('   名前: ${userProvider.currentUser?.fullName}');
-        print('   プレミアム: ${userProvider.currentUser?.premium}');
+        logger.success('ユーザー情報読み込み完了', name: _logName);
+        logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
+        logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
       }
     } else if (userProvider.currentUser != null) {
-      print('✅ ユーザー情報は既に読み込み済み');
-      print('   名前: ${userProvider.currentUser?.fullName}');
-      print('   プレミアム: ${userProvider.currentUser?.premium}');
+      logger.success('ユーザー情報は既に読み込み済み', name: _logName);
+      logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
+      logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
     } else {
-      print('⏳ ユーザー情報読み込み中...');
+      logger.info('ユーザー情報読み込み中...', name: _logName);
     }
     
-    print('=== HomeScreen: 状態確認完了 ===\n');
+    logger.section('状態確認完了', name: _logName);
   }
 
   void _updatePendingFriendRequests() {
@@ -87,14 +90,24 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _pendingFriendRequestCount = count;
     });
+    
+    logger.debug('フレンドリクエスト未読数: $count', name: _logName);
   }
 
   Future<void> _handleLogout() async {
-    // ✅ UserProviderをクリア
-    context.read<UserProvider>().clearUser();
+    logger.section('ログアウト処理開始', name: _logName);
     
+    // UserProviderをクリア
+    logger.start('UserProviderクリア中...', name: _logName);
+    context.read<UserProvider>().clearUser();
+    logger.success('UserProviderクリア完了', name: _logName);
+    
+    logger.start('AuthServiceログアウト中...', name: _logName);
     await widget.authService.logout();
+    logger.success('AuthServiceログアウト完了', name: _logName);
+    
     if (mounted) {
+      logger.start('AuthScreen へ遷移', name: _logName);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => AuthScreen(
@@ -104,6 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+    
+    logger.section('ログアウト処理完了', name: _logName);
   }
 
   void _navigateToCreateRoom() {

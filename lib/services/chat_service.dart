@@ -2,20 +2,28 @@ import 'dart:async';
 import '../models/chat_room.dart';
 import '../models/extension_request.dart';
 import 'storage_service.dart';
+import '../../utils/app_logger.dart';
 
 class ChatService {
   final StorageService _storageService;
   final Map<String, Timer> _roomTimers = {};
   final Map<String, Timer> _extensionPollingTimers = {};
+  static const String _logName = 'ChatService';
   
   ChatService(this._storageService);
   
   Future<ChatRoom> createRoom(String roomName, String currentUserId) async {
+    logger.section('createRoom() 開始', name: _logName);
+    logger.info('ルーム名: $roomName', name: _logName);
+    logger.info('作成者: $currentUserId', name: _logName);
+
     if (roomName.isEmpty) {
+      logger.error('ルーム名が空です', name: _logName);
       throw Exception('ルーム名を入力してください');
     }
     
     if (roomName.length > 30) {
+      logger.error('ルーム名が長すぎます: ${roomName.length}文字', name: _logName);
       throw Exception('ルーム名は30文字以内で入力してください');
     }
     
@@ -41,6 +49,9 @@ class ChatService {
     
     _storageService.rooms.add(newRoom);
     await _storageService.save();
+
+    logger.success('ルーム作成完了: $roomId', name: _logName);
+    logger.section('createRoom() 終了', name: _logName);
     
     // 🔧 タイマーは2人揃ってから開始するので、ここでは開始しない
     
@@ -48,10 +59,13 @@ class ChatService {
   }
   
   Future<ChatRoom?> joinRoom(String roomId, String currentUserId) async {
-    print('🚪 [ChatService] joinRoom 開始: roomId=$roomId, userId=$currentUserId');
+    logger.section('joinRoom() 開始', name: _logName);
+    logger.info('roomId: $roomId', name: _logName);
+    logger.info('userId: $currentUserId', name: _logName);
     
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
     if (roomIndex == -1) {
+      logger.error('ルームが見つかりません: $roomId', name: _logName);
       throw Exception('ルームが見つかりません');
     }
     
@@ -72,9 +86,9 @@ class ChatService {
         expiresAt: expiresAt, // 🔧 10分後に設定
       );
       
-      print('✅ [ChatService] 2人目が参加 → チャット開始');
-      print('   startedAt: $now');
-      print('   expiresAt: $expiresAt');
+      logger.success('2人目が参加 → チャット開始', name: _logName);
+      logger.info('  startedAt: $now', name: _logName);
+      logger.info('  expiresAt: $expiresAt', name: _logName);
       
       _storageService.rooms[roomIndex] = updatedRoom;
       await _storageService.save();
@@ -92,16 +106,19 @@ class ChatService {
         expiresAt: expiresAt,
       );
       
-      print('✅ [ChatService] id1スロットに参加 → チャット開始');
+      logger.success('id1スロットに参加 → チャット開始', name: _logName);
       
       _storageService.rooms[roomIndex] = updatedRoom;
       await _storageService.save();
       
       startRoomTimer(roomId, expiresAt);
+
+      logger.section('joinRoom() 正常終了', name: _logName);
       
       return updatedRoom;
     }
     
+    logger.error('ルームは満員です', name: _logName);
     throw Exception('ルームは満員です');
   }
   
@@ -129,6 +146,8 @@ class ChatService {
   }
   
   Future<void> deleteRoom(String roomId) async {
+    logger.section('deleteRoom() 開始 - roomId: $roomId', name: _logName);
+
     _roomTimers[roomId]?.cancel();
     _roomTimers.remove(roomId);
     _extensionPollingTimers[roomId]?.cancel();
@@ -138,18 +157,26 @@ class ChatService {
     _storageService.extensionRequests.removeWhere((e) => e.roomId == roomId);
     
     await _storageService.save();
+
+    logger.success('ルーム削除完了', name: _logName);
+    logger.section('deleteRoom() 終了', name: _logName);
   }
   
   void startRoomTimer(String roomId, DateTime expiresAt) {
+    logger.debug('startRoomTimer() - roomId: $roomId', name: _logName);
     _roomTimers[roomId]?.cancel();
     
     final duration = expiresAt.difference(DateTime.now());
     if (duration.isNegative) {
+      logger.warning('既に期限切れのため削除します', name: _logName);
       deleteRoom(roomId);
       return;
     }
+
+    logger.info('タイマー設定: ${duration.inMinutes}分${duration.inSeconds % 60}秒', name: _logName);
     
     _roomTimers[roomId] = Timer(duration, () async {
+      logger.warning('ルームタイマー期限切れ - 削除: $roomId', name: _logName);
       await deleteRoom(roomId);
     });
   }
@@ -160,17 +187,19 @@ class ChatService {
   /// [userId] ユーザーID
   /// [text] コメント内容（1〜100文字）
   Future<void> sendComment(String roomId, String userId, String text) async {
-    print('💬 [ChatService] sendComment 開始');
-    print('   roomId: $roomId');
-    print('   userId: $userId');
-    print('   text: $text');
+    logger.debug('sendComment() 開始', name: _logName);
+    logger.debug('  roomId: $roomId', name: _logName);
+    logger.debug('  userId: $userId', name: _logName);
+    logger.debug('  text length: ${text.length}', name: _logName);
     
     if (text.isEmpty || text.length > 100) {
+      logger.error('メッセージ長が不正: ${text.length}文字', name: _logName);
       throw Exception('メッセージは1〜100文字で入力してください');
     }
     
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
     if (roomIndex == -1) {
+      logger.error('ルームが見つかりません: $roomId', name: _logName);
       throw Exception('ルームが見つかりません');
     }
     
@@ -181,18 +210,19 @@ class ChatService {
     
     if (room.id1 == userId) {
       updatedRoom = room.copyWith(comment1: text);
-      print('   → comment1 を更新');
+      logger.debug('  → comment1 を更新', name: _logName);
     } else if (room.id2 == userId) {
       updatedRoom = room.copyWith(comment2: text);
-      print('   → comment2 を更新');
+      logger.debug('  → comment2 を更新', name: _logName);
     } else {
+      logger.error('このルームのメンバーではありません', name: _logName);
       throw Exception('このルームのメンバーではありません');
     }
     
     _storageService.rooms[roomIndex] = updatedRoom;
     await _storageService.save();
     
-    print('✅ [ChatService] sendComment 完了');
+    logger.debug('sendComment() 完了', name: _logName);
   }
   
   /// 特定ルームのコメントを取得
