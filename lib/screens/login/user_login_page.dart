@@ -26,11 +26,18 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
   String message = '';
   bool _isLoading = false;
+  bool _obscurePassword = true;
   static const String _logName = 'UserLoginPage';
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
     logger.section('_login() 開始', name: _logName);
-    logger.info('入力されたメール: ${emailController.text}', name: _logName);
     
     setState(() {
       _isLoading = true;
@@ -38,24 +45,18 @@ class _UserLoginPageState extends State<UserLoginPage> {
     });
 
     try {
-      logger.start('FirebaseAuth でログイン処理中...', name: _logName);
-
       final loginResult = await userAuthService.loginUser(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      logger.success('Auth ログイン成功: $loginResult', name: _logName);
+      logger.success('Auth ログイン成功', name: _logName);
 
-      if (!mounted) {
-        logger.warning('画面非表示状態で終了', name: _logName);
-        return;
-      }
+      if (!mounted) return;
 
       // 論理削除チェック
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        logger.start('Firestore からユーザ情報取得中: ${user.email}', name: _logName);
         final query = await FirebaseFirestore.instance
             .collection('User')
             .where('EmailAddress', isEqualTo: user.email)
@@ -65,30 +66,23 @@ class _UserLoginPageState extends State<UserLoginPage> {
         if (query.docs.isNotEmpty) {
           final userData = query.docs.first.data();
           final isDeleted = userData['IsDeleted'] ?? false;
-          logger.info('取得したユーザ情報: $userData', name: _logName);
 
           if (isDeleted) {
-            logger.error('論理削除済みアカウントです', name: _logName);
             await FirebaseAuth.instance.signOut();
             setState(() {
               message = "このアカウントは削除済みです";
               _isLoading = false;
             });
-            logger.warning('ログイン中断: 論理削除アカウント', name: _logName);
             return;
           }
-        } else {
-          logger.warning('ユーザ情報がFirestoreに存在しません', name: _logName);
         }
       }
 
-      // UserProviderでユーザー情報を読み込む
-      logger.start('UserProviderでユーザー情報読み込み開始...', name: _logName);
+      // UserProvider読み込み
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData();
 
       if (userProvider.error != null) {
-        logger.error('UserProvider読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
           message = "ユーザー情報の読み込みに失敗しました";
           _isLoading = false;
@@ -96,10 +90,6 @@ class _UserLoginPageState extends State<UserLoginPage> {
         return;
       }
 
-      logger.success('UserProvider読み込み完了', name: _logName);
-      logger.start('正常ログイン → HomeScreen へ遷移', name: _logName);
-      
-      // Services を Provider から取得
       final authService = context.read<AuthService>();
       final storageService = context.read<FirestoreStorageService>();
 
@@ -112,98 +102,281 @@ class _UserLoginPageState extends State<UserLoginPage> {
           ),
         ),
       );
-
-      logger.section('_login() 正常終了', name: _logName);
-
-    } catch (e, stack) {
-      logger.error('ログイン処理で例外発生: $e', 
-        name: _logName, 
-        error: e, 
-        stackTrace: stack,
-      );
+    } catch (e) {
       setState(() {
-        message = "ログインエラー: $e";
+        message = "ログインに失敗しました";
         _isLoading = false;
       });
-      logger.section('_login() 異常終了', name: _logName);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ログイン')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'メールアドレス'),
-              enabled: !_isLoading,
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'パスワード'),
-              obscureText: true,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 20),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF667EEA),
+              Color(0xFF764BA2),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // ロゴ・タイトル
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Whispin',
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'ログイン',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
 
-            // ローディング表示付きログインボタン
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                child: _isLoading
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  // フォームカード
+                  Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
                         children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                          // メールアドレス
+                          TextField(
+                            controller: emailController,
+                            enabled: !_isLoading,
+                            decoration: InputDecoration(
+                              labelText: 'メールアドレス',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // パスワード
+                          TextField(
+                            controller: passwordController,
+                            enabled: !_isLoading,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'パスワード',
+                              prefixIcon: const Icon(Icons.lock_outlined),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
                             ),
                           ),
-                          SizedBox(width: 12),
-                          Text('ログイン中...'),
+                          const SizedBox(height: 24),
+
+                          // エラーメッセージ
+                          if (message.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      message,
+                                      style: TextStyle(color: Colors.red.shade700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          // ログインボタン
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: _isLoading
+                                      ? null
+                                      : const LinearGradient(
+                                          colors: [
+                                            Color(0xFF667EEA),
+                                            Color(0xFF764BA2),
+                                          ],
+                                        ),
+                                  color: _isLoading ? Colors.grey.shade300 : null,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text(
+                                          'ログイン',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
-                      )
-                    : const Text('ログイン'),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // リンクボタン群
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildLinkButton(
+                          icon: Icons.person_add_outlined,
+                          text: '新規登録はこちら',
+                          onTap: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const UserRegisterPage(),
+                                    ),
+                                  );
+                                },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLinkButton(
+                          icon: Icons.admin_panel_settings_outlined,
+                          text: '管理者ログインはこちら',
+                          onTap: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const AdminLoginScreen(),
+                                    ),
+                                  );
+                                },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 20),
-            Text(message, style: const TextStyle(color: Colors.red)),
-
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: _isLoading ? null : () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UserRegisterPage()),
-                );
-              },
-              child: const Text("新規登録はこちら"),
-            ),
-
-            TextButton(
-              onPressed: _isLoading ? null : () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                );
-              },
-              child: const Text(
-                '管理者ログインはこちら',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 16,
-                  decoration: TextDecoration.underline,
-                ),
+  Widget _buildLinkButton({
+    required IconData icon,
+    required String text,
+    required VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
