@@ -3,6 +3,9 @@ import '../models/user_evaluation.dart';
 import '../models/friend_request.dart';
 import '../models/block.dart';
 import '../services/storage_service.dart';
+import '../constants/app_constants.dart';
+import '../constants/colors.dart';
+import '../constants/text_styles.dart';
 
 class EvaluationDialog extends StatefulWidget {
   final String partnerId;
@@ -58,7 +61,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           senderId: widget.currentUserId,
           receiverId: widget.partnerId,
-          status: 'pending',
+          status: AppConstants.friendRequestStatusPending,
           createdAt: DateTime.now(),
         );
         widget.storageService.friendRequests.add(friendRequest);
@@ -103,7 +106,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 768;
+    final isMobile = MediaQuery.of(context).size.width < AppConstants.mobileBreakpoint;
 
     if (isMobile) {
       return _buildBottomSheet(context);
@@ -118,7 +121,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Container(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(AppConstants.defaultPadding),
         constraints: BoxConstraints(maxWidth: 400),
         child: _buildContent(),
       ),
@@ -128,14 +131,14 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   Widget _buildBottomSheet(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(
-        24,
+        AppConstants.defaultPadding,
         12,
-        24,
-        24 + MediaQuery.of(context).padding.bottom,
+        AppConstants.defaultPadding,
+        AppConstants.defaultPadding + MediaQuery.of(context).padding.bottom,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -144,11 +147,11 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppColors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildContent(),
         ],
       ),
@@ -162,39 +165,36 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       children: [
         Text(
           'チャットの評価',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.headlineSmall,
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           '相手とのチャットはいかがでしたか？',
-          style: TextStyle(color: Colors.grey.shade600),
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildRatingButton(
               icon: Icons.thumb_up,
               label: 'Good',
-              value: 'thumbs_up',
-              color: Colors.green,
+              value: AppConstants.ratingThumbsUp,
+              color: AppColors.success,
             ),
             _buildRatingButton(
               icon: Icons.thumb_down,
               label: 'Bad',
-              value: 'thumbs_down',
-              color: Colors.red,
+              value: AppConstants.ratingThumbsDown,
+              color: AppColors.error,
             ),
           ],
         ),
-        SizedBox(height: 24),
-        Divider(),
-        SizedBox(height: 16),
+        const SizedBox(height: 24),
+        Divider(color: AppColors.divider),
+        const SizedBox(height: 16),
         CheckboxListTile(
           value: _addFriend,
           onChanged: (value) {
@@ -202,8 +202,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
               _addFriend = value ?? false;
             });
           },
-          title: Text('フレンド申請を送る'),
-          secondary: Icon(Icons.person_add, color: Color(0xFF667EEA)),
+          title: Text('フレンド申請を送る', style: AppTextStyles.bodyMedium),
+          secondary: Icon(Icons.person_add, color: AppColors.primary),
           controlAffinity: ListTileControlAffinity.leading,
         ),
         CheckboxListTile(
@@ -213,24 +213,24 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
               _blockUser = value ?? false;
             });
           },
-          title: Text('ブロックする'),
-          secondary: Icon(Icons.block, color: Colors.red),
+          title: Text('ブロックする', style: AppTextStyles.bodyMedium),
+          secondary: Icon(Icons.block, color: AppColors.error),
           controlAffinity: ListTileControlAffinity.leading,
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _handleSubmit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF667EEA),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textWhite,
             padding: EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
             ),
           ),
           child: Text(
             '送信',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: AppTextStyles.buttonMedium,
           ),
         ),
       ],
@@ -251,30 +251,30 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           _selectedRating = value;
         });
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       child: Container(
         padding: EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey.shade50,
+          color: isSelected ? color.withOpacity(0.1) : AppColors.inputBackground,
           border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
+            color: isSelected ? color : AppColors.divider,
             width: 2,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         child: Column(
           children: [
             Icon(
               icon,
               size: 40,
-              color: isSelected ? color : Colors.grey.shade400,
+              color: isSelected ? color : AppColors.textDisabled,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
+              style: AppTextStyles.labelLarge.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? color : Colors.grey.shade600,
+                color: isSelected ? color : AppColors.textSecondary,
               ),
             ),
           ],

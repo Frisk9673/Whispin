@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../models/chat_room.dart';
 import '../models/extension_request.dart';
+import '../constants/app_constants.dart';
 import 'storage_service.dart';
 import '../../utils/app_logger.dart';
 
@@ -22,9 +23,9 @@ class ChatService {
       throw Exception('ルーム名を入力してください');
     }
     
-    if (roomName.length > 30) {
+    if (roomName.length > AppConstants.roomNameMaxLength) {
       logger.error('ルーム名が長すぎます: ${roomName.length}文字', name: _logName);
-      throw Exception('ルーム名は30文字以内で入力してください');
+      throw Exception('ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください');
     }
     
     final roomId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -36,13 +37,13 @@ class ChatService {
     final newRoom = ChatRoom(
       id: roomId,
       topic: roomName,
-      status: 0, // 待機中
+      status: AppConstants.roomStatusWaiting,
       id1: currentUserId,
       id2: null, // 参加者待ち
       startedAt: farFuture, // 🔧 仮の値(2人揃ったら更新)
       expiresAt: farFuture,  // 🔧 仮の値(2人揃ったら10分後に更新)
       extensionCount: 0,
-      extension: 2,
+      extension: AppConstants.defaultExtensionLimit,
       comment1: '',
       comment2: '',
     );
@@ -52,8 +53,6 @@ class ChatService {
 
     logger.success('ルーム作成完了: $roomId', name: _logName);
     logger.section('createRoom() 終了', name: _logName);
-    
-    // 🔧 タイマーは2人揃ってから開始するので、ここでは開始しない
     
     return newRoom;
   }
@@ -73,7 +72,7 @@ class ChatService {
     
     // 🔧 2人目が参加したらチャット開始
     final now = DateTime.now();
-    final expiresAt = now.add(Duration(minutes: 10));
+    final expiresAt = now.add(Duration(minutes: AppConstants.defaultChatDurationMinutes));
     
     ChatRoom updatedRoom;
     
@@ -81,9 +80,9 @@ class ChatService {
       // id2 スロットが空いている場合
       updatedRoom = room.copyWith(
         id2: currentUserId,
-        status: 1,        // 🔧 会話中に変更
-        startedAt: now,   // 🔧 チャット開始時刻を記録
-        expiresAt: expiresAt, // 🔧 10分後に設定
+        status: AppConstants.roomStatusActive,
+        startedAt: now,
+        expiresAt: expiresAt,
       );
       
       logger.success('2人目が参加 → チャット開始', name: _logName);
@@ -93,15 +92,13 @@ class ChatService {
       _storageService.rooms[roomIndex] = updatedRoom;
       await _storageService.save();
       
-      // 🔧 タイマー開始
       startRoomTimer(roomId, expiresAt);
       
       return updatedRoom;
     } else if (room.id1?.isEmpty ?? true) {
-      // id1 スロットが空いている場合（まれなケース）
       updatedRoom = room.copyWith(
         id1: currentUserId,
-        status: 1,
+        status: AppConstants.roomStatusActive,
         startedAt: now,
         expiresAt: expiresAt,
       );
@@ -181,20 +178,15 @@ class ChatService {
     });
   }
   
-  /// コメントを送信（comment1 または comment2 を更新）
-  /// 
-  /// [roomId] ルームID
-  /// [userId] ユーザーID
-  /// [text] コメント内容（1〜100文字）
   Future<void> sendComment(String roomId, String userId, String text) async {
     logger.debug('sendComment() 開始', name: _logName);
     logger.debug('  roomId: $roomId', name: _logName);
     logger.debug('  userId: $userId', name: _logName);
     logger.debug('  text length: ${text.length}', name: _logName);
     
-    if (text.isEmpty || text.length > 100) {
+    if (text.isEmpty || text.length > AppConstants.messageMaxLength) {
       logger.error('メッセージ長が不正: ${text.length}文字', name: _logName);
-      throw Exception('メッセージは1〜100文字で入力してください');
+      throw Exception('メッセージは1〜${AppConstants.messageMaxLength}文字で入力してください');
     }
     
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
@@ -205,7 +197,6 @@ class ChatService {
     
     final room = _storageService.rooms[roomIndex];
     
-    // ユーザーが id1 か id2 かを判定してコメントを更新
     ChatRoom updatedRoom;
     
     if (room.id1 == userId) {
@@ -225,9 +216,6 @@ class ChatService {
     logger.debug('sendComment() 完了', name: _logName);
   }
   
-  /// 特定ルームのコメントを取得
-  /// 
-  /// 戻り値: {userId1: comment1, userId2: comment2}
   Map<String, String> getRoomComments(String roomId) {
     final room = _storageService.rooms.firstWhere(
       (r) => r.id == roomId,
@@ -262,7 +250,7 @@ class ChatService {
     }
     
     final existingRequest = _storageService.extensionRequests.firstWhere(
-      (e) => e.roomId == roomId && e.status == 'pending',
+      (e) => e.roomId == roomId && e.status == AppConstants.extensionStatusPending,
       orElse: () => ExtensionRequest(
         id: '',
         roomId: '',
@@ -280,7 +268,7 @@ class ChatService {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       roomId: roomId,
       requesterId: requesterId,
-      status: 'pending',
+      status: AppConstants.extensionStatusPending,
       createdAt: DateTime.now(),
     );
     
@@ -309,7 +297,9 @@ class ChatService {
     }
     
     final room = _storageService.rooms[roomIndex];
-    final newExpiresAt = room.expiresAt.add(Duration(minutes: 5));
+    final newExpiresAt = room.expiresAt.add(
+      Duration(minutes: AppConstants.extensionDurationMinutes)
+    );
     final updatedRoom = room.copyWith(
       expiresAt: newExpiresAt,
       extensionCount: room.extensionCount + 1,
@@ -317,7 +307,7 @@ class ChatService {
     
     _storageService.rooms[roomIndex] = updatedRoom;
     _storageService.extensionRequests[requestIndex] = request.copyWith(
-      status: 'approved',
+      status: AppConstants.extensionStatusApproved,
     );
     
     await _storageService.save();
@@ -336,7 +326,7 @@ class ChatService {
     
     final request = _storageService.extensionRequests[requestIndex];
     _storageService.extensionRequests[requestIndex] = request.copyWith(
-      status: 'rejected',
+      status: AppConstants.extensionStatusRejected,
     );
     
     await _storageService.save();

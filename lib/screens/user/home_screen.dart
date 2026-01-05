@@ -4,6 +4,9 @@ import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/chat_service.dart';
 import '../../providers/user_provider.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
 import 'auth_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -36,13 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _chatService = ChatService(widget.storageService);
     _updatePendingFriendRequests();
     
-    // UserProviderの状態をチェックして、未読み込みなら読み込む
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
     });
   }
 
-  /// UserProviderの状態をチェックして必要なら読み込む
   Future<void> _checkAndLoadUserData() async {
     logger.section('UserProvider状態確認', name: _logName);
     
@@ -60,8 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('ユーザー情報の読み込みに失敗しました: ${userProvider.error}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
             ),
           );
         }
@@ -97,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleLogout() async {
     logger.section('ログアウト処理開始', name: _logName);
     
-    // UserProviderをクリア
     logger.start('UserProviderクリア中...', name: _logName);
     context.read<UserProvider>().clearUser();
     logger.success('UserProviderクリア完了', name: _logName);
@@ -149,9 +149,12 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('参加可能なルーム'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Text('参加可能なルーム', style: AppTextStyles.titleLarge),
         content: availableRooms.isEmpty
-            ? Text('参加可能なルームはありません')
+            ? Text(AppConstants.defaultMessage, style: AppTextStyles.bodyMedium)
             : SizedBox(
                 width: double.maxFinite,
                 child: ListView.builder(
@@ -161,8 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     final room = availableRooms[index];
                     final creator = (room.id1 ?? '').isNotEmpty ? room.id1 ?? '' : room.id2 ?? '';
                     return ListTile(
-                      title: Text(room.topic),
-                      subtitle: Text('作成者: $creator'),
+                      title: Text(room.topic, style: AppTextStyles.bodyLarge),
+                      subtitle: Text('作成者: $creator', style: AppTextStyles.labelMedium),
                       onTap: () async {
                         await _chatService.joinRoom(room.id, currentUserId);
                         await widget.storageService.save();
@@ -187,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('閉じる'),
+            child: const Text('閉じる'),
           ),
         ],
       ),
@@ -205,9 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('フレンド一覧'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Text('フレンド一覧', style: AppTextStyles.titleLarge),
         content: friends.isEmpty
-            ? Text('フレンドはいません')
+            ? Text('フレンドはいません', style: AppTextStyles.bodyMedium)
             : SizedBox(
                 width: double.maxFinite,
                 child: ListView.builder(
@@ -222,8 +228,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     return ListTile(
                       leading: CircleAvatar(
                         child: Icon(Icons.person),
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textWhite,
                       ),
-                      title: Text(friendId),
+                      title: Text(friendId, style: AppTextStyles.bodyLarge),
                     );
                   },
                 ),
@@ -231,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('閉じる'),
+            child: const Text('閉じる'),
           ),
         ],
       ),
@@ -247,9 +255,12 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('ブロック一覧'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Text('ブロック一覧', style: AppTextStyles.titleLarge),
         content: blocks.isEmpty
-            ? Text('ブロック中のユーザーはいません')
+            ? Text('ブロック中のユーザーはいません', style: AppTextStyles.bodyMedium)
             : SizedBox(
                 width: double.maxFinite,
                 child: ListView.builder(
@@ -258,8 +269,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, index) {
                     final block = blocks[index];
                     return ListTile(
-                      leading: Icon(Icons.block, color: Colors.red),
-                      title: Text(block.blockedId),
+                      leading: Icon(Icons.block, color: AppColors.error),
+                      title: Text(block.blockedId, style: AppTextStyles.bodyMedium),
                       trailing: TextButton(
                         onPressed: () async {
                           final idx =
@@ -269,10 +280,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           await widget.storageService.save();
                           Navigator.of(context).pop();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('ブロックを解除しました')),
+                            SnackBar(
+                              content: Text('ブロックを解除しました'),
+                              backgroundColor: AppColors.success,
+                            ),
                           );
                         },
-                        child: Text('解除'),
+                        child: const Text('解除'),
                       ),
                     );
                   },
@@ -281,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('閉じる'),
+            child: const Text('閉じる'),
           ),
         ],
       ),
@@ -290,20 +304,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ UserProviderを監視
     final userProvider = context.watch<UserProvider>();
     final currentUser = widget.authService.currentUser;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Whispin'),
-        backgroundColor: Color(0xFF667EEA),
-        foregroundColor: Colors.white,
+        title: Text(AppConstants.appName, style: AppTextStyles.titleLarge.copyWith(color: AppColors.textWhite)),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textWhite,
         actions: [
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.notifications),
+                icon: const Icon(Icons.notifications),
                 onPressed: _updatePendingFriendRequests,
               ),
               if (_pendingFriendRequestCount > 0)
@@ -311,16 +324,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   right: 8,
                   top: 8,
                   child: Container(
-                    padding: EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.error,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       '$_pendingFriendRequestCount',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.textWhite,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -328,9 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-          // ✅ プロフィールボタン
           IconButton(
-            icon: Icon(Icons.person),
+            icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.push(
                 context,
@@ -340,7 +351,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          // ✅ プレミアムバッジ表示（任意）
           if (userProvider.isPremium)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
@@ -348,19 +358,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.premiumGold,
+                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.diamond, size: 16, color: Colors.white),
-                      SizedBox(width: 4),
+                    children: [
+                      Icon(Icons.diamond, size: 16, color: AppColors.textWhite),
+                      const SizedBox(width: 4),
                       Text(
                         'Premium',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textWhite,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -377,13 +386,13 @@ class _HomeScreenState extends State<HomeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF667EEA).withOpacity(0.1),
-              Color(0xFF764BA2).withOpacity(0.1),
+              AppColors.backgroundLight,
+              AppColors.backgroundSecondary,
             ],
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(AppConstants.defaultPadding),
           child: GridView.count(
             crossAxisCount: 2,
             crossAxisSpacing: 16,
@@ -422,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
   }) {
     return Card(
-      elevation: 4,
+      elevation: AppConstants.cardElevation,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -431,14 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF667EEA),
-                Color(0xFF764BA2),
-              ],
-            ),
+            gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -447,16 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
               Icon(
                 icon,
                 size: 48,
-                color: Colors.white,
+                color: AppColors.textWhite,
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.buttonMedium,
                 textAlign: TextAlign.center,
               ),
             ],

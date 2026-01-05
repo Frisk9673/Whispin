@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../models/user.dart';
 import '../models/local_auth_user.dart';
+import '../constants/app_constants.dart';
 import 'password_hasher.dart';
 import 'storage_service.dart';
 
@@ -24,20 +25,21 @@ class AuthService {
     String password,
     String confirmPassword,
   ) async {
+    // バリデーション
     if (email.isEmpty || firstName.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      throw Exception('すべてのフィールドを入力してください');
+      throw Exception(AppConstants.validationRequired);
     }
     
     if (password != confirmPassword) {
-      throw Exception('パスワードが一致しません');
+      throw Exception(AppConstants.validationPasswordMismatch);
     }
     
-    if (password.length < 6) {
-      throw Exception('パスワードは6文字以上にしてください');
+    if (password.length < AppConstants.passwordMinLength) {
+      throw Exception(AppConstants.validationPasswordShort);
     }
     
     if (!email.contains('@')) {
-      throw Exception('有効なメールアドレスを入力してください');
+      throw Exception(AppConstants.validationEmailInvalid);
     }
     
     final existingUser = _storageService.authUsers.any(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
 import '../../services/storage_service.dart';
+import '../../constants/app_constants.dart';
 import 'chat_screen.dart';
 
 class CreateRoomScreen extends StatefulWidget {
@@ -41,9 +42,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       return;
     }
 
-    if (topic.length > 30) {
+    if (topic.length > AppConstants.roomNameMaxLength) {
       setState(() {
-        _errorMessage = 'ルーム名は30文字以内で入力してください';
+        _errorMessage = 'ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください';
       });
       return;
     }
@@ -98,7 +99,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(AppConstants.defaultPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -119,12 +120,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 ),
                 const SizedBox(height: 40),
                 Card(
-                  elevation: 4,
+                  elevation: AppConstants.cardElevation,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(AppConstants.defaultPadding - 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -133,11 +134,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           decoration: InputDecoration(
                             labelText: 'ルーム名',
                             hintText: 'チャットのテーマを入力',
-                            border: const OutlineInputBorder(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                            ),
                             prefixIcon: const Icon(Icons.title),
-                            counterText: '${_topicController.text.length}/30',
+                            counterText: '${_topicController.text.length}/${AppConstants.roomNameMaxLength}',
                           ),
-                          maxLength: 30,
+                          maxLength: AppConstants.roomNameMaxLength,
                           onChanged: (value) {
                             setState(() {});
                           },
@@ -192,7 +195,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                   elevation: 2,
                   color: Colors.blue.shade50,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -215,8 +218,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                         const SizedBox(height: 8),
                         Text(
                           '• 最大2人まで参加可能\n'
-                          '• 10分間のチャット時間\n'
-                          '• 残り2分以下で延長リクエスト可能\n'
+                          '• ${AppConstants.defaultChatDurationMinutes}分間のチャット時間\n'
+                          '• 残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能\n'
                           '• 両者退出で自動削除',
                           style: TextStyle(color: Colors.blue.shade900),
                         ),
