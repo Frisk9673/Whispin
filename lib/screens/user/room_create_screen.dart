@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/common/header.dart';
 import '../../models/chat_room.dart';
+import '../../repositories/chat_room_repository.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
+import '../../utils/app_logger.dart';
 
+/// ルーム作成画面（Repository版）
 class RoomCreateScreen extends StatefulWidget {
   const RoomCreateScreen({super.key});
 
@@ -13,9 +19,11 @@ class RoomCreateScreen extends StatefulWidget {
 
 class _RoomCreateScreenState extends State<RoomCreateScreen> {
   final TextEditingController _roomNameController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ChatRoomRepository _roomRepository = ChatRoomRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
   bool _isLoading = false;
+  static const String _logName = 'RoomCreateScreen';
 
   @override
   void dispose() {
@@ -23,22 +31,26 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
     super.dispose();
   }
 
+  /// ルーム作成処理
   Future<void> _createRoom() async {
     final roomName = _roomNameController.text.trim();
 
+    // バリデーション
     if (roomName.isEmpty) {
       _showError('ルーム名を入力してください');
       return;
     }
 
-    if (roomName.length > 30) {
-      _showError('ルーム名は30文字以内で入力してください');
+    if (roomName.length > AppConstants.roomNameMaxLength) {
+      _showError('ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      logger.section('ルーム作成開始', name: _logName);
+      
       // 現在のユーザーを取得
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
@@ -54,165 +66,254 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         return;
       }
 
-      // ルームIDを生成（タイムスタンプを使用）
-      final roomId = DateTime.now().millisecondsSinceEpoch.toString();
-      final now = DateTime.now();
+      logger.info('作成者: $currentUserEmail', name: _logName);
+      logger.info('ルーム名: $roomName', name: _logName);
 
+      // ルームIDを生成
+      final roomId = DateTime.now().millisecondsSinceEpoch.toString();
+      final farFuture = DateTime.now().add(const Duration(days: 365));
+      
       // ChatRoomオブジェクトを作成
-      // 作成時点では参加者が1人なので、createdAtとexpiresAtは仮の値
-      // 2人目が参加した時点で正式に設定される
       final newRoom = ChatRoom(
         id: roomId,
         topic: roomName,
-        status: 0, // 0=待機中（参加者待ち）
-        id1: currentUserEmail, // 作成者
-        id2: null, // 参加者は未定
-        comment1: null,
-        comment2: null,
+        status: AppConstants.roomStatusWaiting,
+        id1: currentUserEmail,
+        id2: null,
+        startedAt: farFuture,
+        expiresAt: farFuture,
         extensionCount: 0,
-        extension: 2, // 延長上限2回
-        startedAt: now, // 仮の作成日時（2人揃った時に更新）
-        expiresAt: now.add(const Duration(hours: 24)), // 仮の期限（2人揃った時に10分後に更新）
+        extension: AppConstants.defaultExtensionLimit,
+        comment1: '',
+        comment2: '',
       );
+      
+      // Repository経由でFirestoreに保存
+      await _roomRepository.create(newRoom, id: roomId);
 
-      // Firestoreに保存
-      await _firestore.collection('rooms').doc(roomId).set(newRoom.toMap());
+      logger.success('ルーム作成完了: $roomId', name: _logName);
 
       setState(() => _isLoading = false);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('ルーム "$roomName" を作成しました\nルームID: $roomId'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+      // 成功メッセージ（拡張メソッド使用）
+      context.showSuccessSnackBar(
+        'ルーム "$roomName" を作成しました\nルームID: $roomId'
       );
 
-      // TODO: チャット画面に遷移（作成者として）
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => ChatScreen(roomId: roomId),
-      //   ),
-      // );
+      // 前の画面に戻る
+      context.pop();
 
-      // 仮で前の画面に戻る
-      Navigator.pop(context);
-
-    } catch (e) {
+    } catch (e, stack) {
+      logger.error('ルーム作成エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
       _showError('ルーム作成に失敗しました: $e');
     }
   }
 
+  /// エラーメッセージ表示
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
+    context.showErrorSnackBar(message);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
+            // ヘッダー
             CommonHeader(
               onProfilePressed: () {},
               onSettingsPressed: () {},
             ),
+            
+            // メインコンテンツ
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(AppConstants.defaultPadding),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.add_circle_outline,
-                        size: 80,
-                        color: Colors.black87,
+                      // アイコン
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: AppColors.primaryGradient,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.add_circle_outline,
+                          size: 64,
+                          color: AppColors.textWhite,
+                        ),
                       ),
+                      
                       const SizedBox(height: 24),
-                      const Text(
+                      
+                      // タイトル
+                      Text(
                         '部屋を作成',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                        style: AppTextStyles.headlineLarge,
+                        textAlign: TextAlign.center,
                       ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      Text(
+                        '新しいチャットルームを作成します',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
                       const SizedBox(height: 40),
-                      SizedBox(
-                        width: 400,
-                        child: TextField(
-                          controller: _roomNameController,
-                          maxLength: 30,
-                          decoration: InputDecoration(
-                            labelText: 'ルーム名',
-                            hintText: 'ルーム名を入力（最大30文字）',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black87,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black87,
-                                width: 2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            counterText: '${_roomNameController.text.length}/30',
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: 400,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _createRoom,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      
+                      // 入力フォーム
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: Card(
+                          elevation: AppConstants.cardElevation,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius
                             ),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
+                          child: Padding(
+                            padding: EdgeInsets.all(AppConstants.defaultPadding),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // ルーム名入力
+                                TextField(
+                                  controller: _roomNameController,
+                                  maxLength: AppConstants.roomNameMaxLength,
+                                  decoration: InputDecoration(
+                                    labelText: 'ルーム名',
+                                    hintText: 'チャットのテーマを入力',
+                                    prefixIcon: const Icon(Icons.title),
+                                    counterText: 
+                                      '${_roomNameController.text.length}/${AppConstants.roomNameMaxLength}',
                                   ),
-                                )
-                              : const Text(
-                                  '作成する',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                                
+                                const SizedBox(height: 24),
+                                
+                                // 作成ボタン
+                                SizedBox(
+                                  height: AppConstants.buttonHeight,
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading ? null : _createRoom,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppConstants.defaultBorderRadius
+                                        ),
+                                      ),
+                                    ),
+                                    child: Ink(
+                                      decoration: BoxDecoration(
+                                        gradient: _isLoading
+                                            ? null
+                                            : AppColors.primaryGradient,
+                                        color: _isLoading 
+                                            ? AppColors.divider 
+                                            : null,
+                                        borderRadius: BorderRadius.circular(
+                                          AppConstants.defaultBorderRadius
+                                        ),
+                                      ),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        child: _isLoading
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.textWhite,
+                                                ),
+                                              )
+                                            : Text(
+                                                'ルームを作成',
+                                                style: AppTextStyles.buttonMedium,
+                                              ),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // 情報カード
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: Card(
+                          elevation: 2,
+                          color: AppColors.info.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(AppConstants.defaultPadding),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: AppColors.info,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'ルーム情報',
+                                      style: AppTextStyles.titleSmall.copyWith(
+                                        color: AppColors.info,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoItem(
+                                  '最大2人まで参加可能'
+                                ),
+                                _buildInfoItem(
+                                  '${AppConstants.defaultChatDurationMinutes}分間のチャット時間'
+                                ),
+                                _buildInfoItem(
+                                  '残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能'
+                                ),
+                                _buildInfoItem(
+                                  '両者退出で自動削除'
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -220,27 +321,31 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 ),
               ),
             ),
+            
+            // 戻るボタン
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: SizedBox(
                 width: 80,
                 height: 80,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Colors.black87,
+                    backgroundColor: AppColors.cardBackground,
+                    side: BorderSide(
+                      color: AppColors.border,
                       width: 3,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius
+                      ),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back,
                     size: 40,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -249,5 +354,59 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         ),
       ),
     );
+  }
+
+  /// 情報アイテムを構築
+  Widget _buildInfoItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: AppColors.info,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.info,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ChatRoomRepositoryの拡張メソッド
+extension ChatRoomRepositoryExtension on ChatRoomRepository {
+  /// 待機中ルームを作成（簡易メソッド）
+  Future<String> createWaitingRoom({
+    required String topic,
+    required String creatorId,
+  }) async {
+    final roomId = DateTime.now().millisecondsSinceEpoch.toString();
+    final farFuture = DateTime.now().add(const Duration(days: 365));
+    
+    final room = ChatRoom(
+      id: roomId,
+      topic: topic,
+      status: AppConstants.roomStatusWaiting,
+      id1: creatorId,
+      id2: null,
+      startedAt: farFuture,
+      expiresAt: farFuture,
+      extensionCount: 0,
+      extension: AppConstants.defaultExtensionLimit,
+      comment1: '',
+      comment2: '',
+    );
+    
+    await create(room, id: roomId);
+    return roomId;
   }
 }

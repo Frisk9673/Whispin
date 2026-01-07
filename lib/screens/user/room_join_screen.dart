@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
-import '../../models/chat_room.dart';
+import '../../repositories/chat_room_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../providers/user_provider.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
+import '../../utils/app_logger.dart';
 
 class RoomJoinScreen extends StatefulWidget {
   const RoomJoinScreen({super.key});
@@ -13,9 +19,11 @@ class RoomJoinScreen extends StatefulWidget {
 
 class _RoomJoinScreenState extends State<RoomJoinScreen> {
   final TextEditingController _roomIdController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _roomRepository = ChatRoomRepository();
+  final _userRepository = UserRepository();
+  
   bool _isLoading = false;
+  static const String _logName = 'RoomJoinScreen';
 
   @override
   void dispose() {
@@ -27,51 +35,55 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     final roomId = _roomIdController.text.trim();
 
     if (roomId.isEmpty) {
-      _showError('ルームIDを入力してください');
+      context.showErrorSnackBar('ルームIDを入力してください');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      // 現在のユーザーを取得
-      final currentUser = _auth.currentUser;
+      logger.section('ルーム参加処理開始', name: _logName);
+      logger.info('roomId: $roomId', name: _logName);
+
+      // 現在のユーザー取得
+      final userProvider = context.read<UserProvider>();
+      final currentUser = userProvider.currentUser;
+      
       if (currentUser == null) {
-        _showError('ログインしてください');
+        context.showErrorSnackBar('ログインしてください');
         setState(() => _isLoading = false);
         return;
       }
 
-      final currentUserEmail = currentUser.email;
-      if (currentUserEmail == null) {
-        _showError('ユーザー情報が取得できません');
+      final currentUserEmail = currentUser.id;
+      logger.info('参加ユーザー: $currentUserEmail', name: _logName);
+
+      // ルーム存在チェック
+      logger.start('ルーム情報取得中...', name: _logName);
+      final room = await _roomRepository.findById(roomId);
+
+      if (room == null) {
+        logger.warning('ルームが見つかりません', name: _logName);
+        context.showErrorSnackBar('ルームが見つかりません');
         setState(() => _isLoading = false);
         return;
       }
 
-      // Firestoreのrooms/{roomId}ドキュメントを取得
-      final roomDoc = await _firestore.collection('rooms').doc(roomId).get();
+      logger.success('ルーム発見: ${room.topic}', name: _logName);
 
-      if (!roomDoc.exists) {
-        _showError('ルームが見つかりません');
+      // ステータスチェック
+      if (room.isFinished) {
+        logger.warning('ルームは終了しています', name: _logName);
+        context.showErrorSnackBar('このルームは終了しています');
         setState(() => _isLoading = false);
         return;
       }
 
-      // ChatRoomモデルを使用してデータを取得
-      final ChatRoom room = ChatRoom.fromMap(roomDoc.data()!);
-
-      // statusで状態チェック
-      if (room.status == 2) {
-        _showError('このルームは終了しています');
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      if (room.status == 1) {
-        // status=1（会話中）の場合、有効期限をチェック
+      if (room.isActive) {
+        // アクティブな場合は有効期限チェック
         if (DateTime.now().isAfter(room.expiresAt)) {
-          _showError('このルームは期限切れです');
+          logger.warning('ルームは期限切れです', name: _logName);
+          context.showErrorSnackBar('このルームは期限切れです');
           setState(() => _isLoading = false);
           return;
         }
@@ -79,68 +91,67 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
       // 既に参加しているかチェック
       if (room.id1 == currentUserEmail || room.id2 == currentUserEmail) {
-        _showError('既にこのルームに参加しています');
+        logger.warning('既にこのルームに参加しています', name: _logName);
+        context.showErrorSnackBar('既にこのルームに参加しています');
         setState(() => _isLoading = false);
         return;
       }
 
-      // 参加可能なスロットを確認（id1が作成者、id2が参加者）
+      // 満員チェック
       if (room.id2 != null && room.id2!.isNotEmpty) {
-        // id2が既に埋まっている = 満員
-        _showError('ルームは満員です（2人まで）');
+        logger.warning('ルームは満員です', name: _logName);
+        context.showErrorSnackBar('ルームは満員です（2人まで）');
         setState(() => _isLoading = false);
         return;
       }
 
-      // 2人目の参加 → チャット開始
-      final now = DateTime.now();
-      final expiresAt = now.add(const Duration(minutes: 10)); // 10分後
+      // ルームに参加
+      logger.start('ルームに参加中...', name: _logName);
+      await _roomRepository.joinRoom(roomId, currentUserEmail);
+      logger.success('ルーム参加成功', name: _logName);
 
-      // id2（参加者スロット）に参加し、チャット開始時刻と期限を設定
-      await _firestore.collection('rooms').doc(roomId).update({
-        'id2': currentUserEmail,
-        'status': 1, // 会話中に変更
-        'startedAt': Timestamp.fromDate(now), // チャット開始時刻
-        'expiresAt': Timestamp.fromDate(expiresAt), // 10分後
-      });
+      // ユーザーのルーム参加回数を更新
+      try {
+        await _userRepository.incrementRoomCount(currentUserEmail);
+        logger.success('ルーム参加回数更新完了', name: _logName);
+      } catch (e) {
+        logger.warning('ルーム参加回数更新失敗: $e', name: _logName);
+        // 失敗しても続行
+      }
 
       setState(() => _isLoading = false);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('ルーム "${room.topic}" に参加しました\nチャットが開始されました（10分間）'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+      logger.section('ルーム参加処理完了', name: _logName);
+
+      context.showSuccessSnackBar(
+        'ルーム "${room.topic}" に参加しました\nチャットが開始されました（${AppConstants.defaultChatDurationMinutes}分間）',
       );
 
       // TODO: チャット画面に遷移
-      // Navigator.pushReplacement(
+      // NavigationHelper.toChat(
       //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => ChatScreen(roomId: roomId),
-      //   ),
+      //   roomId: roomId,
+      //   authService: authService,
+      //   chatService: chatService,
+      //   storageService: storageService,
       // );
 
       // 仮で前の画面に戻る
-      Navigator.pop(context);
+      context.pop();
 
-    } catch (e) {
+    } catch (e, stack) {
+      logger.error(
+        'ルーム参加エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
+      
       setState(() => _isLoading = false);
-      _showError('参加に失敗しました: $e');
+      context.showErrorSnackBar('参加に失敗しました: $e');
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
 
   @override
@@ -157,66 +168,77 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(AppConstants.defaultPadding),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.meeting_room,
                         size: 80,
-                        color: Colors.black87,
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         '部屋に参加',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                        style: AppTextStyles.headlineLarge,
                       ),
                       const SizedBox(height: 40),
+                      
+                      // ルームID入力
                       SizedBox(
                         width: 400,
                         child: TextField(
                           controller: _roomIdController,
+                          enabled: !_isLoading,
                           decoration: InputDecoration(
                             labelText: 'ルームID',
                             hintText: 'ルームIDを入力',
+                            prefixIcon: Icon(Icons.vpn_key, color: AppColors.primary),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black87,
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius,
+                              ),
+                              borderSide: BorderSide(
+                                color: AppColors.border,
                                 width: 2,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black87,
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius,
+                              ),
+                              borderSide: BorderSide(
+                                color: AppColors.border,
                                 width: 2,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius,
+                              ),
+                              borderSide: BorderSide(
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                             ),
                           ),
+                          style: AppTextStyles.bodyLarge,
                         ),
                       ),
                       const SizedBox(height: 24),
+                      
+                      // 参加ボタン
                       SizedBox(
                         width: 400,
-                        height: 56,
+                        height: AppConstants.buttonHeight,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _joinRoom,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
+                            backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius,
+                              ),
                             ),
                           ),
                           child: _isLoading
@@ -228,14 +250,51 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   '参加する',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppTextStyles.buttonLarge,
                                 ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // 情報カード
+                      Card(
+                        elevation: AppConstants.cardElevation,
+                        color: AppColors.backgroundLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.defaultBorderRadius,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(AppConstants.defaultPadding - 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '参加について',
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInfoItem('ルームIDは作成者から共有されます'),
+                              _buildInfoItem('参加すると${AppConstants.defaultChatDurationMinutes}分間のチャットが開始されます'),
+                              _buildInfoItem('延長は残り${AppConstants.extensionRequestThresholdMinutes}分以下で可能'),
+                              _buildInfoItem('最大${AppConstants.defaultExtensionLimit}回まで延長可能（通常会員）'),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -243,33 +302,60 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                 ),
               ),
             ),
+            
+            // 戻るボタン
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: SizedBox(
                 width: 80,
                 height: 80,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _isLoading ? null : () => context.pop(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Colors.black87,
+                    side: BorderSide(
+                      color: AppColors.border,
                       width: 3,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back,
                     size: 40,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.check_circle,
+            size: 16,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }

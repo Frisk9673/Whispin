@@ -45,9 +45,14 @@ class _UserLoginPageState extends State<UserLoginPage> {
     });
 
     try {
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+
+      logger.info('ログイン試行: $email', name: _logName);
+
       final loginResult = await userAuthService.loginUser(
-        email: emailController.text,
-        password: passwordController.text,
+        email: email,
+        password: password,
       );
 
       logger.success('Auth ログイン成功', name: _logName);
@@ -68,6 +73,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
           final isDeleted = userData['IsDeleted'] ?? false;
 
           if (isDeleted) {
+            logger.warning('削除済みアカウント: $email', name: _logName);
             await FirebaseAuth.instance.signOut();
             setState(() {
               message = "このアカウントは削除済みです";
@@ -78,11 +84,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
         }
       }
 
-      // UserProvider読み込み
+      // 🔧 修正: emailパラメータを渡す
+      logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
-      await userProvider.loadUserData();
+      await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
+        logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
           message = "ユーザー情報の読み込みに失敗しました";
           _isLoading = false;
@@ -90,9 +98,12 @@ class _UserLoginPageState extends State<UserLoginPage> {
         return;
       }
 
+      logger.success('UserProvider.loadUserData() 完了', name: _logName);
+
       final authService = context.read<AuthService>();
       final storageService = context.read<FirestoreStorageService>();
 
+      logger.start('HomeScreen へ遷移', name: _logName);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -102,7 +113,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
           ),
         ),
       );
-    } catch (e) {
+
+      logger.section('_login() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('ログインエラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() {
         message = "ログインに失敗しました";
         _isLoading = false;

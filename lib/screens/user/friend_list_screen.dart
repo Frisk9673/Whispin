@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/common/header.dart';
-import '../../models/friendship.dart';
-import '../../models/user.dart' as app_user;
+import '../../repositories/friendship_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../utils/app_logger.dart';
 
 class FriendListScreen extends StatefulWidget {
   const FriendListScreen({super.key});
@@ -13,9 +16,11 @@ class FriendListScreen extends StatefulWidget {
 }
 
 class _FriendListScreenState extends State<FriendListScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FriendshipRepository _friendshipRepository = FriendshipRepository();
+  final UserRepository _userRepository = UserRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+  static const String _logName = 'FriendListScreen';
+
   bool _isLoading = true;
   List<Map<String, dynamic>> _friends = [];
 
@@ -26,65 +31,56 @@ class _FriendListScreenState extends State<FriendListScreen> {
   }
 
   Future<void> _loadFriends() async {
+    logger.section('_loadFriends() 開始', name: _logName);
+
     setState(() => _isLoading = true);
 
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
+        logger.warning('未ログイン', name: _logName);
         setState(() => _isLoading = false);
         return;
       }
 
       final currentUserEmail = currentUser.email;
       if (currentUserEmail == null) {
+        logger.warning('メールアドレスなし', name: _logName);
         setState(() => _isLoading = false);
         return;
       }
 
-      // Friendshipコレクションから自分が関わっているフレンド関係を取得
-      // userId == currentUserEmail または friendId == currentUserEmail
-      final friendshipsSnapshot1 = await _firestore
-          .collection('friendships')
-          .where('userId', isEqualTo: currentUserEmail)
-          .where('active', isEqualTo: true)
-          .get();
+      logger.start('Repository経由でフレンド一覧取得中...', name: _logName);
 
-      final friendshipsSnapshot2 = await _firestore
-          .collection('friendships')
-          .where('friendId', isEqualTo: currentUserEmail)
-          .where('active', isEqualTo: true)
-          .get();
+      // Repository経由でフレンド一覧を取得
+      final friendships = await _friendshipRepository.findUserFriends(currentUserEmail);
 
-      // 両方のクエリ結果を結合
-      final allFriendships = [
-        ...friendshipsSnapshot1.docs,
-        ...friendshipsSnapshot2.docs,
-      ];
+      logger.success('フレンドシップ取得: ${friendships.length}件', name: _logName);
 
       // フレンドのユーザー情報を取得
       final List<Map<String, dynamic>> friendsList = [];
-      
-      for (var doc in allFriendships) {
-        final friendship = Friendship.fromMap(doc.data());
-        
+
+      for (var friendship in friendships) {
         // 相手のIDを特定
         final friendId = friendship.userId == currentUserEmail
             ? friendship.friendId
             : friendship.userId;
 
-        // Userコレクションからフレンドの情報を取得
+        logger.debug('フレンドID: $friendId を取得中...', name: _logName);
+
         try {
-          final userDoc = await _firestore.collection('User').doc(friendId).get();
-          
-          if (userDoc.exists) {
-            final userData = app_user.User.fromMap(userDoc.data()!);
+          // Repository経由でユーザー情報を取得
+          final friendUser = await _userRepository.findById(friendId);
+
+          if (friendUser != null) {
             friendsList.add({
               'id': friendId,
-              'name': userData.displayName,
+              'name': friendUser.displayName,
               'friendshipId': friendship.id,
             });
+            logger.debug('  → ${friendUser.displayName}', name: _logName);
           } else {
-            // Userドキュメントが存在しない場合はIDのみ表示
+            logger.warning('ユーザー情報なし: $friendId', name: _logName);
             friendsList.add({
               'id': friendId,
               'name': friendId,
@@ -92,8 +88,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
             });
           }
         } catch (e) {
-          print('フレンド情報取得エラー: $e');
-          // エラーの場合はIDのみ表示
+          logger.error('フレンド情報取得エラー: $e', name: _logName, error: e);
           friendsList.add({
             'id': friendId,
             'name': friendId,
@@ -107,8 +102,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
         _isLoading = false;
       });
 
-    } catch (e) {
-      print('フレンド一覧取得エラー: $e');
+      logger.success('フレンド一覧表示準備完了: ${_friends.length}人', name: _logName);
+      logger.section('_loadFriends() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('フレンド一覧取得エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
       _showError('フレンド一覧の取得に失敗しました: $e');
     }
@@ -116,12 +113,21 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   Future<void> _removeFriend(int index) async {
     final friend = _friends[index];
-    
+
+    logger.section('_removeFriend() 開始', name: _logName);
+    logger.info('対象フレンド: ${friend['name']}', name: _logName);
+
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('フレンド削除'),
-        content: Text('${friend['name']} をフレンドから削除しますか？'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Text('フレンド削除', style: AppTextStyles.titleLarge),
+        content: Text(
+          '${friend['name']} をフレンドから削除しますか?',
+          style: AppTextStyles.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -130,7 +136,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
             child: const Text(
               '削除',
@@ -141,14 +147,18 @@ class _FriendListScreenState extends State<FriendListScreen> {
       ),
     );
 
-    if (result != true) return;
+    if (result != true) {
+      logger.info('削除キャンセル', name: _logName);
+      return;
+    }
 
     try {
-      // Friendshipのactiveをfalseに更新（ソフトデリート）
-      await _firestore
-          .collection('friendships')
-          .doc(friend['friendshipId'])
-          .update({'active': false});
+      logger.start('Repository経由でフレンドシップ削除中...', name: _logName);
+
+      // Repository経由で削除（ソフトデリート）
+      await _friendshipRepository.deactivateFriendship(friend['friendshipId']);
+
+      logger.success('フレンドシップ削除完了', name: _logName);
 
       setState(() {
         _friends.removeAt(index);
@@ -162,7 +172,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
           backgroundColor: Colors.green,
         ),
       );
-    } catch (e) {
+
+      logger.section('_removeFriend() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('削除エラー: $e', name: _logName, error: e, stackTrace: stack);
       _showError('削除に失敗しました: $e');
     }
   }
@@ -172,7 +185,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -189,7 +202,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
               onSettingsPressed: () {},
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: Row(
                 children: const [
                   Icon(
@@ -211,9 +224,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
             ),
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Colors.black87,
+                        color: AppColors.primary,
                       ),
                     )
                   : _friends.isEmpty
@@ -238,17 +251,17 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(horizontal: AppConstants.defaultPadding),
                           itemCount: _friends.length,
                           itemBuilder: (context, index) {
                             final friend = _friends[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 2,
+                              elevation: AppConstants.cardElevation,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(
-                                  color: Colors.black87,
+                                borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                                side: BorderSide(
+                                  color: AppColors.border,
                                   width: 2,
                                 ),
                               ),
@@ -258,7 +271,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                                   vertical: 8,
                                 ),
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.black87,
+                                  backgroundColor: AppColors.primary,
                                   child: Text(
                                     friend['name']![0].toUpperCase(),
                                     style: const TextStyle(
@@ -269,21 +282,20 @@ class _FriendListScreenState extends State<FriendListScreen> {
                                 ),
                                 title: Text(
                                   friend['name']!,
-                                  style: const TextStyle(
-                                    fontSize: 18,
+                                  style: AppTextStyles.bodyLarge.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 subtitle: Text(
                                   friend['id']!,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                                 trailing: IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.person_remove,
-                                    color: Colors.red,
+                                    color: AppColors.error,
                                   ),
                                   onPressed: () => _removeFriend(index),
                                 ),
@@ -293,7 +305,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                         ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: SizedBox(
                 width: 80,
                 height: 80,
@@ -301,18 +313,18 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Colors.black87,
+                    side: BorderSide(
+                      color: AppColors.border,
                       width: 3,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back,
                     size: 40,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),

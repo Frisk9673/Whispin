@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/chat_service.dart';
@@ -52,7 +53,28 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userProvider.currentUser == null && !userProvider.isLoading) {
       logger.warning('ユーザー情報が未読み込み → 読み込みを開始', name: _logName);
       
-      await userProvider.loadUserData();
+      // 🔧 修正: FirebaseAuthからメールアドレスを取得
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final email = currentUser?.email;
+      
+      if (email == null) {
+        logger.error('Firebase Auth ユーザーのメールアドレスが取得できません', name: _logName);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ユーザー情報の取得に失敗しました'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+      
+      logger.info('取得したメールアドレス: $email', name: _logName);
+      
+      await userProvider.loadUserData(email);
       
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);

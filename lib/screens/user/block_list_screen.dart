@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/common/header.dart';
-import '../../models/block.dart';
-import '../../models/user.dart' as app_user;
+import '../../repositories/block_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../utils/app_logger.dart';
 
 class BlockListScreen extends StatefulWidget {
   const BlockListScreen({super.key});
@@ -13,8 +16,10 @@ class BlockListScreen extends StatefulWidget {
 }
 
 class _BlockListScreenState extends State<BlockListScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final BlockRepository _blockRepository = BlockRepository();
+  final UserRepository _userRepository = UserRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  static const String _logName = 'BlockListScreen';
   
   bool _isLoading = true;
   List<Map<String, dynamic>> _blockedUsers = [];
@@ -26,50 +31,51 @@ class _BlockListScreenState extends State<BlockListScreen> {
   }
 
   Future<void> _loadBlockedUsers() async {
+    logger.section('_loadBlockedUsers() 開始', name: _logName);
+    
     setState(() => _isLoading = true);
 
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
+        logger.warning('未ログイン', name: _logName);
         setState(() => _isLoading = false);
         return;
       }
 
       final currentUserEmail = currentUser.email;
       if (currentUserEmail == null) {
+        logger.warning('メールアドレスなし', name: _logName);
         setState(() => _isLoading = false);
         return;
       }
 
-      // Blockコレクションから自分がブロックしたユーザーを取得
-      final blocksSnapshot = await _firestore
-          .collection('blocks')
-          .where('blockerId', isEqualTo: currentUserEmail)
-          .where('active', isEqualTo: true) // activeなブロックのみ
-          .get();
+      logger.start('Repository経由でブロック一覧取得中...', name: _logName);
+
+      // Repository経由でブロック一覧を取得
+      final blocks = await _blockRepository.findBlockedUsers(currentUserEmail);
+
+      logger.success('ブロック取得: ${blocks.length}件', name: _logName);
 
       // ブロックユーザーの情報を取得
       final List<Map<String, dynamic>> blockedList = [];
       
-      for (var doc in blocksSnapshot.docs) {
-        final block = Block.fromMap(doc.data());
+      for (var block in blocks) {
+        logger.debug('ブロックユーザーID: ${block.blockedId} を取得中...', name: _logName);
         
-        // Userコレクションからブロックユーザーの情報を取得
         try {
-          final userDoc = await _firestore
-              .collection('User')
-              .doc(block.blockedId)
-              .get();
+          // Repository経由でユーザー情報を取得
+          final blockedUser = await _userRepository.findById(block.blockedId);
           
-          if (userDoc.exists) {
-            final userData = app_user.User.fromMap(userDoc.data()!);
+          if (blockedUser != null) {
             blockedList.add({
               'id': block.blockedId,
-              'name': userData.displayName,
+              'name': blockedUser.displayName,
               'blockId': block.id,
             });
+            logger.debug('  → ${blockedUser.displayName}', name: _logName);
           } else {
-            // Userドキュメントが存在しない場合はIDのみ表示
+            logger.warning('ユーザー情報なし: ${block.blockedId}', name: _logName);
             blockedList.add({
               'id': block.blockedId,
               'name': block.blockedId,
@@ -77,8 +83,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
             });
           }
         } catch (e) {
-          print('ブロックユーザー情報取得エラー: $e');
-          // エラーの場合はIDのみ表示
+          logger.error('ブロックユーザー情報取得エラー: $e', name: _logName, error: e);
           blockedList.add({
             'id': block.blockedId,
             'name': block.blockedId,
@@ -92,8 +97,10 @@ class _BlockListScreenState extends State<BlockListScreen> {
         _isLoading = false;
       });
 
-    } catch (e) {
-      print('ブロック一覧取得エラー: $e');
+      logger.success('ブロック一覧表示準備完了: ${_blockedUsers.length}人', name: _logName);
+      logger.section('_loadBlockedUsers() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('ブロック一覧取得エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
       _showError('ブロック一覧の取得に失敗しました: $e');
     }
@@ -102,11 +109,20 @@ class _BlockListScreenState extends State<BlockListScreen> {
   Future<void> _unblockUser(int index) async {
     final user = _blockedUsers[index];
     
+    logger.section('_unblockUser() 開始', name: _logName);
+    logger.info('対象ユーザー: ${user['name']}', name: _logName);
+    
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('ブロック解除'),
-        content: Text('${user['name']} のブロックを解除しますか？'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Text('ブロック解除', style: AppTextStyles.titleLarge),
+        content: Text(
+          '${user['name']} のブロックを解除しますか？',
+          style: AppTextStyles.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -115,7 +131,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: AppColors.info,
             ),
             child: const Text(
               '解除',
@@ -126,14 +142,18 @@ class _BlockListScreenState extends State<BlockListScreen> {
       ),
     );
 
-    if (result != true) return;
+    if (result != true) {
+      logger.info('解除キャンセル', name: _logName);
+      return;
+    }
 
     try {
-      // Blockのactiveをfalseに更新（ソフトデリート）
-      await _firestore
-          .collection('blocks')
-          .doc(user['blockId'])
-          .update({'active': false});
+      logger.start('Repository経由でブロック解除中...', name: _logName);
+
+      // Repository経由で解除（ソフトデリート）
+      await _blockRepository.unblockById(user['blockId']);
+
+      logger.success('ブロック解除完了', name: _logName);
 
       setState(() {
         _blockedUsers.removeAt(index);
@@ -142,12 +162,15 @@ class _BlockListScreenState extends State<BlockListScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ブロックを解除しました'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: const Text('ブロックを解除しました'),
+          backgroundColor: AppColors.success,
         ),
       );
-    } catch (e) {
+
+      logger.section('_unblockUser() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('ブロック解除エラー: $e', name: _logName, error: e, stackTrace: stack);
       _showError('ブロック解除に失敗しました: $e');
     }
   }
@@ -157,7 +180,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -174,7 +197,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
               onSettingsPressed: () {},
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: Row(
                 children: const [
                   Icon(
@@ -196,9 +219,9 @@ class _BlockListScreenState extends State<BlockListScreen> {
             ),
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Colors.red,
+                        color: AppColors.error,
                       ),
                     )
                   : _blockedUsers.isEmpty
@@ -223,17 +246,21 @@ class _BlockListScreenState extends State<BlockListScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppConstants.defaultPadding,
+                          ),
                           itemCount: _blockedUsers.length,
                           itemBuilder: (context, index) {
                             final user = _blockedUsers[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 2,
+                              elevation: AppConstants.cardElevation,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(
-                                  color: Colors.red,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                side: BorderSide(
+                                  color: AppColors.error,
                                   width: 2,
                                 ),
                               ),
@@ -242,30 +269,29 @@ class _BlockListScreenState extends State<BlockListScreen> {
                                   horizontal: 16,
                                   vertical: 8,
                                 ),
-                                leading: const CircleAvatar(
-                                  backgroundColor: Colors.red,
-                                  child: Icon(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.error,
+                                  child: const Icon(
                                     Icons.block,
                                     color: Colors.white,
                                   ),
                                 ),
                                 title: Text(
                                   user['name']!,
-                                  style: const TextStyle(
-                                    fontSize: 18,
+                                  style: AppTextStyles.bodyLarge.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 subtitle: Text(
                                   user['id']!,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                                 trailing: ElevatedButton(
                                   onPressed: () => _unblockUser(index),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
+                                    backgroundColor: AppColors.info,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -284,7 +310,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
                         ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: SizedBox(
                 width: 80,
                 height: 80,
@@ -292,18 +318,20 @@ class _BlockListScreenState extends State<BlockListScreen> {
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Colors.black87,
+                    side: BorderSide(
+                      color: AppColors.border,
                       width: 3,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back,
                     size: 40,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),

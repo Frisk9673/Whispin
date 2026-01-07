@@ -85,14 +85,19 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     try {
       setState(() => loading = true);
 
+      logger.start('registerService.register() 実行中...', name: _logName);
       await registerService.register(user, password);
+      logger.success('ユーザー登録完了', name: _logName);
 
       if (!mounted) return;
 
+      // 🔧 修正: emailパラメータを渡す
+      logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
-      await userProvider.loadUserData();
+      await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
+        logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
           message = "ユーザー情報の読み込みに失敗しました";
           loading = false;
@@ -100,9 +105,12 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         return;
       }
 
+      logger.success('UserProvider.loadUserData() 完了', name: _logName);
+
       final authService = context.read<AuthService>();
       final storageService = context.read<FirestoreStorageService>();
 
+      logger.start('HomeScreen へ遷移', name: _logName);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -112,7 +120,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
           ),
         ),
       );
-    } catch (e) {
+
+      logger.section('registerUser() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('登録エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => message = e.toString());
     } finally {
       if (mounted) {
