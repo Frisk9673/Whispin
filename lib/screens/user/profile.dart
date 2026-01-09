@@ -29,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
     final bool isDesktop = kIsWeb || (!Platform.isAndroid && !Platform.isIOS);
 
-    // 🔧 拡張メソッド使用
+    // ✅ context拡張メソッド使用
     NavigationHelper.showBottomSheet(
       context: context,
       child: SafeArea(
@@ -58,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 title: const Text('写真を撮る'),
                 onTap: () {
-                  context.pop(); // 🔧 拡張メソッド
+                  context.pop(); // ✅ context拡張メソッド
                   _getImage(ImageSource.camera);
                 },
               ),
@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 title: const Text('ライブラリから選択'),
                 onTap: () {
-                  context.pop(); // 🔧 拡張メソッド
+                  context.pop(); // ✅ context拡張メソッド
                   _getImage(ImageSource.gallery);
                 },
               ),
@@ -90,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 title: const Text('フォルダから選択'),
                 onTap: () {
-                  context.pop(); // 🔧 拡張メソッド
+                  context.pop(); // ✅ context拡張メソッド
                   _getImage(ImageSource.gallery);
                 },
               ),
@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Icon(Icons.cancel, color: AppColors.textSecondary),
               ),
               title: const Text('キャンセル'),
-              onTap: () => context.pop(), // 🔧 拡張メソッド
+              onTap: () => context.pop(), // ✅ context拡張メソッド
             ),
             const SizedBox(height: 16),
           ],
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      // 🔧 拡張メソッド使用
+      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('画像の選択に失敗しました: $e');
     }
   }
@@ -150,12 +150,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       logger.success('ログアウト成功', name: _logName);
 
-      // 🔧 NavigationHelper使用
       NavigationHelper.toLogin(context);
     } catch (e) {
       logger.error('ログアウトエラー: $e', name: _logName, error: e);
       if (!mounted) return;
-      // 🔧 拡張メソッド使用
+      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('ログアウトエラー: $e');
     }
   }
@@ -166,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final isPremium = userProvider.isPremium;
 
-    // 🔧 拡張メソッド使用
+    // ✅ context拡張メソッド使用
     final result = await context.showConfirmDialog(
       title: isPremium ? 'プレミアム解約' : 'プレミアムプラン加入',
       message: isPremium
@@ -178,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!result) return;
 
-    // ローディング表示
+    // ✅ context拡張メソッド使用
     context.showLoadingDialog(
       message: isPremium ? '解約処理中...' : 'プレミアムに加入中...',
     );
@@ -186,12 +185,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await userProvider.updatePremiumStatus(!isPremium);
 
-      // ローディング非表示
+      // ✅ context拡張メソッド使用
       context.hideLoadingDialog();
 
       if (!mounted) return;
 
-      // 🔧 拡張メソッド使用
+      // ✅ context拡張メソッド使用
       if (isPremium) {
         context.showWarningSnackBar('プレミアムを解約しました');
       } else {
@@ -200,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       logger.error('プレミアムステータス更新エラー: $e', name: _logName, error: e);
 
-      // ローディング非表示
+      // ✅ context拡張メソッド使用
       context.hideLoadingDialog();
 
       if (!mounted) return;
@@ -462,7 +461,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                               ),
                               onTap: () {
-                                // 🔧 NavigationHelper使用
                                 NavigationHelper.toUserChat(context);
                               },
                             ),
@@ -494,7 +492,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               onTap: () async {
                                 logger.info('アカウント削除ボタン押下', name: _logName);
-                                // TODO: アカウント削除処理
+                                // ✅ context拡張メソッド使用
                                 context.showInfoSnackBar('この機能は準備中です');
                               },
                             ),
