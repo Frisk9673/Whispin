@@ -210,27 +210,34 @@ Log_Premium/
 
 ---
 
-## 📦 主要な依存パッケージ
+## 📦 依存パッケージ
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Firebase
-  firebase_core: ^3.8.1
-  firebase_auth: ^5.3.3
-  cloud_firestore: ^5.5.0
-  
-  # 状態管理
-  provider: ^6.1.2
-  
-  # ユーティリティ
-  intl: ^0.19.0
-  crypto: ^3.0.6
-  path_provider: ^2.1.5
-  
-  # UI
-  image_picker: ^1.1.2
+  #UI/UX
+  google_fonts: 6.3.2
+
+  # Firebase 系パッケージ（互換性を考慮）
+  firebase_core: 4.2.1
+  firebase_auth: 6.1.2
+  cloud_firestore: 6.1.0
+
+  #Utilities
+  http: 1.6.0
+  crypto: 3.0.3
+  shared_preferences: 2.2.2
+  intl: 0.19.0
+  path_provider: 2.1.5
+
+  # Other
+  image_picker: 1.2.1
+  provider: 6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
 ```
 
 ---
