@@ -192,11 +192,11 @@ class RouteGuardWrapper extends StatelessWidget {
   final VoidCallback? onBackPressed;
 
   const RouteGuardWrapper({
-    Key? key,
+    super.key,
     required this.child,
     required this.routeName,
     this.onBackPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

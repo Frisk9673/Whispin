@@ -4,12 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/routes/app_router.dart';
-
+import 'package:whispin/constants/routes.dart';
 import 'services/firestore_storage_service.dart';
 import 'services/auth_service.dart';
 import 'services/chat_service.dart';
-import 'screens/account_create/account_create_screen.dart';
-import 'screens/user/home_screen.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/admin_provider.dart';
@@ -145,12 +143,9 @@ class MyApp extends StatelessWidget {
         NavigationLogger(),
       ],
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: authService.isLoggedIn()
-          ? HomeScreen(
-              authService: authService,
-              storageService: storageService,
-            )
-          : const UserRegisterPage(),
+      initialRoute: authService.isLoggedIn()
+      ? AppRoutes.home
+      : AppRoutes.login,
     );
   }
 }

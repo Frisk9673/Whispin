@@ -6,8 +6,7 @@ class SpeechBubble extends StatelessWidget {
   final bool isMe;
 
   const SpeechBubble(
-      {Key? key, required this.name, required this.text, required this.isMe})
-      : super(key: key);
+      {super.key, required this.name, required this.text, required this.isMe});
 
   @override
   Widget build(BuildContext context) {

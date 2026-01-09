@@ -17,10 +17,10 @@ class HomeScreen extends StatefulWidget {
   final StorageService storageService;
 
   const HomeScreen({
-    Key? key,
+    super.key,
     required this.authService,
     required this.storageService,
-  }) : super(key: key);
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

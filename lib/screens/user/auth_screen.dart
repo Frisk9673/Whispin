@@ -14,10 +14,10 @@ class AuthScreen extends StatefulWidget {
   final StorageService storageService;
 
   const AuthScreen({
-    Key? key,
+    super.key,
     required this.authService,
     required this.storageService,
-  }) : super(key: key);
+  });
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();

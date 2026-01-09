@@ -19,6 +19,7 @@ class PremiumLogListTile extends StatelessWidget {
 
     try {
       user = await PremiumLogService().fetchUser(log.email);
+      if(!context.mounted) return;
       logger.success('fetchUser 完了', name: _logName);
     } catch (e, stack) {
       logger.error('fetchUser 実行中に例外発生: $e', 

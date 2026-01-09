@@ -13,11 +13,11 @@ class EvaluationDialog extends StatefulWidget {
   final StorageService storageService;
 
   const EvaluationDialog({
-    Key? key,
+    super.key,
     required this.partnerId,
     required this.currentUserId,
     required this.storageService,
-  }) : super(key: key);
+  });
 
   @override
   State<EvaluationDialog> createState() => _EvaluationDialogState();

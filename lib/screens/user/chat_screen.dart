@@ -20,12 +20,12 @@ class ChatScreen extends StatefulWidget {
   final StorageService storageService;
 
   const ChatScreen({
-    Key? key,
+    super.key,
     required this.roomId,
     required this.authService,
     required this.chatService,
     required this.storageService,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();

@@ -4,9 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/user_auth_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_storage_service.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
-import '../../constants/routes.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -49,16 +50,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
 
-      // バリデーション
-      if (email.isEmpty || password.isEmpty) {
-        context.showErrorSnackBar('メールアドレスとパスワードを入力してください');
-        setState(() => _isLoading = false);
-        return;
-      }
-
       logger.info('ログイン試行: $email', name: _logName);
 
-      // ログイン処理
       final loginResult = await userAuthService.loginUser(
         email: email,
         password: password,
@@ -84,53 +77,49 @@ class _UserLoginPageState extends State<UserLoginPage> {
           if (isDeleted) {
             logger.warning('削除済みアカウント: $email', name: _logName);
             await FirebaseAuth.instance.signOut();
-            
-            if (!mounted) return;
-            
-            context.showErrorSnackBar('このアカウントは削除済みです');
-            setState(() => _isLoading = false);
+            setState(() {
+              message = "このアカウントは削除済みです";
+              _isLoading = false;
+            });
             return;
           }
         }
       }
 
-      // UserProviderにユーザー情報を読み込み
       logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
-        
-        if (!mounted) return;
-        
-        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
-        setState(() => _isLoading = false);
+        setState(() {
+          message = "ユーザー情報の読み込みに失敗しました";
+          _isLoading = false;
+        });
         return;
       }
 
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
 
-      if (!mounted) return;
+      final authService = context.read<AuthService>();
+      final storageService = context.read<FirestoreStorageService>();
 
-      // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
       
-      // NavigationHelper経由でホーム画面へ
-      // Note: authServiceとstorageServiceはProvider経由で取得
-      await Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.home,
-        (route) => false,
+      // NavigationHelper使用
+      await NavigationHelper.toHome(
+        context,
+        authService: authService,
+        storageService: storageService,
       );
 
       logger.section('_login() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('ログインエラー: $e', name: _logName, error: e, stackTrace: stack);
-      
-      if (!mounted) return;
-      
-      context.showErrorSnackBar('ログインに失敗しました');
-      setState(() => _isLoading = false);
+      setState(() {
+        message = "ログインに失敗しました";
+        _isLoading = false;
+      });
     }
   }
 
@@ -138,15 +127,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667EEA),
-              Color(0xFF764BA2),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
         ),
         child: SafeArea(
           child: Center(
@@ -239,9 +221,39 @@ class _UserLoginPageState extends State<UserLoginPage> {
                               ),
                             ),
                             style: AppTextStyles.bodyLarge,
-                            onSubmitted: (_) => _login(),
                           ),
                           const SizedBox(height: 24),
+
+                          // エラーメッセージ
+                          if (message.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                border: Border.all(
+                                  color: AppColors.error.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: AppColors.error,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      message,
+                                      style: AppTextStyles.error,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
                           // ログインボタン
                           SizedBox(
@@ -350,12 +362,12 @@ class _UserLoginPageState extends State<UserLoginPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(icon, color: AppColors.textWhite, size: 20),
             const SizedBox(width: 8),
             Text(
               text,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
+                color: AppColors.textWhite,
                 fontWeight: FontWeight.w500,
               ),
             ),

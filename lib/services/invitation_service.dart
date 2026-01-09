@@ -338,7 +338,7 @@ class InvitationService {
 
     if (hasUpdates) {
       await _storageService.save();
-      logger.success('クリーンアップ完了: ${expiredCount}件更新', name: _logName);
+      logger.success('クリーンアップ完了: $expiredCount件更新', name: _logName);
     } else {
       logger.info('期限切れの招待はありません', name: _logName);
     }

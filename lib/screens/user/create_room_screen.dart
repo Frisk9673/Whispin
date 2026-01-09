@@ -15,11 +15,11 @@ class CreateRoomScreen extends StatefulWidget {
   final StorageService storageService;
 
   const CreateRoomScreen({
-    Key? key,
+    super.key,
     required this.authService,
     required this.chatService,
     required this.storageService,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateRoomScreen> createState() => _CreateRoomScreenState();

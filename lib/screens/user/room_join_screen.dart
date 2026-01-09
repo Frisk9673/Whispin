@@ -50,6 +50,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       final currentUser = userProvider.currentUser;
       
       if (currentUser == null) {
+        if (!mounted) return;
         context.showErrorSnackBar('ログインしてください');
         setState(() => _isLoading = false);
         return;
@@ -61,6 +62,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // ルーム存在チェック
       logger.start('ルーム情報取得中...', name: _logName);
       final room = await _roomRepository.findById(roomId);
+      if(!mounted) return;
 
       if (room == null) {
         logger.warning('ルームが見つかりません', name: _logName);
