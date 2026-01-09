@@ -4,12 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/user_auth_service.dart';
-import '../../services/auth_service.dart';
-import '../../services/firestore_storage_service.dart';
 import '../../providers/user_provider.dart';
-import '../../screens/user/home_screen.dart';
-import '../account_create/account_create_screen.dart';
-import '../admin/admin_login_screen.dart';
+import '../../routes/navigation_helper.dart';
+import '../../constants/routes.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class UserLoginPage extends StatefulWidget {
@@ -48,8 +49,16 @@ class _UserLoginPageState extends State<UserLoginPage> {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
 
+      // バリデーション
+      if (email.isEmpty || password.isEmpty) {
+        context.showErrorSnackBar('メールアドレスとパスワードを入力してください');
+        setState(() => _isLoading = false);
+        return;
+      }
+
       logger.info('ログイン試行: $email', name: _logName);
 
+      // ログイン処理
       final loginResult = await userAuthService.loginUser(
         email: email,
         password: password,
@@ -75,52 +84,53 @@ class _UserLoginPageState extends State<UserLoginPage> {
           if (isDeleted) {
             logger.warning('削除済みアカウント: $email', name: _logName);
             await FirebaseAuth.instance.signOut();
-            setState(() {
-              message = "このアカウントは削除済みです";
-              _isLoading = false;
-            });
+            
+            if (!mounted) return;
+            
+            context.showErrorSnackBar('このアカウントは削除済みです');
+            setState(() => _isLoading = false);
             return;
           }
         }
       }
 
-      // 🔧 修正: emailパラメータを渡す
+      // UserProviderにユーザー情報を読み込み
       logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
-        setState(() {
-          message = "ユーザー情報の読み込みに失敗しました";
-          _isLoading = false;
-        });
+        
+        if (!mounted) return;
+        
+        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
+        setState(() => _isLoading = false);
         return;
       }
 
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
 
-      final authService = context.read<AuthService>();
-      final storageService = context.read<FirestoreStorageService>();
+      if (!mounted) return;
 
+      // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(
-            authService: authService,
-            storageService: storageService,
-          ),
-        ),
+      
+      // NavigationHelper経由でホーム画面へ
+      // Note: authServiceとstorageServiceはProvider経由で取得
+      await Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.home,
+        (route) => false,
       );
 
       logger.section('_login() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('ログインエラー: $e', name: _logName, error: e, stackTrace: stack);
-      setState(() {
-        message = "ログインに失敗しました";
-        _isLoading = false;
-      });
+      
+      if (!mounted) return;
+      
+      context.showErrorSnackBar('ログインに失敗しました');
+      setState(() => _isLoading = false);
     }
   }
 
@@ -141,13 +151,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(AppConstants.defaultPadding),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.2),
@@ -159,32 +169,29 @@ class _UserLoginPageState extends State<UserLoginPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Whispin',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  Text(
+                    AppConstants.appName,
+                    style: AppTextStyles.displayMedium.copyWith(
+                      color: AppColors.textWhite,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'ログイン',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white70,
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: AppColors.textWhite.withOpacity(0.9),
                     ),
                   ),
                   const SizedBox(height: 48),
 
                   // フォームカード
                   Card(
-                    elevation: 8,
+                    elevation: AppConstants.cardElevation * 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(AppConstants.defaultPadding),
                       child: Column(
                         children: [
                           // メールアドレス
@@ -195,12 +202,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
                               labelText: 'メールアドレス',
                               prefixIcon: const Icon(Icons.email_outlined),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
                               ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
                             ),
                             keyboardType: TextInputType.emailAddress,
+                            style: AppTextStyles.bodyLarge,
                           ),
                           const SizedBox(height: 16),
 
@@ -225,44 +233,20 @@ class _UserLoginPageState extends State<UserLoginPage> {
                                 },
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // エラーメッセージ
-                          if (message.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.red.shade200,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.error_outline, color: Colors.red.shade700),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      message,
-                                      style: TextStyle(color: Colors.red.shade700),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
+                            style: AppTextStyles.bodyLarge,
+                            onSubmitted: (_) => _login(),
+                          ),
+                          const SizedBox(height: 24),
 
                           // ログインボタン
                           SizedBox(
                             width: double.infinity,
-                            height: 56,
+                            height: AppConstants.buttonHeight,
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _login,
                               style: ElevatedButton.styleFrom(
@@ -270,21 +254,22 @@ class _UserLoginPageState extends State<UserLoginPage> {
                                 shadowColor: Colors.transparent,
                                 padding: EdgeInsets.zero,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.defaultBorderRadius,
+                                  ),
                                 ),
                               ),
                               child: Ink(
                                 decoration: BoxDecoration(
                                   gradient: _isLoading
                                       ? null
-                                      : const LinearGradient(
-                                          colors: [
-                                            Color(0xFF667EEA),
-                                            Color(0xFF764BA2),
-                                          ],
-                                        ),
-                                  color: _isLoading ? Colors.grey.shade300 : null,
-                                  borderRadius: BorderRadius.circular(12),
+                                      : AppColors.primaryGradient,
+                                  color: _isLoading 
+                                      ? AppColors.divider 
+                                      : null,
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.defaultBorderRadius,
+                                  ),
                                 ),
                                 child: Container(
                                   alignment: Alignment.center,
@@ -297,13 +282,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
                                             color: Colors.white,
                                           ),
                                         )
-                                      : const Text(
+                                      : Text(
                                           'ログイン',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
+                                          style: AppTextStyles.buttonLarge,
                                         ),
                                 ),
                               ),
@@ -318,7 +299,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
                   // リンクボタン群
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(AppConstants.defaultPadding - 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
@@ -330,14 +311,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           text: '新規登録はこちら',
                           onTap: _isLoading
                               ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const UserRegisterPage(),
-                                    ),
-                                  );
-                                },
+                              : () => NavigationHelper.toRegister(context),
                         ),
                         const SizedBox(height: 12),
                         _buildLinkButton(
@@ -345,14 +319,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           text: '管理者ログインはこちら',
                           onTap: _isLoading
                               ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const AdminLoginScreen(),
-                                    ),
-                                  );
-                                },
+                              : () => NavigationHelper.toAdminLogin(context),
                         ),
                       ],
                     ),
@@ -373,12 +340,12 @@ class _UserLoginPageState extends State<UserLoginPage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -387,9 +354,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
             const SizedBox(width: 8),
             Text(
               text,
-              style: const TextStyle(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white,
-                fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
             ),

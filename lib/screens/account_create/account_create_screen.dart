@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../services/account_create_service.dart';
-import '../../services/auth_service.dart';
-import '../../services/firestore_storage_service.dart';
 import '../../providers/user_provider.dart';
-import '../../screens/user/home_screen.dart';
-import '../login/user_login_page.dart';
+import '../../routes/navigation_helper.dart';
+import '../../constants/routes.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class UserRegisterPage extends StatefulWidget {
@@ -26,7 +28,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   final telIdController = TextEditingController();
 
   bool loading = false;
-  String message = '';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -53,37 +54,44 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     final confirmPassword = confirmPasswordController.text.trim();
     final telId = telIdController.text.trim();
 
+    // バリデーション
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty || telId.isEmpty) {
-      setState(() => message = "必須項目が未入力です");
+      context.showErrorSnackBar('必須項目が未入力です');
       return;
     }
 
     if (password != confirmPassword) {
-      setState(() => message = "パスワードが一致しません");
+      context.showErrorSnackBar('パスワードが一致しません');
       return;
     }
 
-    if (password.length < 6) {
-      setState(() => message = "パスワードは6文字以上にしてください");
+    if (password.length < AppConstants.passwordMinLength) {
+      context.showErrorSnackBar(AppConstants.validationPasswordShort);
       return;
     }
 
-    final user = User(
-      phoneNumber: telId,
-      id: email,
-      firstName: firstNameController.text.trim(),
-      lastName: lastNameController.text.trim(),
-      nickname: nicknameController.text.trim(),
-      rate: 0.0,
-      premium: false,
-      roomCount: 0,
-      createdAt: DateTime.now(),
-      lastUpdatedPremium: null,
-      deletedAt: null,
-    );
+    if (!email.contains('@')) {
+      context.showErrorSnackBar(AppConstants.validationEmailInvalid);
+      return;
+    }
+
+    setState(() => loading = true);
 
     try {
-      setState(() => loading = true);
+      // ユーザーオブジェクト作成
+      final user = User(
+        phoneNumber: telId,
+        id: email,
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
+        nickname: nicknameController.text.trim(),
+        rate: 0.0,
+        premium: false,
+        roomCount: 0,
+        createdAt: DateTime.now(),
+        lastUpdatedPremium: null,
+        deletedAt: null,
+      );
 
       logger.start('registerService.register() 実行中...', name: _logName);
       await registerService.register(user, password);
@@ -91,44 +99,45 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (!mounted) return;
 
-      // 🔧 修正: emailパラメータを渡す
+      // UserProviderにユーザー情報を読み込み
       logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
-        setState(() {
-          message = "ユーザー情報の読み込みに失敗しました";
-          loading = false;
-        });
+        
+        if (!mounted) return;
+        
+        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
+        setState(() => loading = false);
         return;
       }
 
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
 
-      final authService = context.read<AuthService>();
-      final storageService = context.read<FirestoreStorageService>();
+      if (!mounted) return;
 
+      // 成功メッセージ
+      context.showSuccessSnackBar('登録が完了しました！');
+
+      // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(
-            authService: authService,
-            storageService: storageService,
-          ),
-        ),
+      
+      await Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.home,
+        (route) => false,
       );
 
       logger.section('registerUser() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('登録エラー: $e', name: _logName, error: e, stackTrace: stack);
-      setState(() => message = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+      
+      if (!mounted) return;
+      
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      context.showErrorSnackBar(errorMessage);
+      setState(() => loading = false);
     }
   }
 
@@ -149,13 +158,13 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(AppConstants.defaultPadding),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.2),
@@ -167,32 +176,29 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Whispin',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  Text(
+                    AppConstants.appName,
+                    style: AppTextStyles.displayMedium.copyWith(
+                      color: AppColors.textWhite,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '新規登録',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white70,
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: AppColors.textWhite.withOpacity(0.9),
                     ),
                   ),
                   const SizedBox(height: 48),
 
                   // フォームカード
                   Card(
-                    elevation: 8,
+                    elevation: AppConstants.cardElevation * 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(AppConstants.defaultPadding),
                       child: Column(
                         children: [
                           _buildTextField(
@@ -237,7 +243,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                           const SizedBox(height: 16),
                           _buildTextField(
                             controller: passwordController,
-                            label: 'パスワード（6文字以上）',
+                            label: 'パスワード（${AppConstants.passwordMinLength}文字以上）',
                             icon: Icons.lock_outlined,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
@@ -274,34 +280,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                           ),
                           const SizedBox(height: 24),
 
-                          // エラーメッセージ
-                          if (message.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.red.shade200),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.error_outline, color: Colors.red.shade700),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      message,
-                                      style: TextStyle(color: Colors.red.shade700),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
                           // 登録ボタン
                           SizedBox(
                             width: double.infinity,
-                            height: 56,
+                            height: AppConstants.buttonHeight,
                             child: ElevatedButton(
                               onPressed: loading ? null : registerUser,
                               style: ElevatedButton.styleFrom(
@@ -309,21 +291,22 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                                 shadowColor: Colors.transparent,
                                 padding: EdgeInsets.zero,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.defaultBorderRadius,
+                                  ),
                                 ),
                               ),
                               child: Ink(
                                 decoration: BoxDecoration(
                                   gradient: loading
                                       ? null
-                                      : const LinearGradient(
-                                          colors: [
-                                            Color(0xFF667EEA),
-                                            Color(0xFF764BA2),
-                                          ],
-                                        ),
-                                  color: loading ? Colors.grey.shade300 : null,
-                                  borderRadius: BorderRadius.circular(12),
+                                      : AppColors.primaryGradient,
+                                  color: loading 
+                                      ? AppColors.divider 
+                                      : null,
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.defaultBorderRadius,
+                                  ),
                                 ),
                                 child: Container(
                                   alignment: Alignment.center,
@@ -336,13 +319,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                                             color: Colors.white,
                                           ),
                                         )
-                                      : const Text(
+                                      : Text(
                                           '登録',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
+                                          style: AppTextStyles.buttonLarge,
                                         ),
                                 ),
                               ),
@@ -357,7 +336,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
                   // ログインリンク
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(AppConstants.defaultPadding - 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
@@ -365,15 +344,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                     child: InkWell(
                       onTap: loading
                           ? null
-                          : () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const UserLoginPage(),
-                                ),
-                              );
-                            },
-                      borderRadius: BorderRadius.circular(12),
+                          : () => NavigationHelper.toLogin(context),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 12,
@@ -381,18 +355,19 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.defaultBorderRadius,
+                          ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.login, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
+                            const Icon(Icons.login, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
                             Text(
                               'すでにアカウントをお持ちの方はこちら',
-                              style: TextStyle(
+                              style: AppTextStyles.bodyMedium.copyWith(
                                 color: Colors.white,
-                                fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -428,11 +403,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         prefixIcon: Icon(icon),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
-        filled: true,
-        fillColor: Colors.grey.shade50,
       ),
+      style: AppTextStyles.bodyLarge,
     );
   }
 }

@@ -5,7 +5,13 @@ import '../../services/chat_service.dart';
 import '../../services/storage_service.dart';
 import '../../models/chat_room.dart';
 import '../../widgets/evaluation_dialog.dart';
-import 'home_screen.dart';
+import '../../routes/navigation_helper.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
+import '../../extensions/datetime_extensions.dart';
+import '../../utils/app_logger.dart';
 
 class ChatScreen extends StatefulWidget {
   final String roomId;
@@ -30,14 +36,14 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _updateTimer;
   ChatRoom? _currentRoom;
   bool _partnerHasLeft = false;
+  static const String _logName = 'ChatScreen';
 
   @override
   void initState() {
     super.initState();
     _loadRoom();
     if (_currentRoom != null) {
-      widget.chatService
-          .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
+      widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
     _startUpdateTimer();
   }
@@ -48,13 +54,12 @@ class _ChatScreenState extends State<ChatScreen> {
         (r) => r.id == widget.roomId,
       );
     } catch (e) {
-      print('❌ [ChatScreen] Error loading room: $e');
+      logger.error('ルーム読み込みエラー: $e', name: _logName, error: e);
     }
   }
 
   // ===== コメント取得ロジック =====
 
-  /// 自分のコメントを取得
   String _getMyComment() {
     if (_currentRoom == null) return '';
 
@@ -69,27 +74,24 @@ class _ChatScreenState extends State<ChatScreen> {
     return '';
   }
 
-  /// 相手のコメントを取得
   String _getPartnerComment() {
-    if (_currentRoom == null) return 'ユーザーを待っています...';
+    if (_currentRoom == null) return AppConstants.waitingForUser;
 
     final currentUserId = widget.authService.currentUser?.id ?? '';
 
     if (_currentRoom!.id1 == currentUserId) {
-      // 自分が id1 なら、相手は id2
-      return _currentRoom!.comment2 ?? 'ユーザーを待っています...';
+      return _currentRoom!.comment2 ?? AppConstants.waitingForUser;
     } else if (_currentRoom!.id2 == currentUserId) {
-      // 自分が id2 なら、相手は id1
-      return _currentRoom!.comment1 ?? 'ユーザーを待っています...';
+      return _currentRoom!.comment1 ?? AppConstants.waitingForUser;
     }
 
-    return 'ユーザーを待っています...';
+    return AppConstants.waitingForUser;
   }
 
   // ===== 更新タイマー =====
 
   void _startUpdateTimer() {
-    _updateTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _updateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -105,24 +107,22 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
-      // 🔧 修正: startedAt が遠い未来 = まだチャット開始していない(待機中)
+      // チャット開始チェック
       final isChatStarted = _currentRoom!.startedAt.isBefore(
-        DateTime.now().add(Duration(days: 300))
+        DateTime.now().add(const Duration(days: 300))
       );
 
       if (!isChatStarted) {
-        // チャット開始前(待機中)は退出監視しない
         setState(() {});
         return;
       }
 
-      // 🔧 ここからはチャット開始後の処理
+      // 相手の退出チェック
       final currentUserId = widget.authService.currentUser?.id ?? '';
       final partnerId = _currentRoom!.id1 == currentUserId
           ? _currentRoom!.id2
           : _currentRoom!.id1;
 
-      // 相手が退出したかチェック
       if ((partnerId?.isEmpty ?? true) && !_partnerHasLeft) {
         setState(() {
           _partnerHasLeft = true;
@@ -131,8 +131,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       // 時間切れチェック
-      final now = DateTime.now();
-      if (_currentRoom!.expiresAt.isBefore(now)) {
+      if (_currentRoom!.expiresAt.isBefore(DateTime.now())) {
         timer.cancel();
         _handleRoomExpired();
         return;
@@ -145,27 +144,24 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== ルーム状態ハンドラー =====
 
   void _handleRoomDisappeared() {
-    showDialog(
-      context: context,
+    // 🔧 拡張メソッド使用
+    context.showCustomDialog(
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('ルームが削除されました'),
-        content: Text('このルームは削除されました。'),
+      child: AlertDialog(
+        title: const Text('ルームが削除されました'),
+        content: const Text('このルームは削除されました。'),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => HomeScreen(
-                    authService: widget.authService,
-                    storageService: widget.storageService,
-                  ),
-                ),
-                (route) => false,
+              context.pop(); // ダイアログを閉じる
+              // 🔧 NavigationHelper使用
+              NavigationHelper.toHome(
+                context,
+                authService: widget.authService,
+                storageService: widget.storageService,
               );
             },
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -175,28 +171,27 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleRoomExpired() {
     if (!mounted) return;
 
-    showDialog(
-      context: context,
+    // 🔧 拡張メソッド使用
+    context.showCustomDialog(
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('チャット時間終了'),
-        content: Text('10分間のチャット時間が終了しました。'),
+      child: AlertDialog(
+        title: const Text('チャット時間終了'),
+        content: Text(
+          '${AppConstants.defaultChatDurationMinutes}分間のチャット時間が終了しました。'
+        ),
         actions: [
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              context.pop(); // ダイアログを閉じる
               await _showEvaluationDialog();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => HomeScreen(
-                    authService: widget.authService,
-                    storageService: widget.storageService,
-                  ),
-                ),
-                (route) => false,
+              // 🔧 NavigationHelper使用
+              NavigationHelper.toHome(
+                context,
+                authService: widget.authService,
+                storageService: widget.storageService,
               );
             },
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -204,16 +199,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showPartnerLeftDialog() {
-    showDialog(
-      context: context,
+    context.showCustomDialog(
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('相手が退出しました'),
-        content: Text('退出ボタンを押してください'),
+      child: AlertDialog(
+        title: const Text('相手が退出しました'),
+        content: const Text('退出ボタンを押してください'),
         actions: [
           TextButton(
             onPressed: _handleLeave,
-            child: Text('退出する'),
+            child: const Text('退出する'),
           ),
         ],
       ),
@@ -223,20 +217,19 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== タイマー関連 =====
 
   String _formatRemainingTime() {
-    if (_currentRoom == null) return '待機中';
+    if (_currentRoom == null) return AppConstants.waitingStatus;
 
-    // チャット開始前(待機中)かチェック
+    // チャット開始前チェック
     final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(Duration(days: 300))
+      DateTime.now().add(const Duration(days: 300))
     );
 
     if (!isChatStarted) {
-      return '待機中';
+      return AppConstants.waitingStatus;
     }
 
-    // チャット開始後は残り時間を表示
-    final now = DateTime.now();
-    final remaining = _currentRoom!.expiresAt.difference(now);
+    // 🔧 DateTime拡張メソッド使用
+    final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
 
     if (remaining.isNegative) {
       return '0:00';
@@ -250,16 +243,14 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _canRequestExtension() {
     if (_currentRoom == null) return false;
 
-    // チャット開始前は延長ボタンを表示しない
     final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(Duration(days: 300))
+      DateTime.now().add(const Duration(days: 300))
     );
 
     if (!isChatStarted) return false;
 
-    final now = DateTime.now();
-    final remaining = _currentRoom!.expiresAt.difference(now);
-    return remaining.inMinutes <= 2 &&
+    final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
+    return remaining.inMinutes <= AppConstants.extensionRequestThresholdMinutes &&
         _currentRoom!.extensionCount < _currentRoom!.extension;
   }
 
@@ -267,15 +258,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-    if (_messageController.text.trim().length > 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('メッセージは100文字以内で入力してください')),
+    
+    if (_messageController.text.trim().length > AppConstants.messageMaxLength) {
+      // 🔧 拡張メソッド使用
+      context.showWarningSnackBar(
+        'メッセージは${AppConstants.messageMaxLength}文字以内で入力してください'
       );
       return;
     }
 
     try {
-      // ChatService.sendComment() を使用
       await widget.chatService.sendComment(
         widget.roomId,
         widget.authService.currentUser!.id,
@@ -283,13 +275,13 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       _messageController.clear();
-      _loadRoom(); // ルーム情報を再読み込み
+      _loadRoom();
       setState(() {});
+      
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('送信エラー: $e')),
-      );
+      // 🔧 拡張メソッド使用
+      context.showErrorSnackBar('送信エラー: $e');
     }
   }
 
@@ -303,14 +295,12 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('延長リクエストを送信しました')),
-      );
+      // 🔧 拡張メソッド使用
+      context.showSuccessSnackBar('延長リクエストを送信しました');
+      
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('エラー: $e')),
-      );
+      context.showErrorSnackBar('エラー: $e');
     }
   }
 
@@ -322,14 +312,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (mounted) {
       await _showEvaluationDialog();
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(
-            authService: widget.authService,
-            storageService: widget.storageService,
-          ),
-        ),
-        (route) => false,
+      // 🔧 NavigationHelper使用
+      NavigationHelper.toHome(
+        context,
+        authService: widget.authService,
+        storageService: widget.storageService,
       );
     }
   }
@@ -347,10 +334,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (partnerId.isEmpty) return;
 
-    await showDialog(
-      context: context,
+    // 🔧 拡張メソッド使用
+    await context.showCustomDialog(
       barrierDismissible: false,
-      builder: (context) => EvaluationDialog(
+      child: EvaluationDialog(
         partnerId: partnerId,
         currentUserId: currentUserId,
         storageService: widget.storageService,
@@ -373,47 +360,48 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     if (_currentRoom == null) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
-    // チャット開始前かチェック
+    // チャット開始前チェック
     final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(Duration(days: 300))
+      DateTime.now().add(const Duration(days: 300))
     );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentRoom!.topic),
-        backgroundColor: Color(0xFF667EEA),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false,
         actions: [
-          // タイマー表示（待機中は「待機中」と表示）
+          // タイマー表示
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Center(
               child: Text(
                 _formatRemainingTime(),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  // 待機中は色を変える（オプション）
-                  color: isChatStarted ? Colors.white : Colors.white70,
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: isChatStarted 
+                      ? AppColors.textWhite 
+                      : AppColors.textWhite.withOpacity(0.7),
                 ),
               ),
             ),
           ),
-          // 延長ボタン（チャット開始後かつ条件を満たす場合のみ表示）
+          // 延長ボタン
           if (_canRequestExtension())
             IconButton(
-              icon: Icon(Icons.access_time),
+              icon: const Icon(Icons.access_time),
               onPressed: _requestExtension,
               tooltip: '延長リクエスト',
             ),
           // 退出ボタン
           IconButton(
-            icon: Icon(Icons.exit_to_app),
+            icon: const Icon(Icons.exit_to_app),
             onPressed: _handleLeave,
             tooltip: '退出',
           ),
@@ -421,21 +409,21 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // 待機中メッセージを表示（オプション）
+          // 待機中メッセージ
           if (!isChatStarted)
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(12),
-              color: Colors.orange.shade100,
+              padding: const EdgeInsets.all(12),
+              color: AppColors.warning.withOpacity(0.1),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.hourglass_empty, color: Colors.orange.shade700),
-                  SizedBox(width: 8),
+                  Icon(Icons.hourglass_empty, color: AppColors.warning),
+                  const SizedBox(width: 8),
                   Text(
                     '相手の参加を待っています...',
-                    style: TextStyle(
-                      color: Colors.orange.shade700,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.warning,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -450,42 +438,43 @@ class _ChatScreenState extends State<ChatScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFF667EEA).withOpacity(0.1),
-                    Color(0xFF764BA2).withOpacity(0.1),
+                    AppColors.backgroundLight,
+                    AppColors.backgroundSecondary,
                   ],
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(AppConstants.defaultPadding),
                 child: Column(
                   children: [
                     // 相手のメッセージパネル
                     Expanded(
                       child: Card(
-                        elevation: 4,
-                        color: Colors.blue.shade50,
+                        elevation: AppConstants.cardElevation,
+                        color: AppColors.bubbleAdmin,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.defaultBorderRadius,
+                          ),
                         ),
                         child: Container(
-                          padding: EdgeInsets.all(16),
+                          padding: EdgeInsets.all(AppConstants.defaultPadding),
                           width: double.infinity,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '相手のメッセージ',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                style: AppTextStyles.titleSmall.copyWith(
+                                  color: AppColors.info,
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
                                     _getPartnerComment(),
-                                    style: TextStyle(fontSize: 16),
+                                    style: AppTextStyles.bodyLarge,
                                   ),
                                 ),
                               ),
@@ -494,35 +483,36 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
                     // 自分のメッセージパネル
                     Expanded(
                       child: Card(
-                        elevation: 4,
-                        color: Colors.purple.shade50,
+                        elevation: AppConstants.cardElevation,
+                        color: AppColors.primary.withOpacity(0.1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.defaultBorderRadius,
+                          ),
                         ),
                         child: Container(
-                          padding: EdgeInsets.all(16),
+                          padding: EdgeInsets.all(AppConstants.defaultPadding),
                           width: double.infinity,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'あなたのメッセージ',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple.shade700,
+                                style: AppTextStyles.titleSmall.copyWith(
+                                  color: AppColors.primary,
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Expanded(
                                 child: SingleChildScrollView(
                                   child: Text(
                                     _getMyComment(),
-                                    style: TextStyle(fontSize: 16),
+                                    style: AppTextStyles.bodyLarge,
                                   ),
                                 ),
                               ),
@@ -539,14 +529,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
           // メッセージ入力欄
           Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black12,
+                  color: AppColors.shadowLight,
                   blurRadius: 4,
-                  offset: Offset(0, -2),
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
@@ -560,27 +550,24 @@ class _ChatScreenState extends State<ChatScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      suffixText: '${_messageController.text.length}/100',
+                      suffixText: '${_messageController.text.length}/${AppConstants.messageMaxLength}',
                     ),
-                    maxLength: 100,
-                    buildCounter: (context,
-                            {required currentLength,
-                            required isFocused,
-                            maxLength}) =>
-                        null,
+                    maxLength: AppConstants.messageMaxLength,
+                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
                     onChanged: (value) => setState(() {}),
                     onSubmitted: (_) => _sendMessage(),
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: Color(0xFF667EEA),
+                  backgroundColor: AppColors.primary,
                   child: IconButton(
-                    icon: Icon(Icons.send, color: Colors.white),
+                    icon: Icon(Icons.send, color: AppColors.textWhite),
                     onPressed: _sendMessage,
                   ),
                 ),
