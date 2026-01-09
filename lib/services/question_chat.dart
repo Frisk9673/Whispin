@@ -34,7 +34,7 @@ class QuestionChatService {
 
   Future<void> sendMessage({
     required String chatId,
-    required String text,
+    required String text, required String senderRole,
   }) async {
     final msgRef = _db
         .collection("QuestionChat")
