@@ -10,6 +10,8 @@ import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_storage_service.dart';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
@@ -55,7 +57,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     final telId = telIdController.text.trim();
 
     // バリデーション
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty || telId.isEmpty) {
+    if (email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty ||
+        telId.isEmpty) {
       context.showErrorSnackBar('必須項目が未入力です');
       return;
     }
@@ -106,9 +111,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
-        
+
         if (!mounted) return;
-        
+
         context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
         setState(() => loading = false);
         return;
@@ -121,20 +126,27 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       // 成功メッセージ
       context.showSuccessSnackBar('登録が完了しました！');
 
+      final authService = context.read<AuthService>();
+      final storageService = context.read<FirestoreStorageService>();
+
       // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
-      
+
       await Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.home,
         (route) => false,
+        arguments: {
+          'authService': authService,
+          'storageService': storageService,
+        },
       );
 
       logger.section('registerUser() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('登録エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       if (!mounted) return;
-      
+
       final errorMessage = e.toString().replaceAll('Exception: ', '');
       context.showErrorSnackBar(errorMessage);
       setState(() => loading = false);
@@ -243,7 +255,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                           const SizedBox(height: 16),
                           _buildTextField(
                             controller: passwordController,
-                            label: 'パスワード（${AppConstants.passwordMinLength}文字以上）',
+                            label:
+                                'パスワード（${AppConstants.passwordMinLength}文字以上）',
                             icon: Icons.lock_outlined,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
@@ -273,7 +286,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
                                 });
                               },
                             ),
@@ -301,9 +315,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                                   gradient: loading
                                       ? null
                                       : AppColors.primaryGradient,
-                                  color: loading 
-                                      ? AppColors.divider 
-                                      : null,
+                                  color: loading ? AppColors.divider : null,
                                   borderRadius: BorderRadius.circular(
                                     AppConstants.defaultBorderRadius,
                                   ),
@@ -362,7 +374,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.login, color: Colors.white, size: 20),
+                            const Icon(Icons.login,
+                                color: Colors.white, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'すでにアカウントをお持ちの方はこちら',
