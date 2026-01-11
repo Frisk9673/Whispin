@@ -226,284 +226,245 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = userProvider.currentUser;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundLight,
-              AppColors.backgroundSecondary,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              CommonHeader(
-                onSettingsPressed: () {
-                  logger.info('設定ボタン押下', name: _logName);
-                },
-                onProfilePressed: () {
-                  logger.info('プロフィールボタン押下（自画面）', name: _logName);
-                },
-              ),
-              Expanded(
-                child: userProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : SingleChildScrollView(
-                        padding: EdgeInsets.all(AppConstants.defaultPadding),
-                        child: Column(
-                          children: [
-                            // プロフィール画像カード
-                            Card(
-                              elevation: AppConstants.cardElevation,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding:
-                                    EdgeInsets.all(AppConstants.defaultPadding),
-                                child: Column(
-                                  children: [
-                                    Stack(
-                                      children: [
-                                        Container(
-                                          width: AppConstants.avatarSize,
-                                          height: AppConstants.avatarSize,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            gradient: AppColors.primaryGradient,
-                                            border: Border.all(
-                                              color: AppColors.cardBackground,
-                                              width: 4,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: AppColors.primary
-                                                    .withOpacity(0.3),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ],
-                                          ),
-                                          child: _selectedImagePath != null
-                                              ? ClipOval(
-                                                  child: Image(
-                                                    image:
-                                                        _buildProfileImage()!,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  Icons.account_circle,
-                                                  size: AppConstants.avatarSize,
-                                                  color: AppColors.textWhite,
-                                                ),
-                                        ),
-                                        Positioned(
-                                          bottom: 0,
-                                          right: 0,
-                                          child: InkWell(
-                                            onTap: _pickImage,
-                                            child: Container(
-                                              width: 44,
-                                              height: 44,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: AppColors.primary,
-                                                border: Border.all(
-                                                  color:
-                                                      AppColors.cardBackground,
-                                                  width: 3,
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color:
-                                                        AppColors.shadowMedium,
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Icon(
-                                                Icons.camera_alt,
-                                                color: AppColors.textWhite,
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      currentUser?.displayName ??
-                                          AppConstants.defaultNickname,
-                                      style: AppTextStyles.headlineMedium,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // ユーザー情報カード
-                            Card(
-                              elevation: AppConstants.cardElevation,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  children: [
-                                    _buildInfoRow(
-                                      Icons.badge,
-                                      'ニックネーム',
-                                      currentUser?.nickname ??
-                                          AppConstants.defaultNickname,
-                                    ),
-                                    const Divider(height: 24),
-                                    _buildInfoRow(
-                                      Icons.person,
-                                      '本名',
-                                      currentUser?.fullName ??
-                                          AppConstants.defaultNickname,
-                                    ),
-                                    const Divider(height: 24),
-                                    _buildInfoRow(
-                                      Icons.phone,
-                                      '電話番号',
-                                      currentUser?.phoneNumber ??
-                                          AppConstants.defaultNickname,
-                                    ),
-                                    const Divider(height: 24),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: userProvider.isPremium
-                                                ? AppColors.primary
-                                                    .withOpacity(0.1)
-                                                : AppColors.inputBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            userProvider.isPremium
-                                                ? Icons.diamond
-                                                : Icons.person,
-                                            color: userProvider.isPremium
-                                                ? AppColors.primary
-                                                : AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '会員ステータス',
-                                                style:
-                                                    AppTextStyles.labelMedium,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                userProvider.isPremium
-                                                    ? 'プレミアム会員'
-                                                    : '通常会員',
-                                                style: AppTextStyles.titleMedium
-                                                    .copyWith(
-                                                  color: userProvider.isPremium
-                                                      ? AppColors.primary
-                                                      : AppColors.textSecondary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // アクションボタン群
-                            _buildActionButton(
-                              icon: userProvider.isPremium
-                                  ? Icons.diamond_outlined
-                                  : Icons.diamond,
-                              label: userProvider.isPremium
-                                  ? 'プレミアム解約'
-                                  : 'プレミアム加入',
-                              gradient: AppColors.primaryGradient,
-                              onTap: () =>
-                                  _handlePremiumButton(context, userProvider),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _buildActionButton(
-                              icon: Icons.support_agent,
-                              label: 'お問い合わせ',
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.info.lighten(0.15),
-                                  AppColors.info.darken(0.15),
-                                ],
-                              ),
-                              onTap: () {
-                                NavigationHelper.toUserChat(context);
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _buildActionButton(
-                              icon: Icons.logout,
-                              label: 'ログアウト',
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.error.lighten(0.15),
-                                  AppColors.error.darken(0.15),
-                                ],
-                              ),
-                              onTap: _logout,
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _buildActionButton(
-                              icon: Icons.delete_forever,
-                              label: 'アカウント削除',
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.grey.shade600,
-                                  Colors.grey.shade800,
-                                ],
-                              ),
-                              onTap: () async {
-                                logger.info('アカウント削除ボタン押下', name: _logName);
-                                // ✅ context拡張メソッド使用
-                                context.showInfoSnackBar('この機能は準備中です');
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
+      // ✅ 統一ヘッダーを使用
+      appBar: CommonHeader(
+        title: 'プロフィール',
+        showNotifications: true,
+        showProfile: false, // プロフィール画面なので自分自身のアイコンは非表示
+        showPremiumBadge: true,
       ),
+      body: userProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(AppConstants.defaultPadding),
+              child: Column(
+                children: [
+                  // プロフィール画像カード
+                  Card(
+                    elevation: AppConstants.cardElevation,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppConstants.defaultPadding),
+                      child: Column(
+                        children: [
+                          Stack(
+                            children: [
+                              Container(
+                                width: AppConstants.avatarSize,
+                                height: AppConstants.avatarSize,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppColors.primaryGradient,
+                                  border: Border.all(
+                                    color: AppColors.cardBackground,
+                                    width: 4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: _selectedImagePath != null
+                                    ? ClipOval(
+                                        child: Image(
+                                          image: _buildProfileImage()!,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.account_circle,
+                                        size: AppConstants.avatarSize,
+                                        color: AppColors.textWhite,
+                                      ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: InkWell(
+                                  onTap: _pickImage,
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.primary,
+                                      border: Border.all(
+                                        color: AppColors.cardBackground,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.shadowMedium,
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      color: AppColors.textWhite,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            currentUser?.displayName ??
+                                AppConstants.defaultNickname,
+                            style: AppTextStyles.headlineMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ユーザー情報カード
+                  Card(
+                    elevation: AppConstants.cardElevation,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _buildInfoRow(
+                            Icons.badge,
+                            'ニックネーム',
+                            currentUser?.nickname ??
+                                AppConstants.defaultNickname,
+                          ),
+                          const Divider(height: 24),
+                          _buildInfoRow(
+                            Icons.person,
+                            '本名',
+                            currentUser?.fullName ??
+                                AppConstants.defaultNickname,
+                          ),
+                          const Divider(height: 24),
+                          _buildInfoRow(
+                            Icons.phone,
+                            '電話番号',
+                            currentUser?.phoneNumber ??
+                                AppConstants.defaultNickname,
+                          ),
+                          const Divider(height: 24),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: userProvider.isPremium
+                                      ? AppColors.primary.withOpacity(0.1)
+                                      : AppColors.inputBackground,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  userProvider.isPremium
+                                      ? Icons.diamond
+                                      : Icons.person,
+                                  color: userProvider.isPremium
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('会員ステータス',
+                                        style: AppTextStyles.labelMedium),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      userProvider.isPremium
+                                          ? 'プレミアム会員'
+                                          : '通常会員',
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: userProvider.isPremium
+                                            ? AppColors.primary
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // アクションボタン群
+                  _buildActionButton(
+                    icon: userProvider.isPremium
+                        ? Icons.diamond_outlined
+                        : Icons.diamond,
+                    label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
+                    gradient: AppColors.primaryGradient,
+                    onTap: () => _handlePremiumButton(context, userProvider),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildActionButton(
+                    icon: Icons.support_agent,
+                    label: 'お問い合わせ',
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.info.lighten(0.15),
+                        AppColors.info.darken(0.15),
+                      ],
+                    ),
+                    onTap: () => NavigationHelper.toUserChat(context),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildActionButton(
+                    icon: Icons.logout,
+                    label: 'ログアウト',
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.error.lighten(0.15),
+                        AppColors.error.darken(0.15),
+                      ],
+                    ),
+                    onTap: _logout,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildActionButton(
+                    icon: Icons.delete_forever,
+                    label: 'アカウント削除',
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.grey.shade600,
+                        Colors.grey.shade800,
+                      ],
+                    ),
+                    onTap: () {
+                      logger.info('アカウント削除ボタン押下', name: _logName);
+                      context.showInfoSnackBar('この機能は準備中です');
+                    },
+                  ),
+                ],
+              ),
+            ),
     );
   }
 

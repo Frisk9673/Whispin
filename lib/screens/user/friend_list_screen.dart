@@ -54,7 +54,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
       logger.start('Repository経由でフレンド一覧取得中...', name: _logName);
 
       // Repository経由でフレンド一覧を取得
-      final friendships = await _friendshipRepository.findUserFriends(currentUserEmail);
+      final friendships =
+          await _friendshipRepository.findUserFriends(currentUserEmail);
 
       logger.success('フレンドシップ取得: ${friendships.length}件', name: _logName);
 
@@ -106,7 +107,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
       logger.success('フレンド一覧表示準備完了: ${_friends.length}人', name: _logName);
       logger.section('_loadFriends() 完了', name: _logName);
     } catch (e, stack) {
-      logger.error('フレンド一覧取得エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('フレンド一覧取得エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
       _showError('フレンド一覧の取得に失敗しました: $e');
     }
@@ -186,144 +188,124 @@ class _FriendListScreenState extends State<FriendListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ 統一ヘッダーを使用
+      appBar: CommonHeader(
+        title: 'フレンド一覧',
+        showNotifications: true,
+        showProfile: true,
+        showPremiumBadge: true,
+      ),
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CommonHeader(
-              onProfilePressed: () {},
-              onSettingsPressed: () {},
-            ),
-            Padding(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
-              child: Row(
-                children: const [
-                  Icon(
-                    Icons.people,
-                    size: 32,
-                    color: Colors.black87,
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'フレンド一覧',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    )
-                  : _friends.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.person_off,
-                                size: 80,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'フレンドがいません',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: AppConstants.defaultPadding),
-                          itemCount: _friends.length,
-                          itemBuilder: (context, index) {
-                            final friend = _friends[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: AppConstants.cardElevation,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-                                side: BorderSide(
-                                  color: AppColors.border,
-                                  width: 2,
-                                ),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                leading: CircleAvatar(
-                                  backgroundColor: AppColors.primary,
-                                  child: Text(
-                                    friend['name']![0].toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  friend['name']!,
-                                  style: AppTextStyles.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  friend['id']!,
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(
-                                    Icons.person_remove,
-                                    color: AppColors.error,
-                                  ),
-                                  onPressed: () => _removeFriend(index),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: BorderSide(
-                      color: AppColors.border,
-                      width: 3,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.arrow_back,
-                    size: 40,
-                    color: AppColors.textPrimary,
+      body: Column(
+        children: [
+          // サブヘッダー（アイコン付きタイトル）
+          Padding(
+            padding: EdgeInsets.all(AppConstants.defaultPadding),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.people,
+                  size: 32,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'フレンド一覧',
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // フレンドリスト
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  )
+                : _friends.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_off,
+                              size: 80,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'フレンドがいません',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppConstants.defaultPadding,
+                        ),
+                        itemCount: _friends.length,
+                        itemBuilder: (context, index) {
+                          final friend = _friends[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: AppConstants.cardElevation,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius,
+                              ),
+                              side: BorderSide(
+                                color: AppColors.border,
+                                width: 2,
+                              ),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: CircleAvatar(
+                                backgroundColor: AppColors.primary,
+                                child: Text(
+                                  friend['name']![0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                friend['name']!,
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                friend['id']!,
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.person_remove,
+                                  color: AppColors.error,
+                                ),
+                                onPressed: () => _removeFriend(index),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }

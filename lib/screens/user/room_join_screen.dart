@@ -21,7 +21,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   final TextEditingController _roomIdController = TextEditingController();
   final _roomRepository = ChatRoomRepository();
   final _userRepository = UserRepository();
-  
+
   bool _isLoading = false;
   static const String _logName = 'RoomJoinScreen';
 
@@ -49,7 +49,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // 現在のユーザー取得
       final userProvider = context.read<UserProvider>();
       final currentUser = userProvider.currentUser;
-      
+
       if (currentUser == null) {
         if (!mounted) return;
         // ✅ context拡張メソッド使用
@@ -64,7 +64,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // ルーム存在チェック
       logger.start('ルーム情報取得中...', name: _logName);
       final room = await _roomRepository.findById(roomId);
-      if(!mounted) return;
+      if (!mounted) return;
 
       if (room == null) {
         logger.warning('ルームが見つかりません', name: _logName);
@@ -151,7 +151,6 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // 仮で前の画面に戻る
       // ✅ context拡張メソッド使用
       context.pop();
-
     } catch (e, stack) {
       logger.error(
         'ルーム参加エラー: $e',
@@ -159,7 +158,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         error: e,
         stackTrace: stack,
       );
-      
+
       setState(() => _isLoading = false);
       // ✅ context拡張メソッド使用
       context.showErrorSnackBar('参加に失敗しました: $e');
@@ -169,182 +168,150 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ 統一ヘッダーを使用
+      appBar: CommonHeader(
+        title: '部屋に参加',
+        showNotifications: true,
+        showProfile: true,
+        showPremiumBadge: true,
+      ),
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CommonHeader(
-              onProfilePressed: () {},
-              onSettingsPressed: () {},
-            ),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(AppConstants.defaultPadding),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.meeting_room,
-                        size: 80,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(AppConstants.defaultPadding),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.meeting_room,
+                size: 80,
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '部屋に参加',
+                style: AppTextStyles.headlineLarge,
+              ),
+              const SizedBox(height: 40),
+
+              // ルームID入力
+              SizedBox(
+                width: 400,
+                child: TextField(
+                  controller: _roomIdController,
+                  enabled: !_isLoading,
+                  decoration: InputDecoration(
+                    labelText: 'ルームID',
+                    hintText: 'ルームIDを入力',
+                    prefixIcon: Icon(Icons.vpn_key, color: AppColors.primary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
+                        color: AppColors.border,
+                        width: 2,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
+                        color: AppColors.border,
+                        width: 2,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
                         color: AppColors.primary,
+                        width: 2,
                       ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '部屋に参加',
-                        style: AppTextStyles.headlineLarge,
-                      ),
-                      const SizedBox(height: 40),
-                      
-                      // ルームID入力
-                      SizedBox(
-                        width: 400,
-                        child: TextField(
-                          controller: _roomIdController,
-                          enabled: !_isLoading,
-                          decoration: InputDecoration(
-                            labelText: 'ルームID',
-                            hintText: 'ルームIDを入力',
-                            prefixIcon: Icon(Icons.vpn_key, color: AppColors.primary),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                              borderSide: BorderSide(
-                                color: AppColors.border,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                              borderSide: BorderSide(
-                                color: AppColors.border,
-                                width: 2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          style: AppTextStyles.bodyLarge,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // 参加ボタン
-                      SizedBox(
-                        width: 400,
-                        height: AppConstants.buttonHeight,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _joinRoom,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  '参加する',
-                                  style: AppTextStyles.buttonLarge,
-                                ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // 情報カード
-                      Card(
-                        elevation: AppConstants.cardElevation,
-                        color: AppColors.backgroundLight,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.defaultBorderRadius,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppConstants.defaultPadding - 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: AppColors.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '参加について',
-                                    style: AppTextStyles.titleMedium.copyWith(
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInfoItem('ルームIDは作成者から共有されます'),
-                              _buildInfoItem('参加すると${AppConstants.defaultChatDurationMinutes}分間のチャットが開始されます'),
-                              _buildInfoItem('延長は残り${AppConstants.extensionRequestThresholdMinutes}分以下で可能'),
-                              _buildInfoItem('最大${AppConstants.defaultExtensionLimit}回まで延長可能（通常会員）'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
+                  style: AppTextStyles.bodyLarge,
                 ),
               ),
-            ),
-            
-            // 戻るボタン
-            Padding(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
-              child: SizedBox(
-                width: 80,
-                height: 80,
+              const SizedBox(height: 24),
+
+              // 参加ボタン
+              SizedBox(
+                width: 400,
+                height: AppConstants.buttonHeight,
                 child: ElevatedButton(
-                  // ✅ context拡張メソッド使用
-                  onPressed: _isLoading ? null : () => context.pop(),
+                  onPressed: _isLoading ? null : _joinRoom,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: BorderSide(
-                      color: AppColors.border,
-                      width: 3,
-                    ),
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
                       ),
                     ),
                   ),
-                  child: Icon(
-                    Icons.arrow_back,
-                    size: 40,
-                    color: AppColors.textPrimary,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          '参加する',
+                          style: AppTextStyles.buttonLarge,
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // 情報カード
+              Card(
+                elevation: AppConstants.cardElevation,
+                color: AppColors.backgroundLight,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.defaultBorderRadius,
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(AppConstants.defaultPadding - 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '参加について',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoItem('ルームIDは作成者から共有されます'),
+                      _buildInfoItem(
+                          '参加すると${AppConstants.defaultChatDurationMinutes}分間のチャットが開始されます'),
+                      _buildInfoItem(
+                          '延長は残り${AppConstants.extensionRequestThresholdMinutes}分以下で可能'),
+                      _buildInfoItem(
+                          '最大${AppConstants.defaultExtensionLimit}回まで延長可能（通常会員）'),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
