@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/services/storage_service.dart';
 
 import '../../services/user_auth_service.dart';
 import '../../services/auth_service.dart';
@@ -103,7 +104,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
 
       final authService = context.read<AuthService>();
-      final storageService = context.read<FirestoreStorageService>();
+      final storageService = context.read<StorageService>();
 
       logger.start('HomeScreen へ遷移', name: _logName);
       

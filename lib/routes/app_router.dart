@@ -94,15 +94,15 @@ class AppRouter {
 
       // ===== Room Routes =====
       case '/room/create-new':
-        return _buildRoute(
-          const RoomCreateScreen(),
+        return MaterialPageRoute(
           settings: settings,
+          builder: (context) => const RoomCreateScreen(),
         );
 
       case '/room/join-new':
-        return _buildRoute(
-          const RoomJoinScreen(),
+        return MaterialPageRoute(
           settings: settings,
+          builder: (context) => const RoomJoinScreen(),
         );
 
       // ===== Friend Routes =====

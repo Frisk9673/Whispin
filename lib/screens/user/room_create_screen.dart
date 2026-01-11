@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
 import '../../models/chat_room.dart';
 import '../../repositories/chat_room_repository.dart';
+import '../../services/auth_service.dart';
+import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
+import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -37,13 +42,11 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
     // バリデーション
     if (roomName.isEmpty) {
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('ルーム名を入力してください');
       return;
     }
 
     if (roomName.length > AppConstants.roomNameMaxLength) {
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar(
           'ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください');
       return;
@@ -57,7 +60,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       // 現在のユーザーを取得
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
-        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('ログインしてください');
         setState(() => _isLoading = false);
         return;
@@ -65,7 +67,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       final currentUserEmail = currentUser.email;
       if (currentUserEmail == null) {
-        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('ユーザー情報が取得できません');
         setState(() => _isLoading = false);
         return;
@@ -98,19 +99,27 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       logger.success('ルーム作成完了: $roomId', name: _logName);
 
-      setState(() => _isLoading = false);
-
       if (!mounted) return;
 
-      // ✅ context拡張メソッド使用
-      context.showSuccessSnackBar('ルーム "$roomName" を作成しました\nルームID: $roomId');
+      logger.start('チャット画面へ自動遷移します', name: _logName);
+      
+      setState(() => _isLoading = false);
+      
+      // NavigationHelperを使用してチャット画面へ遷移
+      await NavigationHelper.toChat(
+        context,
+        roomId: roomId,
+        authService: context.read<AuthService>(),
+        chatService: context.read<ChatService>(),
+        storageService: context.read<StorageService>(),
+      );
 
-      // ✅ context拡張メソッド使用
-      context.pop();
+      logger.success('チャット画面遷移完了', name: _logName);
+      logger.section('ルーム作成処理完了', name: _logName);
+
     } catch (e, stack) {
       logger.error('ルーム作成エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('ルーム作成に失敗しました: $e');
     }
   }
@@ -118,7 +127,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ 統一ヘッダーを使用
+      // 統一ヘッダーを使用
       appBar: CommonHeader(
         title: '部屋を作成',
         showNotifications: true,
@@ -286,9 +295,11 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
+                        _buildInfoItem('作成後、チャット画面で相手の参加を待ちます'),
+                        _buildInfoItem('ルーム名で検索して参加してもらえます'),
                         _buildInfoItem('最大2人まで参加可能'),
                         _buildInfoItem(
-                            '${AppConstants.defaultChatDurationMinutes}分間のチャット時間'),
+                            '2人目が参加すると${AppConstants.defaultChatDurationMinutes}分間のチャット開始'),
                         _buildInfoItem(
                             '残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能'),
                         _buildInfoItem('両者退出で自動削除'),
@@ -327,34 +338,5 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         ],
       ),
     );
-  }
-}
-
-/// ChatRoomRepositoryの拡張メソッド
-extension ChatRoomRepositoryExtension on ChatRoomRepository {
-  /// 待機中ルームを作成（簡易メソッド）
-  Future<String> createWaitingRoom({
-    required String topic,
-    required String creatorId,
-  }) async {
-    final roomId = DateTime.now().millisecondsSinceEpoch.toString();
-    final farFuture = DateTime.now().add(const Duration(days: 365));
-
-    final room = ChatRoom(
-      id: roomId,
-      topic: topic,
-      status: AppConstants.roomStatusWaiting,
-      id1: creatorId,
-      id2: null,
-      startedAt: farFuture,
-      expiresAt: farFuture,
-      extensionCount: 0,
-      extension: AppConstants.defaultExtensionLimit,
-      comment1: '',
-      comment2: '',
-    );
-
-    await create(room, id: roomId);
-    return roomId;
   }
 }

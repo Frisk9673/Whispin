@@ -6,7 +6,7 @@ class User{
   final String firstName;
   final String lastName;
   final String nickname;
-  final String? phoneNumber; // TEL_ID に相当
+  final String? phoneNumber;
   final double rate; // double に統一
   final bool premium;
   final int roomCount;

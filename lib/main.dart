@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/routes/app_router.dart';
 import 'package:whispin/constants/routes.dart';
+import 'package:whispin/services/storage_service.dart';
 import 'services/firestore_storage_service.dart';
 import 'services/auth_service.dart';
 import 'services/chat_service.dart';
@@ -98,7 +99,7 @@ Future<void> main() async {
         ),
         
         // Services
-        Provider<FirestoreStorageService>.value(value: storageService),
+        Provider<StorageService>.value(value: storageService),
         Provider<AuthService>.value(value: authService),
         Provider<ChatService>.value(value: chatService),
         

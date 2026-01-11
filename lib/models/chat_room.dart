@@ -59,9 +59,8 @@ class ChatRoom {
     'comment2': comment2,
     'extensionCount': extensionCount,
     'extension': extension,
-    'startedAt': startedAt.toIso8601String(), // ✅ 変更
+    'startedAt': startedAt.toIso8601String(),
     'expiresAt': expiresAt.toIso8601String(),
-    // For backward compatibility
     'name': topic,
     'userIds': userIds,
   };
@@ -85,10 +84,9 @@ class ChatRoom {
       id2Value = null;
     }
     
-    // ✅ 変更: 後方互換性を保ちつつ startedAt を優先
     final startedAt = json['startedAt'] != null
         ? DateTime.parse(json['startedAt'] as String)
-        : (json['createdAt'] != null // 後方互換性
+        : (json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)
             : DateTime.now());
     
@@ -102,10 +100,10 @@ class ChatRoom {
       comment2: json['comment2'] as String?,
       extensionCount: json['extensionCount'] as int? ?? 0,
       extension: json['extension'] as int? ?? 2,
-      startedAt: startedAt, // ✅ 変更
+      startedAt: startedAt,
       expiresAt: json['expiresAt'] != null
         ? DateTime.parse(json['expiresAt'] as String)
-        : startedAt.add(Duration(minutes: 10)), // ✅ 変更
+        : startedAt.add(Duration(minutes: 10)),
     );
   }
   
@@ -119,7 +117,7 @@ class ChatRoom {
     String? comment2,
     int? extensionCount,
     int? extension,
-    DateTime? startedAt, // ✅ 変更
+    DateTime? startedAt,
     DateTime? expiresAt,
   }) {
     return ChatRoom(
@@ -132,7 +130,7 @@ class ChatRoom {
       comment2: comment2 ?? this.comment2,
       extensionCount: extensionCount ?? this.extensionCount,
       extension: extension ?? this.extension,
-      startedAt: startedAt ?? this.startedAt, // ✅ 変更
+      startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt ?? this.expiresAt,
     );
   }

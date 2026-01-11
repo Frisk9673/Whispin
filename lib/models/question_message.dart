@@ -18,7 +18,7 @@ class Message {
   factory Message.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Message(
-      id: doc.id, // ← doc.id を使う方が安全
+      id: doc.id,
       isAdmin: data["IsAdmin"] ?? false,
       text: data["Text"] ?? "",
       createdAt: data["CreatedAt"] ?? Timestamp.now(),

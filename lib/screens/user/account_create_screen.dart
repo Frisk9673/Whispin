@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/services/storage_service.dart';
 import '../../models/user.dart';
 import '../../services/account_create_service.dart';
 import '../../providers/user_provider.dart';
@@ -129,7 +130,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       context.showSuccessSnackBar('登録が完了しました！');
 
       final authService = context.read<AuthService>();
-      final storageService = context.read<FirestoreStorageService>();
+      final storageService = context.read<StorageService>();
 
       // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
@@ -150,7 +151,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       if (!mounted) return;
 
       final errorMessage = e.toString().replaceAll('Exception: ', '');
-      context.showErrorSnackBar(errorMessage); // ✅ context拡張メソッド
+      context.showErrorSnackBar(errorMessage);
       setState(() => loading = false);
     }
   }
