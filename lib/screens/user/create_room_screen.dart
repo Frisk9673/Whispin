@@ -79,7 +79,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
       if (!mounted) return;
 
-      // 🔧 NavigationHelper使用 - チャット画面へ遷移
+      // ✅ NavigationHelper使用 - チャット画面へ遷移
       await NavigationHelper.toChat(
         context,
         roomId: room.id,
@@ -102,7 +102,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔧 拡張メソッド使用
+    // ✅ 拡張メソッド使用
     final isMobile = context.isMobile;
     final isSmallScreen = context.isSmallScreen;
 
@@ -113,7 +113,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         foregroundColor: AppColors.textWhite,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(), // 🔧 拡張メソッド
+          onPressed: () => context.pop(), // ✅ 拡張メソッド
         ),
       ),
       body: Container(
@@ -131,7 +131,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           child: Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(
-                // 🔧 レスポンシブ対応
+                // ✅ レスポンシブ対応
                 isSmallScreen 
                     ? AppConstants.defaultPadding / 2 
                     : AppConstants.defaultPadding

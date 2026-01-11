@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import '../extensions/context_extensions.dart';
 
 class EvaluationDialog extends StatefulWidget {
   final String partnerId;
@@ -106,7 +107,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < AppConstants.mobileBreakpoint;
+    // ✅ context拡張メソッド使用
+    final isMobile = context.isMobile;
 
     if (isMobile) {
       return _buildBottomSheet(context);
@@ -138,7 +140,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         AppConstants.defaultPadding,
         12,
         AppConstants.defaultPadding,
-        AppConstants.defaultPadding + MediaQuery.of(context).padding.bottom,
+        // ✅ context拡張メソッド使用
+        AppConstants.defaultPadding + context.padding.bottom,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

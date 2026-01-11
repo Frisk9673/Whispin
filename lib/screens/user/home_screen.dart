@@ -58,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
         logger.error('Firebase Auth ユーザーのメールアドレスが取得できません', name: _logName);
         
         if (mounted) {
+          // ✅ context拡張メソッド使用
           context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
         }
         return;
@@ -71,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         
         if (mounted) {
+          // ✅ context拡張メソッド使用
           context.showErrorSnackBar(
             'ユーザー情報の読み込みに失敗しました: ${userProvider.error}'
           );
@@ -157,6 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return hasOpenSlot && notMyRoom && notExpired;
     }).toList();
 
+    // ✅ context拡張メソッド使用
     context.showCustomDialog(
       child: AlertDialog(
         shape: RoundedRectangleBorder(
@@ -180,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         await _chatService.joinRoom(room.id, currentUserId);
                         await widget.storageService.save();
                         if (mounted) {
+                          // ✅ context拡張メソッド使用
                           context.pop();
                           NavigationHelper.toChat(
                             context,
@@ -196,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         actions: [
           TextButton(
+            // ✅ context拡張メソッド使用
             onPressed: () => context.pop(),
             child: const Text('閉じる'),
           ),

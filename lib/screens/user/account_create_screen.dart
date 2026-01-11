@@ -9,6 +9,7 @@ import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
+import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_storage_service.dart';
@@ -56,27 +57,28 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     final confirmPassword = confirmPasswordController.text.trim();
     final telId = telIdController.text.trim();
 
-    // バリデーション
-    if (email.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty ||
-        telId.isEmpty) {
-      context.showErrorSnackBar('必須項目が未入力です');
+    // ✅ String拡張メソッド使用 - バリデーション
+    if (email.isBlank ||
+        password.isBlank ||
+        confirmPassword.isBlank ||
+        telId.isBlank) {
+      context.showErrorSnackBar('必須項目が未入力です'); // ✅ context拡張メソッド
       return;
     }
 
     if (password != confirmPassword) {
-      context.showErrorSnackBar('パスワードが一致しません');
+      context.showErrorSnackBar('パスワードが一致しません'); // ✅ context拡張メソッド
       return;
     }
 
     if (password.length < AppConstants.passwordMinLength) {
-      context.showErrorSnackBar(AppConstants.validationPasswordShort);
+      context.showErrorSnackBar(AppConstants.validationPasswordShort); // ✅ context拡張メソッド
       return;
     }
 
-    if (!email.contains('@')) {
-      context.showErrorSnackBar(AppConstants.validationEmailInvalid);
+    // ✅ String拡張メソッド使用
+    if (!email.isValidEmail) {
+      context.showErrorSnackBar(AppConstants.validationEmailInvalid); // ✅ context拡張メソッド
       return;
     }
 
@@ -114,7 +116,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
         if (!mounted) return;
 
-        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
+        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました'); // ✅ context拡張メソッド
         setState(() => loading = false);
         return;
       }
@@ -123,7 +125,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (!mounted) return;
 
-      // 成功メッセージ
+      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar('登録が完了しました！');
 
       final authService = context.read<AuthService>();
@@ -148,7 +150,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       if (!mounted) return;
 
       final errorMessage = e.toString().replaceAll('Exception: ', '');
-      context.showErrorSnackBar(errorMessage);
+      context.showErrorSnackBar(errorMessage); // ✅ context拡張メソッド
       setState(() => loading = false);
     }
   }

@@ -6,6 +6,7 @@ import '../../repositories/user_repository.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class FriendListScreen extends StatefulWidget {
@@ -166,12 +167,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('フレンドを削除しました'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // ✅ context拡張メソッド使用
+      context.showSuccessSnackBar('フレンドを削除しました');
 
       logger.section('_removeFriend() 完了', name: _logName);
     } catch (e, stack) {
@@ -182,12 +179,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
-    );
+    // ✅ context拡張メソッド使用
+    context.showErrorSnackBar(message);
   }
 
   @override

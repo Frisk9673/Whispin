@@ -12,6 +12,7 @@ import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
+import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class UserLoginPage extends StatefulWidget {
@@ -225,7 +226,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           const SizedBox(height: 24),
 
                           // エラーメッセージ
-                          if (message.isNotEmpty)
+                          if (message.isNotBlank) // ✅ String拡張メソッド
                             Container(
                               padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),

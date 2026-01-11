@@ -35,6 +35,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     final roomId = _roomIdController.text.trim();
 
     if (roomId.isEmpty) {
+      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('ルームIDを入力してください');
       return;
     }
@@ -51,6 +52,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       
       if (currentUser == null) {
         if (!mounted) return;
+        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('ログインしてください');
         setState(() => _isLoading = false);
         return;
@@ -66,6 +68,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
       if (room == null) {
         logger.warning('ルームが見つかりません', name: _logName);
+        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('ルームが見つかりません');
         setState(() => _isLoading = false);
         return;
@@ -76,6 +79,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // ステータスチェック
       if (room.isFinished) {
         logger.warning('ルームは終了しています', name: _logName);
+        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('このルームは終了しています');
         setState(() => _isLoading = false);
         return;
@@ -85,6 +89,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         // アクティブな場合は有効期限チェック
         if (DateTime.now().isAfter(room.expiresAt)) {
           logger.warning('ルームは期限切れです', name: _logName);
+          // ✅ context拡張メソッド使用
           context.showErrorSnackBar('このルームは期限切れです');
           setState(() => _isLoading = false);
           return;
@@ -94,6 +99,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // 既に参加しているかチェック
       if (room.id1 == currentUserEmail || room.id2 == currentUserEmail) {
         logger.warning('既にこのルームに参加しています', name: _logName);
+        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('既にこのルームに参加しています');
         setState(() => _isLoading = false);
         return;
@@ -102,6 +108,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // 満員チェック
       if (room.id2 != null && room.id2!.isNotEmpty) {
         logger.warning('ルームは満員です', name: _logName);
+        // ✅ context拡張メソッド使用
         context.showErrorSnackBar('ルームは満員です（2人まで）');
         setState(() => _isLoading = false);
         return;
@@ -127,6 +134,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
       logger.section('ルーム参加処理完了', name: _logName);
 
+      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar(
         'ルーム "${room.topic}" に参加しました\nチャットが開始されました（${AppConstants.defaultChatDurationMinutes}分間）',
       );
@@ -141,6 +149,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       // );
 
       // 仮で前の画面に戻る
+      // ✅ context拡張メソッド使用
       context.pop();
 
     } catch (e, stack) {
@@ -152,6 +161,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       );
       
       setState(() => _isLoading = false);
+      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('参加に失敗しました: $e');
     }
   }
@@ -312,6 +322,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                 width: 80,
                 height: 80,
                 child: ElevatedButton(
+                  // ✅ context拡張メソッド使用
                   onPressed: _isLoading ? null : () => context.pop(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

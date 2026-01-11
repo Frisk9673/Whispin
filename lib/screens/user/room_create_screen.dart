@@ -37,12 +37,16 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
     // バリデーション
     if (roomName.isEmpty) {
-      _showError('ルーム名を入力してください');
+      // ✅ context拡張メソッド使用
+      context.showErrorSnackBar('ルーム名を入力してください');
       return;
     }
 
     if (roomName.length > AppConstants.roomNameMaxLength) {
-      _showError('ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください');
+      // ✅ context拡張メソッド使用
+      context.showErrorSnackBar(
+        'ルーム名は${AppConstants.roomNameMaxLength}文字以内で入力してください'
+      );
       return;
     }
 
@@ -54,14 +58,16 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       // 現在のユーザーを取得
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
-        _showError('ログインしてください');
+        // ✅ context拡張メソッド使用
+        context.showErrorSnackBar('ログインしてください');
         setState(() => _isLoading = false);
         return;
       }
 
       final currentUserEmail = currentUser.email;
       if (currentUserEmail == null) {
-        _showError('ユーザー情報が取得できません');
+        // ✅ context拡張メソッド使用
+        context.showErrorSnackBar('ユーザー情報が取得できません');
         setState(() => _isLoading = false);
         return;
       }
@@ -97,25 +103,20 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       if (!mounted) return;
 
-      // 成功メッセージ（拡張メソッド使用）
+      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar(
         'ルーム "$roomName" を作成しました\nルームID: $roomId'
       );
 
-      // 前の画面に戻る
+      // ✅ context拡張メソッド使用
       context.pop();
 
     } catch (e, stack) {
       logger.error('ルーム作成エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
-      _showError('ルーム作成に失敗しました: $e');
+      // ✅ context拡張メソッド使用
+      context.showErrorSnackBar('ルーム作成に失敗しました: $e');
     }
-  }
-
-  /// エラーメッセージ表示
-  void _showError(String message) {
-    if (!mounted) return;
-    context.showErrorSnackBar(message);
   }
 
   @override
@@ -329,6 +330,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 width: 80,
                 height: 80,
                 child: ElevatedButton(
+                  // ✅ context拡張メソッド使用
                   onPressed: () => context.pop(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.cardBackground,

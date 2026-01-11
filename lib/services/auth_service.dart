@@ -2,6 +2,7 @@ import 'dart:async';
 import '../models/user.dart';
 import '../models/local_auth_user.dart';
 import '../constants/app_constants.dart';
+import '../extensions/string_extensions.dart'; // ✅ 追加
 import 'password_hasher.dart';
 import 'storage_service.dart';
 
@@ -25,8 +26,8 @@ class AuthService {
     String password,
     String confirmPassword,
   ) async {
-    // バリデーション
-    if (email.isEmpty || firstName.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    // ✅ String拡張メソッドを使用したバリデーション
+    if (email.isBlank || firstName.isBlank || password.isBlank || confirmPassword.isBlank) {
       throw Exception(AppConstants.validationRequired);
     }
     
@@ -38,7 +39,12 @@ class AuthService {
       throw Exception(AppConstants.validationPasswordShort);
     }
     
-    if (!email.contains('@')) {
+    if (password.length > AppConstants.passwordMaxLength) {
+      throw Exception(AppConstants.validationMaxLength);
+    }
+    
+    // ✅ String拡張メソッドを使用したメールバリデーション
+    if (!email.isValidEmail) {
       throw Exception(AppConstants.validationEmailInvalid);
     }
     
@@ -58,7 +64,7 @@ class AuthService {
     
     final authUser = LocalAuthUser(
       email: email,
-      username: nickname.isNotEmpty ? nickname : '$firstName $lastName',
+      username: nickname.isNotBlank ? nickname : '$firstName $lastName',
       passwordHash: passwordHash,
       salt: salt,
       userId: userId,
@@ -85,7 +91,8 @@ class AuthService {
   }
   
   Future<User> login(String email, String password) async {
-    if (email.isEmpty || password.isEmpty) {
+    // ✅ String拡張メソッドを使用
+    if (email.isBlank || password.isBlank) {
       throw Exception('メールアドレスとパスワードを入力してください');
     }
     
@@ -101,7 +108,8 @@ class AuthService {
       ),
     );
     
-    if (authUser.email.isEmpty) {
+    // ✅ String拡張メソッドを使用
+    if (authUser.email.isBlank) {
       throw Exception('メールアドレスまたはパスワードが正しくありません');
     }
     

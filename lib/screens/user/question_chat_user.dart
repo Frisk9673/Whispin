@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/chat_provider.dart';
 import '../../services/question_chat.dart';
 import '../../models/question_message.dart';
+import '../../extensions/datetime_extensions.dart';
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
@@ -482,26 +483,15 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
+  // ✅ DateTime拡張メソッド使用
   String _formatTimestamp(dynamic timestamp) {
     try {
       final DateTime dateTime = timestamp is DateTime
           ? timestamp
           : (timestamp as Timestamp).toDate();
 
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inMinutes < 1) {
-        return 'たった今';
-      } else if (difference.inHours < 1) {
-        return '${difference.inMinutes}分前';
-      } else if (difference.inDays < 1) {
-        return '${difference.inHours}時間前';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays}日前';
-      } else {
-        return '${dateTime.month}/${dateTime.day}';
-      }
+      // ✅ toRelativeTime 拡張メソッドを使用
+      return dateTime.toRelativeTime;
     } catch (e) {
       return '';
     }

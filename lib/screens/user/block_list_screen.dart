@@ -6,6 +6,7 @@ import '../../repositories/user_repository.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class BlockListScreen extends StatefulWidget {
@@ -161,12 +162,8 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('ブロックを解除しました'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      // ✅ context拡張メソッド使用
+      context.showSuccessSnackBar('ブロックを解除しました');
 
       logger.section('_unblockUser() 完了', name: _logName);
     } catch (e, stack) {
@@ -177,12 +174,8 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
-    );
+    // ✅ context拡張メソッド使用
+    context.showErrorSnackBar(message);
   }
 
   @override

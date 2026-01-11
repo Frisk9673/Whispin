@@ -2,6 +2,7 @@ import 'dart:async';
 import '../models/chat_room.dart';
 import '../models/extension_request.dart';
 import '../constants/app_constants.dart';
+import '../extensions/datetime_extensions.dart'; // ✅ 追加
 import '../repositories/chat_room_repository.dart';
 import 'storage_service.dart';
 import '../utils/app_logger.dart';
@@ -38,8 +39,7 @@ class ChatService {
     
     final roomId = DateTime.now().millisecondsSinceEpoch.toString();
     
-    // 🔧 修正: startedAt を遠い未来にする（仮の日時）
-    // 2人揃った時点で正式に設定される
+    // 遠い未来の日時（1年後）
     final farFuture = DateTime.now().add(const Duration(days: 365));
     
     final newRoom = ChatRoom(
@@ -47,9 +47,9 @@ class ChatService {
       topic: roomName,
       status: AppConstants.roomStatusWaiting,
       id1: currentUserId,
-      id2: null, // 参加者待ち
-      startedAt: farFuture, // 🔧 仮の値（2人揃ったら更新）
-      expiresAt: farFuture,  // 🔧 仮の値（2人揃ったら10分後に更新）
+      id2: null,
+      startedAt: farFuture,
+      expiresAt: farFuture,
       extensionCount: 0,
       extension: AppConstants.defaultExtensionLimit,
       comment1: '',
@@ -85,16 +85,13 @@ class ChatService {
       throw Exception('ルームが見つかりません');
     }
     
-    // 🔧 2人目が参加したらチャット開始
+    // ✅ Duration を使用（標準の add メソッド）
     final now = DateTime.now();
-    final expiresAt = now.add(
-      Duration(minutes: AppConstants.defaultChatDurationMinutes)
-    );
+    final expiresAt = now.add(Duration(minutes: AppConstants.defaultChatDurationMinutes));
     
     ChatRoom updatedRoom;
     
     if (room.id2?.isEmpty ?? true) {
-      // id2 スロットが空いている場合
       updatedRoom = room.copyWith(
         id2: currentUserId,
         status: AppConstants.roomStatusActive,
@@ -106,10 +103,8 @@ class ChatService {
       logger.info('  startedAt: $now', name: _logName);
       logger.info('  expiresAt: $expiresAt', name: _logName);
       
-      // Repository経由で更新
       await _roomRepository.update(roomId, updatedRoom);
       
-      // StorageServiceも更新（互換性維持）
       final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
       if (roomIndex != -1) {
         _storageService.rooms[roomIndex] = updatedRoom;
@@ -122,7 +117,6 @@ class ChatService {
       return updatedRoom;
       
     } else if (room.id1?.isEmpty ?? true) {
-      // id1 スロットに参加
       updatedRoom = room.copyWith(
         id1: currentUserId,
         status: AppConstants.roomStatusActive,
@@ -132,10 +126,8 @@ class ChatService {
       
       logger.success('id1スロットに参加 → チャット開始', name: _logName);
       
-      // Repository経由で更新
       await _roomRepository.update(roomId, updatedRoom);
       
-      // StorageServiceも更新
       final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
       if (roomIndex != -1) {
         _storageService.rooms[roomIndex] = updatedRoom;
@@ -159,7 +151,6 @@ class ChatService {
     logger.section('leaveRoom() 開始', name: _logName);
     logger.info('roomId: $roomId, userId: $currentUserId', name: _logName);
     
-    // Repository経由でルーム取得
     final room = await _roomRepository.findById(roomId);
     if (room == null) {
       logger.warning('ルームが見つかりません: $roomId', name: _logName);
@@ -184,10 +175,8 @@ class ChatService {
       logger.info('全員退出 → ルーム削除', name: _logName);
       await deleteRoom(roomId);
     } else {
-      // Repository経由で更新
       await _roomRepository.update(roomId, updatedRoom);
       
-      // StorageServiceも更新
       final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
       if (roomIndex != -1) {
         _storageService.rooms[roomIndex] = updatedRoom;
@@ -206,16 +195,13 @@ class ChatService {
   Future<void> deleteRoom(String roomId) async {
     logger.section('deleteRoom() 開始 - roomId: $roomId', name: _logName);
 
-    // タイマーをキャンセル
     _roomTimers[roomId]?.cancel();
     _roomTimers.remove(roomId);
     _extensionPollingTimers[roomId]?.cancel();
     _extensionPollingTimers.remove(roomId);
     
-    // Repository経由で削除
     await _roomRepository.delete(roomId);
     
-    // StorageServiceからも削除
     _storageService.rooms.removeWhere((r) => r.id == roomId);
     _storageService.extensionRequests.removeWhere((e) => e.roomId == roomId);
     await _storageService.save();
@@ -231,7 +217,8 @@ class ChatService {
     logger.debug('startRoomTimer() - roomId: $roomId', name: _logName);
     _roomTimers[roomId]?.cancel();
     
-    final duration = expiresAt.difference(DateTime.now());
+    // ✅ DateTime拡張メソッドを使用（残り時間計算）
+    final duration = expiresAt.timeUntil(DateTime.now());
     if (duration.isNegative) {
       logger.warning('既に期限切れのため削除します', name: _logName);
       deleteRoom(roomId);
@@ -255,13 +242,11 @@ class ChatService {
     logger.debug('  userId: $userId', name: _logName);
     logger.debug('  text length: ${text.length}', name: _logName);
     
-    // バリデーション
     if (text.isEmpty || text.length > AppConstants.messageMaxLength) {
       logger.error('メッセージ長が不正: ${text.length}文字', name: _logName);
       throw Exception('メッセージは1〜${AppConstants.messageMaxLength}文字で入力してください');
     }
     
-    // Repository経由でルーム取得
     final room = await _roomRepository.findById(roomId);
     if (room == null) {
       logger.error('ルームが見つかりません: $roomId', name: _logName);
@@ -281,10 +266,8 @@ class ChatService {
       throw Exception('このルームのメンバーではありません');
     }
     
-    // Repository経由で更新
     await _roomRepository.update(roomId, updatedRoom);
     
-    // StorageServiceも更新
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
     if (roomIndex != -1) {
       _storageService.rooms[roomIndex] = updatedRoom;
@@ -326,7 +309,6 @@ class ChatService {
     logger.section('requestExtension() 開始', name: _logName);
     logger.info('roomId: $roomId, requesterId: $requesterId', name: _logName);
     
-    // Repository経由でルーム取得
     final room = await _roomRepository.findById(roomId);
     if (room == null) {
       logger.error('ルームが見つかりません', name: _logName);
@@ -387,13 +369,13 @@ class ChatService {
     
     final request = _storageService.extensionRequests[requestIndex];
     
-    // Repository経由でルーム取得
     final room = await _roomRepository.findById(request.roomId);
     if (room == null) {
       logger.error('ルームが見つかりません', name: _logName);
       throw Exception('ルームが見つかりません');
     }
     
+    // 延長後の有効期限を計算
     final newExpiresAt = room.expiresAt.add(
       Duration(minutes: AppConstants.extensionDurationMinutes)
     );
@@ -403,10 +385,8 @@ class ChatService {
       extensionCount: room.extensionCount + 1,
     );
     
-    // Repository経由で更新
     await _roomRepository.update(room.id, updatedRoom);
     
-    // StorageServiceも更新
     final roomIndex = _storageService.rooms.indexWhere((r) => r.id == room.id);
     if (roomIndex != -1) {
       _storageService.rooms[roomIndex] = updatedRoom;

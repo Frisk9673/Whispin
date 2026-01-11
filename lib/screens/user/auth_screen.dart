@@ -49,10 +49,10 @@ class _AuthScreenState extends State<AuthScreen> {
   // ===== バリデーション =====
 
   String? _validateEmail(String email) {
-    if (email.isEmpty) {
+    // ✅ String拡張メソッド使用
+    if (email.isBlank) {
       return AppConstants.validationRequired;
     }
-    // 🔧 String拡張メソッド使用
     if (!email.isValidEmail) {
       return AppConstants.validationEmailInvalid;
     }
@@ -92,12 +92,12 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     if (!_isLogin) {
-      // サインアップ時の追加バリデーション
-      if (_firstNameController.text.trim().isEmpty) {
+      // サインアップ時の追加バリデーション - ✅ String拡張メソッド使用
+      if (_firstNameController.text.isBlank) {
         setState(() => _errorMessage = '名を入力してください');
         return;
       }
-      if (_lastNameController.text.trim().isEmpty) {
+      if (_lastNameController.text.isBlank) {
         setState(() => _errorMessage = '姓を入力してください');
         return;
       }
@@ -140,7 +140,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       if (success && mounted) {
-        // 🔧 NavigationHelper使用
+        // ✅ NavigationHelper使用
         await NavigationHelper.toHome(
           context,
           authService: widget.authService,
@@ -182,9 +182,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔧 拡張メソッド使用
+    // ✅ 拡張メソッド使用
     final isMobile = context.isMobile;
-    final screenWidth = context.screenWidth;
 
     return Scaffold(
       body: Container(
