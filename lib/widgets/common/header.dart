@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../screens/user/profile.dart'; // ProfileScreenをインポート
+import '../../screens/user/profile.dart';
 
 class CommonHeader extends StatelessWidget {
   final String appName;

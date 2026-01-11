@@ -6,7 +6,6 @@ import '../constants/routes.dart';
 import '../screens/user/home_screen.dart';
 import '../screens/user/auth_screen.dart';
 import '../screens/user/profile.dart';
-import '../screens/user/create_room_screen.dart';
 import '../screens/user/chat_screen.dart';
 import '../screens/user/friend_list_screen.dart';
 import '../screens/user/block_list_screen.dart';
@@ -75,21 +74,6 @@ class AppRouter {
       case AppRoutes.profile:
         return _buildRoute(
           const ProfileScreen(),
-          settings: settings,
-        );
-
-      // ===== Chat Routes =====
-      case AppRoutes.createRoom:
-        final args = settings.arguments as Map<String, dynamic>?;
-        if (args == null) {
-          return _buildErrorRoute('CreateRoomScreen requires arguments');
-        }
-        return _buildRoute(
-          CreateRoomScreen(
-            authService: args['authService'] as AuthService,
-            chatService: args['chatService'] as ChatService,
-            storageService: args['storageService'] as StorageService,
-          ),
           settings: settings,
         );
 

@@ -58,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
         logger.error('Firebase Auth ユーザーのメールアドレスが取得できません', name: _logName);
         
         if (mounted) {
-          // ✅ context拡張メソッド使用
           context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
         }
         return;
@@ -72,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         
         if (mounted) {
-          // ✅ context拡張メソッド使用
           context.showErrorSnackBar(
             'ユーザー情報の読み込みに失敗しました: ${userProvider.error}'
           );
@@ -125,13 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
     logger.section('ログアウト処理完了', name: _logName);
   }
 
+  // ✅ 修正: room_create_screen.dart を使用
   void _navigateToCreateRoom() {
-    NavigationHelper.toCreateRoom(
-      context,
-      authService: widget.authService,
-      chatService: _chatService,
-      storageService: widget.storageService,
-    );
+    logger.info('ルーム作成画面へ遷移', name: _logName);
+    NavigationHelper.toRoomCreate(context);
   }
 
   void _navigateToProfile() {
@@ -146,67 +141,10 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationHelper.toBlockList(context);
   }
 
-  void _showAvailableRooms() {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    final availableRooms = widget.storageService.rooms.where((room) {
-      final hasOpenSlot =
-          ((room.id1 ?? '').isEmpty && (room.id2 ?? '').isNotEmpty) ||
-              ((room.id2 ?? '').isEmpty && (room.id1 ?? '').isNotEmpty);
-      final notMyRoom = room.id1 != currentUserId && room.id2 != currentUserId;
-      final now = DateTime.now();
-      final notExpired = room.expiresAt.isAfter(now);
-
-      return hasOpenSlot && notMyRoom && notExpired;
-    }).toList();
-
-    // ✅ context拡張メソッド使用
-    context.showCustomDialog(
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        ),
-        title: Text('参加可能なルーム', style: AppTextStyles.titleLarge),
-        content: availableRooms.isEmpty
-            ? Text(AppConstants.defaultMessage, style: AppTextStyles.bodyMedium)
-            : SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: availableRooms.length,
-                  itemBuilder: (context, index) {
-                    final room = availableRooms[index];
-                    final creator = (room.id1 ?? '').isNotEmpty ? room.id1 ?? '' : room.id2 ?? '';
-                    return ListTile(
-                      title: Text(room.topic, style: AppTextStyles.bodyLarge),
-                      subtitle: Text('作成者: $creator', style: AppTextStyles.labelMedium),
-                      onTap: () async {
-                        await _chatService.joinRoom(room.id, currentUserId);
-                        await widget.storageService.save();
-                        if (mounted) {
-                          // ✅ context拡張メソッド使用
-                          context.pop();
-                          NavigationHelper.toChat(
-                            context,
-                            roomId: room.id,
-                            authService: widget.authService,
-                            chatService: _chatService,
-                            storageService: widget.storageService,
-                          );
-                        }
-                      },
-                    );
-                  },
-                ),
-              ),
-        actions: [
-          TextButton(
-            // ✅ context拡張メソッド使用
-            onPressed: () => context.pop(),
-            child: const Text('閉じる'),
-          ),
-        ],
-      ),
-    );
+  // ✅ 修正: room_join_screen.dart を使用
+  void _navigateToJoinRoom() {
+    logger.info('ルーム参加画面へ遷移', name: _logName);
+    NavigationHelper.toRoomJoin(context);
   }
 
   @override
@@ -306,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMenuButton(
                 icon: Icons.meeting_room,
                 label: '部屋に参加',
-                onTap: _showAvailableRooms,
+                onTap: _navigateToJoinRoom, // ✅ 修正
               ),
               _buildMenuButton(
                 icon: Icons.block,
@@ -316,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMenuButton(
                 icon: Icons.add_circle,
                 label: '部屋を作成',
-                onTap: _navigateToCreateRoom,
+                onTap: _navigateToCreateRoom, // ✅ 修正
               ),
               _buildMenuButton(
                 icon: Icons.people,
