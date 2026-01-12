@@ -73,51 +73,55 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// プレミアムステータスを更新
-  Future<void> updatePremiumStatus(bool isPremium) async {
-    logger.section('updatePremiumStatus($isPremium) 開始', name: _logName);
+/// プレミアムステータスを更新
+Future<void> updatePremiumStatus(bool isPremium) async {
+  logger.section('updatePremiumStatus($isPremium) 開始', name: _logName);
 
-    if (_currentUser == null) {
-      logger.error('ユーザー情報が読み込まれていません', name: _logName);
-      throw Exception('ユーザー情報が読み込まれていません');
-    }
-
-    try {
-      logger.start('Repository経由でプレミアムステータス更新中...', name: _logName);
-
-      // Repository経由で更新
-      await _userRepository.updatePremiumStatus(
-        _currentUser!.id,
-        isPremium,
-      );
-
-      logger.success('Repository更新完了', name: _logName);
-
-      // ローカルのユーザー情報も更新
-      _currentUser = app_user.User(
-        id: _currentUser!.id,
-        password: _currentUser!.password,
-        firstName: _currentUser!.firstName,
-        lastName: _currentUser!.lastName,
-        nickname: _currentUser!.nickname,
-        phoneNumber: _currentUser!.phoneNumber,
-        rate: _currentUser!.rate,
-        premium: isPremium,
-        roomCount: _currentUser!.roomCount,
-        createdAt: _currentUser!.createdAt,
-        lastUpdatedPremium: DateTime.now(),
-        deletedAt: _currentUser!.deletedAt,
-      );
-
-      logger.success('ローカルユーザー情報更新完了', name: _logName);
-      notifyListeners();
-
-      logger.section('updatePremiumStatus() 完了', name: _logName);
-    } catch (e, stack) {
-      logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
-      rethrow;
-    }
+  if (_currentUser == null) {
+    logger.error('ユーザー情報が読み込まれていません', name: _logName);
+    throw Exception('ユーザー情報が読み込まれていません');
   }
+
+  try {
+    logger.info('現在のユーザーID: ${_currentUser!.id}', name: _logName);
+    logger.info('現在のプレミアム状態: ${_currentUser!.premium}', name: _logName);
+    logger.info('変更後のプレミアム状態: $isPremium', name: _logName);
+
+    // Repository経由で更新
+    await _userRepository.updatePremiumStatus(
+      _currentUser!.id,
+      isPremium,
+    );
+
+    logger.success('Repository更新完了', name: _logName);
+
+    // ★ 変更: ローカルのユーザー情報を即座に更新（Firestoreは信頼）
+    _currentUser = app_user.User(
+      id: _currentUser!.id,
+      password: _currentUser!.password,
+      firstName: _currentUser!.firstName,
+      lastName: _currentUser!.lastName,
+      nickname: _currentUser!.nickname,
+      phoneNumber: _currentUser!.phoneNumber,
+      rate: _currentUser!.rate,
+      premium: isPremium, // ★ 更新
+      roomCount: _currentUser!.roomCount,
+      createdAt: _currentUser!.createdAt,
+      lastUpdatedPremium: DateTime.now(), // ★ 更新
+      deletedAt: _currentUser!.deletedAt,
+    );
+
+    logger.success('ローカルユーザー情報更新完了', name: _logName);
+    logger.info('  premium: ${_currentUser!.premium}', name: _logName);
+    
+    notifyListeners();
+
+    logger.section('updatePremiumStatus() 完了', name: _logName);
+  } catch (e, stack) {
+    logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
+    rethrow;
+  }
+}
 
   /// ユーザー情報をクリア（ログアウト時）
   void clearUser() {

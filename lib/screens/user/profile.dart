@@ -162,10 +162,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _handlePremiumButton(
       BuildContext context, UserProvider userProvider) async {
     logger.section('プレミアムボタン押下', name: _logName);
+    logger.info('現在のユーザー: ${userProvider.currentUser?.id}', name: _logName);
+    logger.info('現在のプレミアム状態: ${userProvider.isPremium}', name: _logName);
+
+    // ユーザー情報の事前チェック
+    if (userProvider.currentUser == null) {
+      logger.error('currentUserがnull', name: _logName);
+      context.showErrorSnackBar('ユーザー情報が読み込まれていません。再ログインしてください。');
+      return;
+    }
 
     final isPremium = userProvider.isPremium;
 
-    // ✅ context拡張メソッド使用
+    // 確認ダイアログ
     final result = await context.showConfirmDialog(
       title: isPremium ? 'プレミアム解約' : 'プレミアムプラン加入',
       message: isPremium
@@ -175,49 +184,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
       cancelText: 'キャンセル',
     );
 
-    if (!result) return;
+    if (!result) {
+      logger.info('ユーザーがキャンセルしました', name: _logName);
+      return;
+    }
 
-    // ✅ context拡張メソッド使用
     context.showLoadingDialog(
       message: isPremium ? '解約処理中...' : 'プレミアムに加入中...',
     );
 
     try {
+      logger.start('UserProvider.updatePremiumStatus() 呼び出し', name: _logName);
+
       await userProvider.updatePremiumStatus(!isPremium);
 
-      // ✅ context拡張メソッド使用
+      logger.success('プレミアムステータス更新成功', name: _logName);
+
       context.hideLoadingDialog();
 
       if (!mounted) return;
 
-      // ✅ context拡張メソッド使用
       if (isPremium) {
         context.showWarningSnackBar('プレミアムを解約しました');
       } else {
         context.showSuccessSnackBar('プレミアムに加入しました！');
       }
-    } catch (e) {
-      logger.error('プレミアムステータス更新エラー: $e', name: _logName, error: e);
 
-      // ✅ context拡張メソッド使用
+      logger.section('_handlePremiumButton() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('プレミアムステータス更新エラー',
+          name: _logName, error: e, stackTrace: stack);
+      logger.info('エラー詳細: ${e.toString()}', name: _logName);
+
       context.hideLoadingDialog();
 
       if (!mounted) return;
-      context.showErrorSnackBar('エラーが発生しました: $e');
-    }
-  }
 
-  Widget _buildFeatureItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle, size: 16, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Text(text, style: AppTextStyles.bodySmall),
-        ],
-      ),
-    );
+      // エラーメッセージを詳細化
+      String errorMessage;
+      if (e.toString().contains('見つかりません') ||
+          e.toString().contains('not-found')) {
+        errorMessage = 'ユーザー情報の更新に失敗しました。\n\n'
+            'アカウント: ${userProvider.currentUser?.id ?? "不明"}\n'
+            '再ログインをお試しください。';
+      } else {
+        errorMessage = 'エラーが発生しました。\n\n${e.toString()}';
+      }
+
+      context.showErrorSnackBar(errorMessage);
+
+      logger.section('_handlePremiumButton() エラー終了', name: _logName);
+    }
   }
 
   @override
@@ -226,7 +243,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = userProvider.currentUser;
 
     return Scaffold(
-      // ✅ 統一ヘッダーを使用
       appBar: CommonHeader(
         title: 'プロフィール',
         showNotifications: true,

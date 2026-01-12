@@ -63,29 +63,31 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         password.isBlank ||
         confirmPassword.isBlank ||
         telId.isBlank) {
-      context.showErrorSnackBar('必須項目が未入力です'); // ✅ context拡張メソッド
+      context.showErrorSnackBar('必須項目が未入力です');
       return;
     }
 
     if (password != confirmPassword) {
-      context.showErrorSnackBar('パスワードが一致しません'); // ✅ context拡張メソッド
+      context.showErrorSnackBar('パスワードが一致しません');
       return;
     }
 
     if (password.length < AppConstants.passwordMinLength) {
-      context.showErrorSnackBar(AppConstants.validationPasswordShort); // ✅ context拡張メソッド
+      context.showErrorSnackBar(AppConstants.validationPasswordShort);
       return;
     }
 
-    // ✅ String拡張メソッド使用
     if (!email.isValidEmail) {
-      context.showErrorSnackBar(AppConstants.validationEmailInvalid); // ✅ context拡張メソッド
+      context.showErrorSnackBar(AppConstants.validationEmailInvalid);
       return;
     }
 
     setState(() => loading = true);
 
     try {
+      // ✅ StorageServiceを取得
+      final storageService = context.read<StorageService>();
+
       // ユーザーオブジェクト作成
       final user = User(
         phoneNumber: telId,
@@ -102,7 +104,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       );
 
       logger.start('registerService.register() 実行中...', name: _logName);
-      await registerService.register(user, password);
+
+      // ✅ StorageServiceを渡す
+      await registerService.register(
+        user: user,
+        password: password,
+        storageService: storageService, // ← これを追加
+      );
+
       logger.success('ユーザー登録完了', name: _logName);
 
       if (!mounted) return;
@@ -117,7 +126,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
         if (!mounted) return;
 
-        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました'); // ✅ context拡張メソッド
+        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
         setState(() => loading = false);
         return;
       }
@@ -126,11 +135,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (!mounted) return;
 
-      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar('登録が完了しました！');
 
       final authService = context.read<AuthService>();
-      final storageService = context.read<StorageService>();
 
       // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);

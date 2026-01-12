@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
@@ -26,7 +27,7 @@ class UserRepository extends BaseRepository<User> {
 
     try {
       final results = await findWhere(field: 'id', value: email, limit: 1);
-      
+
       if (results.isEmpty) {
         // 'EmailAddress'フィールドでも試す（後方互換性）
         final altResults = await findWhere(
@@ -34,18 +35,19 @@ class UserRepository extends BaseRepository<User> {
           value: email,
           limit: 1,
         );
-        
+
         if (altResults.isEmpty) {
           logger.warning('ユーザーが見つかりません: $email', name: _logName);
           return null;
         }
-        
+
         return altResults.first;
       }
 
       return results.first;
     } catch (e, stack) {
-      logger.error('findByEmail() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findByEmail() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -68,7 +70,8 @@ class UserRepository extends BaseRepository<User> {
 
       return results.first;
     } catch (e, stack) {
-      logger.error('findByPhoneNumber() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findByPhoneNumber() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -83,14 +86,13 @@ class UserRepository extends BaseRepository<User> {
           .where('deletedAt', isNull: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('プレミアム会員数: ${results.length}人', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findPremiumUsers() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findPremiumUsers() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -109,29 +111,73 @@ class UserRepository extends BaseRepository<User> {
       logger.success('プレミアム会員数: $count人', name: _logName);
       return count;
     } catch (e, stack) {
-      logger.error('countPremiumUsers() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('countPremiumUsers() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return 0;
     }
   }
 
-  /// プレミアムステータスを更新
-  Future<void> updatePremiumStatus(String userId, bool isPremium) async {
-    logger.start('updatePremiumStatus($userId, $isPremium) 開始', name: _logName);
+/// プレミアムステータスを更新
+Future<void> updatePremiumStatus(String userId, bool isPremium) async {
+  logger.start('updatePremiumStatus($userId, $isPremium) 開始', name: _logName);
 
-    try {
-      await updateFields(userId, {
-        'premium': isPremium,
-        'Premium': isPremium, // 後方互換性
-        'lastUpdatedPremium': DateTime.now().toIso8601String(),
-        'LastUpdated_Premium': DateTime.now().toIso8601String(), // 後方互換性
-      });
+  try {
+    // ★ 修正: まずユーザーを検索して実際のドキュメントIDを取得
+    logger.start('ユーザー検索中...', name: _logName);
+    
+    // メールアドレスで検索
+    final userSnapshot = await firestore
+        .collection(collectionName)
+        .where('id', isEqualTo: userId)
+        .limit(1)
+        .get();
 
-      logger.success('プレミアムステータス更新完了', name: _logName);
-    } catch (e, stack) {
-      logger.error('updatePremiumStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
-      rethrow;
+    // 旧形式のEmailAddressでも検索
+    if (userSnapshot.docs.isEmpty) {
+      final altSnapshot = await firestore
+          .collection(collectionName)
+          .where('EmailAddress', isEqualTo: userId)
+          .limit(1)
+          .get();
+      
+      if (altSnapshot.docs.isEmpty) {
+        logger.error('ユーザーが見つかりません: $userId', name: _logName);
+        throw Exception('ユーザー情報が見つかりません');
+      }
+      
+      // 見つかったドキュメントIDを使用
+      final docId = altSnapshot.docs.first.id;
+      logger.success('ドキュメントID取得: $docId', name: _logName);
+      
+      await _updatePremiumFields(docId, isPremium);
+    } else {
+      // 見つかったドキュメントIDを使用
+      final docId = userSnapshot.docs.first.id;
+      logger.success('ドキュメントID取得: $docId', name: _logName);
+      
+      await _updatePremiumFields(docId, isPremium);
     }
+
+    logger.section('updatePremiumStatus() 完了', name: _logName);
+  } catch (e, stack) {
+    logger.error('updatePremiumStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
+    rethrow;
   }
+}
+
+/// プレミアムフィールドを更新する内部メソッド
+Future<void> _updatePremiumFields(String docId, bool isPremium) async {
+  logger.start('Firestore更新中... (docId: $docId)', name: _logName);
+  
+  await firestore.collection(collectionName).doc(docId).update({
+    'premium': isPremium,
+    'Premium': isPremium, // 旧形式対応
+    'lastUpdatedPremium': FieldValue.serverTimestamp(),
+    'LastUpdated_Premium': FieldValue.serverTimestamp(), // 旧形式対応
+  });
+  
+  logger.success('Firestore更新完了', name: _logName);
+}
 
   /// ユーザーを論理削除
   Future<void> softDelete(String userId) async {
@@ -145,7 +191,8 @@ class UserRepository extends BaseRepository<User> {
 
       logger.success('ユーザー論理削除完了: $userId', name: _logName);
     } catch (e, stack) {
-      logger.error('softDelete() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('softDelete() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -155,18 +202,15 @@ class UserRepository extends BaseRepository<User> {
     logger.debug('findDeletedUsers()', name: _logName);
 
     try {
-      final snapshot = await collection
-          .where('deletedAt', isNull: false)
-          .get();
+      final snapshot = await collection.where('deletedAt', isNull: false).get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('削除済みユーザー数: ${results.length}人', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findDeletedUsers() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findDeletedUsers() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -183,7 +227,8 @@ class UserRepository extends BaseRepository<User> {
 
       logger.success('評価スコア更新完了', name: _logName);
     } catch (e, stack) {
-      logger.error('updateRate() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('updateRate() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -206,7 +251,8 @@ class UserRepository extends BaseRepository<User> {
 
       logger.success('ルーム参加回数更新: $newCount', name: _logName);
     } catch (e, stack) {
-      logger.error('incrementRoomCount() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('incrementRoomCount() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -217,7 +263,7 @@ class UserRepository extends BaseRepository<User> {
 
     try {
       final user = await findById(userId);
-      
+
       if (user == null) {
         logger.warning('ユーザーが存在しません: $userId', name: _logName);
         return false;
@@ -230,7 +276,8 @@ class UserRepository extends BaseRepository<User> {
 
       return true;
     } catch (e, stack) {
-      logger.error('isActiveUser() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('isActiveUser() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -244,9 +291,7 @@ class UserRepository extends BaseRepository<User> {
         .where('deletedAt', isNull: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 }

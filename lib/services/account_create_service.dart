@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fba;
 import '../models/user.dart';
+import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 
 class UserRegisterService {
@@ -8,7 +9,16 @@ class UserRegisterService {
   final _firestore = FirebaseFirestore.instance;
   static const String _logName = 'UserRegisterService';
 
-  Future<bool> register(User user, String password) async {
+  /// ユーザー登録処理（StorageService統合版）
+  /// 
+  /// [user] 登録するユーザー情報
+  /// [password] パスワード
+  /// [storageService] データ永続化サービス（必須）
+  Future<bool> register({
+    required User user, 
+    required String password,
+    required StorageService storageService,
+  }) async {
     logger.section('register() 開始', name: _logName);
 
     try {
@@ -41,6 +51,28 @@ class UserRegisterService {
       await _firestore.collection('User').doc(docId).set(inputData);
 
       logger.success('Firestore 登録完了!', name: _logName);
+
+      // ===== ✅ StorageServiceにもユーザーを追加 =====
+      logger.start('StorageService にユーザー追加中...', name: _logName);
+      
+      // 既存ユーザーリストにない場合のみ追加
+      final existingUser = storageService.users.firstWhere(
+        (u) => u.id == user.id,
+        orElse: () => User(id: ''),
+      );
+
+      if (existingUser.id.isEmpty) {
+        storageService.users.add(user);
+        logger.success('StorageService にユーザー追加完了', name: _logName);
+      } else {
+        logger.warning('StorageService に既に存在するため追加スキップ', name: _logName);
+      }
+
+      // StorageServiceを保存
+      logger.start('StorageService.save() 実行中...', name: _logName);
+      await storageService.save();
+      logger.success('StorageService.save() 完了', name: _logName);
+      // =======================================
 
       // Firestore から取得して整合性チェック
       logger.start('Firestore(User/$docId) の保存済みデータ取得中...', name: _logName);

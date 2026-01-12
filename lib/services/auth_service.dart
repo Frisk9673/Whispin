@@ -2,7 +2,7 @@ import 'dart:async';
 import '../models/user.dart';
 import '../models/local_auth_user.dart';
 import '../constants/app_constants.dart';
-import '../extensions/string_extensions.dart'; // ✅ 追加
+import '../extensions/string_extensions.dart';
 import 'password_hasher.dart';
 import 'storage_service.dart';
 
@@ -26,7 +26,6 @@ class AuthService {
     String password,
     String confirmPassword,
   ) async {
-    // ✅ String拡張メソッドを使用したバリデーション
     if (email.isBlank || firstName.isBlank || password.isBlank || confirmPassword.isBlank) {
       throw Exception(AppConstants.validationRequired);
     }
@@ -43,7 +42,6 @@ class AuthService {
       throw Exception(AppConstants.validationMaxLength);
     }
     
-    // ✅ String拡張メソッドを使用したメールバリデーション
     if (!email.isValidEmail) {
       throw Exception(AppConstants.validationEmailInvalid);
     }
@@ -108,7 +106,6 @@ class AuthService {
       ),
     );
     
-    // ✅ String拡張メソッドを使用
     if (authUser.email.isBlank) {
       throw Exception('メールアドレスまたはパスワードが正しくありません');
     }
