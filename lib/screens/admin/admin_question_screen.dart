@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../providers/chat_provider.dart';
-import '../../services/question_chat.dart';
+import '../../providers/admin_provider.dart';
 import '../../models/question_message.dart';
 import '../../constants/colors.dart';
 
@@ -20,22 +18,18 @@ class AdminQuestionChatScreen extends StatefulWidget {
       _AdminQuestionChatScreenState();
 }
 
-class _AdminQuestionChatScreenState
-    extends State<AdminQuestionChatScreen> {
+class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final QuestionChatService _service = QuestionChatService();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
 
-    /// 管理者として既存チャットをロード
+    // 管理者としてチャット購読開始
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ChatProvider>(
-        context,
-        listen: false,
-      ).loadChatAsAdmin(widget.chatId);
+      final provider = Provider.of<AdminProvider>(context, listen: false);
+      provider.startMessageStream(widget.chatId);
     });
   }
 
@@ -43,6 +37,10 @@ class _AdminQuestionChatScreenState
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+
+    final provider = Provider.of<AdminProvider>(context, listen: false);
+    provider.disposeMessageStream();
+
     super.dispose();
   }
 
@@ -62,29 +60,16 @@ class _AdminQuestionChatScreenState
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final provider = Provider.of<ChatProvider>(
-      context,
-      listen: false,
-    );
+    final provider = Provider.of<AdminProvider>(context, listen: false);
+    await provider.sendMessage(widget.chatId, text);
 
-    await provider.send(text);
     _controller.clear();
     _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ChatProvider>(context);
-
-    if (provider.loading || provider.chatId == null) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
-        ),
-      );
-    }
+    final provider = Provider.of<AdminProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -96,42 +81,24 @@ class _AdminQuestionChatScreenState
         children: [
           // メッセージ一覧
           Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _service.messageStream(provider.chatId!),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                  );
-                }
-
-                final messages = snapshot.data!;
-
-                if (messages.isEmpty) {
-                  return const Center(
+            child: provider.messages.isEmpty
+                ? const Center(
                     child: Text(
                       'メッセージがありません',
                       style: TextStyle(color: Colors.grey),
                     ),
-                  );
-                }
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
-                });
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    return _buildMessageBubble(messages[index]);
-                  },
-                );
-              },
-            ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: provider.messages.length,
+                    itemBuilder: (context, index) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scrollToBottom();
+                      });
+                      return _buildMessageBubble(provider.messages[index]);
+                    },
+                  ),
           ),
 
           // 入力欄
@@ -175,9 +142,7 @@ class _AdminQuestionChatScreenState
                 child: Text(
                   message.text,
                   style: TextStyle(
-                    color: isAdmin
-                        ? Colors.white
-                        : Colors.black87,
+                    color: isAdmin ? Colors.white : Colors.black87,
                   ),
                 ),
               ),
@@ -195,8 +160,7 @@ class _AdminQuestionChatScreenState
   Widget _buildAvatar(bool isAdmin) {
     return CircleAvatar(
       radius: 18,
-      backgroundColor:
-          isAdmin ? AppColors.primary : Colors.grey,
+      backgroundColor: isAdmin ? AppColors.primary : Colors.grey,
       child: Icon(
         isAdmin ? Icons.support_agent : Icons.person,
         color: Colors.white,
