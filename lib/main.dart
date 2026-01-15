@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/config/environment.dart';
+import 'package:whispin/firebase_options.dart';
 import 'package:whispin/routes/app_router.dart';
 import 'package:whispin/constants/routes.dart';
 import 'package:whispin/services/storage_service.dart';
@@ -22,6 +26,10 @@ import 'utils/app_logger.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await initializeDateFormatting('ja_JP', null);
+  await dotenv.load(fileName: '.env');
+  Environment.loadFromEnv();
+
   // ログシステムの初期化
   await logger.initialize();
 
@@ -30,14 +38,7 @@ Future<void> main() async {
   // Firebase初期化
   logger.start('Firebase 初期化中...', name: 'Main');
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'dummy', 
-      authDomain: 'dummy.firebaseapp.com',
-      projectId: 'kazutxt-firebase-overvie-8d3e4',
-      storageBucket: 'dummy.appspot.com',
-      messagingSenderId: 'dummy',
-      appId: 'dummy',
-    ),
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   logger.success('Firebase 初期化完了', name: 'Main');
 
@@ -97,12 +98,12 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => AdminProvider(userRepository: userRepository),
         ),
-        
+
         // Services
         Provider<StorageService>.value(value: storageService),
         Provider<AuthService>.value(value: authService),
         Provider<ChatService>.value(value: chatService),
-        
+
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
         Provider<FriendshipRepository>.value(value: friendshipRepository),
@@ -144,9 +145,7 @@ class MyApp extends StatelessWidget {
         NavigationLogger(),
       ],
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: authService.isLoggedIn()
-      ? AppRoutes.home
-      : AppRoutes.login,
+      initialRoute: authService.isLoggedIn() ? AppRoutes.home : AppRoutes.login,
     );
   }
 }

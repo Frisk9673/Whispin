@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "772148163985",
+    "project_id": "wispin-999",
+    "storage_bucket": "wispin-999.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:772148163985:android:4e72e6416119570019d630",
+        "android_client_info": {
+          "package_name": "com.example.whispin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCViZn-T8iZfymASx3ED6YWxfqAiaJf0Es"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

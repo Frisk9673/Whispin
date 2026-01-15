@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:whispin/firebase_options.dart';
 import '../utils/app_logger.dart';
 import 'environment.dart';
 
@@ -17,41 +17,25 @@ class FirebaseConfig {
     logger.section('🔥 Firebase初期化開始', name: _logName);
 
     try {
-      // Firebase初期化
       logger.start('Firebase Core 初期化中...', name: _logName);
+
+      // FlutterFire CLI の設定を使用
       await Firebase.initializeApp(
-        options: _getFirebaseOptions(),
+        options: DefaultFirebaseOptions.currentPlatform,
       );
+
       logger.success('Firebase Core 初期化完了', name: _logName);
 
-      // エミュレーター設定（開発環境のみ）
       if (Environment.isDevelopment) {
         await _configureEmulators();
       }
 
       logger.success('✨ Firebase初期化完了', name: _logName);
-      logger.section('', name: _logName);
     } catch (e, stack) {
-      logger.error(
-        '❌ Firebase初期化エラー: $e',
-        name: _logName,
-        error: e,
-        stackTrace: stack,
-      );
+      logger.error('❌ Firebase初期化エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
-  }
-
-  /// Firebase Options取得
-  static FirebaseOptions _getFirebaseOptions() {
-    return FirebaseOptions(
-      apiKey: Environment.firebaseApiKey,
-      authDomain: Environment.firebaseAuthDomain,
-      projectId: Environment.firebaseProjectId,
-      storageBucket: Environment.firebaseStorageBucket,
-      messagingSenderId: Environment.firebaseMessagingSenderId,
-      appId: Environment.firebaseAppId,
-    );
   }
 
   /// エミュレーター設定
