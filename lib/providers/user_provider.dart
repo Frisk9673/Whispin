@@ -93,6 +93,15 @@ Future<void> updatePremiumStatus(bool isPremium) async {
       isPremium,
     );
 
+    // ★ 追加：プレミアム契約・解約ログを作成
+    if (_currentUser!.phoneNumber != null &&
+        _currentUser!.phoneNumber!.isNotEmpty) {
+      await _userRepository.createPremiumLog(
+        phoneNumber: _currentUser!.phoneNumber!, // ← ここで ! を使う
+        isPremium: isPremium,
+      );
+    }
+
     logger.success('Repository更新完了', name: _logName);
 
     // ★ 変更: ローカルのユーザー情報を即座に更新（Firestoreは信頼）

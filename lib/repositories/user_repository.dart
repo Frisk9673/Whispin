@@ -294,4 +294,34 @@ Future<void> _updatePremiumFields(String docId, bool isPremium) async {
       return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
+  // =====================================================
+  // ★ 追加：プレミアム契約・解約ログ作成
+  // =====================================================
+  Future<void> createPremiumLog({
+    required String phoneNumber,
+    required bool isPremium,
+  }) async {
+    try {
+      final detail = isPremium ? '契約' : '解約';
+
+      await firestore.collection('Log_Premium').add({
+        'ID': phoneNumber,
+        'Timestamp': FieldValue.serverTimestamp(),
+        'Detail': detail,
+      });
+
+      logger.success(
+        'Log_Premium 作成完了: $phoneNumber / $detail',
+        name: _logName,
+      );
+    } catch (e, stack) {
+      logger.error(
+        'Log_Premium 作成失敗: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
+      rethrow;
+    }
+  }
 }
