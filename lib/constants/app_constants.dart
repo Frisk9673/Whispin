@@ -39,7 +39,7 @@ class AppConstants {
   static const String themeKey = 'theme_mode';
 
   // ===== Firestore Collections =====
-  static const String usersCollection = 'User';
+  static const String usersCollection = 'users';
   static const String roomsCollection = 'rooms';
   static const String friendshipsCollection = 'friendships';
   static const String friendRequestsCollection = 'friendRequests';

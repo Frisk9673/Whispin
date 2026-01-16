@@ -21,56 +21,62 @@ class UserRepository extends BaseRepository<User> {
 
   // ===== User Specific Methods =====
 
-  /// メールアドレスでユーザーを検索
+  /// メールアドレスでユーザーを検索（強化版）
   Future<User?> findByEmail(String email) async {
-    logger.debug('findByEmail($email)', name: _logName);
+    logger.section('findByEmail($email) 開始', name: _logName);
 
     try {
-      final results = await findWhere(field: 'id', value: email, limit: 1);
+      // ===== 方法1: 'id' フィールドで検索 =====
+      logger.start('方法1: id フィールドで検索中...', name: _logName);
+      
+      final snapshot1 = await firestore
+          .collection(collectionName)
+          .where('id', isEqualTo: email)
+          .limit(1)
+          .get();
 
-      if (results.isEmpty) {
-        // 'EmailAddress'フィールドでも試す（後方互換性）
-        final altResults = await findWhere(
-          field: 'EmailAddress',
-          value: email,
-          limit: 1,
-        );
-
-        if (altResults.isEmpty) {
-          logger.warning('ユーザーが見つかりません: $email', name: _logName);
-          return null;
-        }
-
-        return altResults.first;
+      if (snapshot1.docs.isNotEmpty) {
+        print('方法1で発見: ${snapshot1.docs.first.id}');
+        
+        final data = snapshot1.docs.first.data();
+        logger.info('取得データ:', name: _logName);
+        data.forEach((key, value) {
+          logger.info('  $key: $value', name: _logName);
+        });
+        
+        final user = fromMap(data);
+        logger.section('findByEmail() 完了', name: _logName);
+        return user;
       }
 
-      return results.first;
+      logger.warning('方法1: 見つかりませんでした', name: _logName);
+
+      // ===== 全ての方法で見つからない場合 =====
+      print('全ての方法でユーザーが見つかりませんでした');
+      print('検索したメールアドレス: $email');
+      print('検索したコレクション: $collectionName');
+      
+      // デバッグ用: コレクション内の全ドキュメントID表示
+      logger.start('デバッグ: コレクション内の全ドキュメントIDを表示', name: _logName);
+      final allDocs = await firestore
+          .collection(collectionName)
+          .limit(10)
+          .get();
+      
+      if (allDocs.docs.isEmpty) {
+        logger.warning('コレクションが空です！', name: _logName);
+      } else {
+        logger.info('コレクション内の最初の10件:', name: _logName);
+        for (var doc in allDocs.docs) {
+          logger.info('  - ${doc.id}', name: _logName);
+        }
+      }
+
+      logger.section('findByEmail() 完了（null）', name: _logName);
+      return null;
+
     } catch (e, stack) {
       logger.error('findByEmail() エラー: $e',
-          name: _logName, error: e, stackTrace: stack);
-      rethrow;
-    }
-  }
-
-  /// 電話番号でユーザーを検索
-  Future<User?> findByPhoneNumber(String phoneNumber) async {
-    logger.debug('findByPhoneNumber($phoneNumber)', name: _logName);
-
-    try {
-      final results = await findWhere(
-        field: 'phoneNumber',
-        value: phoneNumber,
-        limit: 1,
-      );
-
-      if (results.isEmpty) {
-        logger.warning('ユーザーが見つかりません: $phoneNumber', name: _logName);
-        return null;
-      }
-
-      return results.first;
-    } catch (e, stack) {
-      logger.error('findByPhoneNumber() エラー: $e',
           name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
@@ -117,67 +123,65 @@ class UserRepository extends BaseRepository<User> {
     }
   }
 
-/// プレミアムステータスを更新
-Future<void> updatePremiumStatus(String userId, bool isPremium) async {
-  logger.start('updatePremiumStatus($userId, $isPremium) 開始', name: _logName);
+  /// プレミアムステータスを更新
+  Future<void> updatePremiumStatus(String userId, bool isPremium) async {
+    logger.start('updatePremiumStatus($userId, $isPremium) 開始', name: _logName);
 
-  try {
-    // ★ 修正: まずユーザーを検索して実際のドキュメントIDを取得
-    logger.start('ユーザー検索中...', name: _logName);
-    
-    // メールアドレスで検索
-    final userSnapshot = await firestore
-        .collection(collectionName)
-        .where('id', isEqualTo: userId)
-        .limit(1)
-        .get();
-
-    // 旧形式のEmailAddressでも検索
-    if (userSnapshot.docs.isEmpty) {
-      final altSnapshot = await firestore
+    try {
+      // ユーザー検索して実際のドキュメントIDを取得
+      logger.start('ユーザー検索中...', name: _logName);
+      
+      // メールアドレスで検索
+      final userSnapshot = await firestore
           .collection(collectionName)
-          .where('EmailAddress', isEqualTo: userId)
+          .where('id', isEqualTo: userId)
           .limit(1)
           .get();
-      
-      if (altSnapshot.docs.isEmpty) {
-        logger.error('ユーザーが見つかりません: $userId', name: _logName);
-        throw Exception('ユーザー情報が見つかりません');
+
+      // 旧形式のEmailAddressでも検索
+      if (userSnapshot.docs.isEmpty) {
+        final altSnapshot = await firestore
+            .collection(collectionName)
+            .where('EmailAddress', isEqualTo: userId)
+            .limit(1)
+            .get();
+        
+        if (altSnapshot.docs.isEmpty) {
+          logger.error('ユーザーが見つかりません: $userId', name: _logName);
+          throw Exception('ユーザー情報が見つかりません');
+        }
+        
+        final docId = altSnapshot.docs.first.id;
+        logger.success('ドキュメントID取得: $docId', name: _logName);
+        
+        await _updatePremiumFields(docId, isPremium);
+      } else {
+        final docId = userSnapshot.docs.first.id;
+        logger.success('ドキュメントID取得: $docId', name: _logName);
+        
+        await _updatePremiumFields(docId, isPremium);
       }
-      
-      // 見つかったドキュメントIDを使用
-      final docId = altSnapshot.docs.first.id;
-      logger.success('ドキュメントID取得: $docId', name: _logName);
-      
-      await _updatePremiumFields(docId, isPremium);
-    } else {
-      // 見つかったドキュメントIDを使用
-      final docId = userSnapshot.docs.first.id;
-      logger.success('ドキュメントID取得: $docId', name: _logName);
-      
-      await _updatePremiumFields(docId, isPremium);
+
+      logger.section('updatePremiumStatus() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('updatePremiumStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      rethrow;
     }
-
-    logger.section('updatePremiumStatus() 完了', name: _logName);
-  } catch (e, stack) {
-    logger.error('updatePremiumStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
-    rethrow;
   }
-}
 
-/// プレミアムフィールドを更新する内部メソッド
-Future<void> _updatePremiumFields(String docId, bool isPremium) async {
-  logger.start('Firestore更新中... (docId: $docId)', name: _logName);
-  
-  await firestore.collection(collectionName).doc(docId).update({
-    'premium': isPremium,
-    'Premium': isPremium, // 旧形式対応
-    'lastUpdatedPremium': FieldValue.serverTimestamp(),
-    'LastUpdated_Premium': FieldValue.serverTimestamp(), // 旧形式対応
-  });
-  
-  logger.success('Firestore更新完了', name: _logName);
-}
+  /// プレミアムフィールドを更新する内部メソッド
+  Future<void> _updatePremiumFields(String docId, bool isPremium) async {
+    logger.start('Firestore更新中... (docId: $docId)', name: _logName);
+    
+    await firestore.collection(collectionName).doc(docId).update({
+      'premium': isPremium,
+      'Premium': isPremium,
+      'lastUpdatedPremium': FieldValue.serverTimestamp(),
+      'LastUpdated_Premium': FieldValue.serverTimestamp(),
+    });
+    
+    logger.success('Firestore更新完了', name: _logName);
+  }
 
   /// ユーザーを論理削除
   Future<void> softDelete(String userId) async {
@@ -186,7 +190,7 @@ Future<void> _updatePremiumFields(String docId, bool isPremium) async {
     try {
       await updateFields(userId, {
         'deletedAt': DateTime.now().toIso8601String(),
-        'DeletedAt': DateTime.now().toIso8601String(), // 後方互換性
+        'DeletedAt': DateTime.now().toIso8601String(),
       });
 
       logger.success('ユーザー論理削除完了: $userId', name: _logName);
@@ -222,7 +226,7 @@ Future<void> _updatePremiumFields(String docId, bool isPremium) async {
     try {
       await updateFields(userId, {
         'rate': rate,
-        'Rate': rate, // 後方互換性
+        'Rate': rate,
       });
 
       logger.success('評価スコア更新完了', name: _logName);
@@ -246,7 +250,7 @@ Future<void> _updatePremiumFields(String docId, bool isPremium) async {
       final newCount = user.roomCount + 1;
       await updateFields(userId, {
         'roomCount': newCount,
-        'RoomCount': newCount, // 後方互換性
+        'RoomCount': newCount,
       });
 
       logger.success('ルーム参加回数更新: $newCount', name: _logName);
@@ -294,9 +298,8 @@ Future<void> _updatePremiumFields(String docId, bool isPremium) async {
       return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
-  // =====================================================
-  // ★ 追加：プレミアム契約・解約ログ作成
-  // =====================================================
+
+  /// プレミアム契約・解約ログ作成
   Future<void> createPremiumLog({
     required String phoneNumber,
     required bool isPremium,
