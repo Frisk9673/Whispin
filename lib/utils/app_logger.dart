@@ -214,5 +214,4 @@ class AppLogger {
   }
 }
 
-/// グローバルログインスタンス
 final logger = AppLogger();
