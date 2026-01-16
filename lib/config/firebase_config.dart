@@ -26,7 +26,7 @@ class FirebaseConfig {
 
       logger.success('Firebase Core 初期化完了', name: _logName);
 
-      if (Environment.isDevelopment) {
+      if (Environment.isFirebaseEmulator) {
         await _configureEmulators();
       }
 
@@ -44,7 +44,7 @@ class FirebaseConfig {
 
     try {
       // Auth Emulator
-      await FirebaseAuth.instance.useAuthEmulator(
+      FirebaseAuth.instance.useAuthEmulator(
         Environment.emulatorHost,
         Environment.authEmulatorPort,
       );
@@ -89,5 +89,5 @@ class FirebaseConfig {
   static bool get isSignedIn => currentUser != null;
 
   /// エミュレーター接続状態確認
-  static bool get isUsingEmulator => Environment.isDevelopment;
+  static bool get isUsingEmulator => Environment.isFirebaseEmulator;
 }

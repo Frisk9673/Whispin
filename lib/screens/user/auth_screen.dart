@@ -49,7 +49,6 @@ class _AuthScreenState extends State<AuthScreen> {
   // ===== バリデーション =====
 
   String? _validateEmail(String email) {
-    // ✅ String拡張メソッド使用
     if (email.isBlank) {
       return AppConstants.validationRequired;
     }

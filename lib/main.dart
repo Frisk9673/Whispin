@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/config/environment.dart';
+import 'package:whispin/config/firebase_config.dart';
 import 'package:whispin/firebase_options.dart';
 import 'package:whispin/routes/app_router.dart';
 import 'package:whispin/constants/routes.dart';
@@ -26,9 +25,10 @@ import 'utils/app_logger.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting('ja_JP', null);
   await dotenv.load(fileName: '.env');
   Environment.loadFromEnv();
+  await FirebaseConfig.initialize(); 
+  await initializeDateFormatting('ja_JP', null);
 
   // ログシステムの初期化
   await logger.initialize();
@@ -41,22 +41,6 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   logger.success('Firebase 初期化完了', name: 'Main');
-
-  // エミュレーター設定
-  try {
-    logger.start('Firebase エミュレーター接続中...', name: 'Main');
-    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: false,
-      sslEnabled: false,
-    );
-    logger.success('エミュレーター接続完了', name: 'Main');
-    logger.info('  - Auth: localhost:9099', name: 'Main');
-    logger.info('  - Firestore: localhost:8080', name: 'Main');
-  } catch (e) {
-    logger.error('エミュレーター設定エラー: $e', name: 'Main', error: e);
-  }
 
   // Services層の初期化
   logger.start('Services 初期化中...', name: 'Main');

@@ -1,1 +1,44 @@
-{"database":{"rules":"database.rules.json"},"emulators":{"database":{"host":"0.0.0.0","port":9000},"auth":{"host":"0.0.0.0","port":9099},"ui":{"enabled":true,"host":"0.0.0.0","port":4000},"firestore":{"port":8080},"singleProjectMode":true},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"wispin-999","configurations":{"android":"1:772148163985:android:4e72e6416119570019d630","web":"1:772148163985:web:253d944a6aef22f319d630"}}},"android":{"default":{"projectId":"wispin-999","appId":"1:772148163985:android:4e72e6416119570019d630","fileOutput":"android/app/google-services.json"}}}}}
+{
+    "database": {
+        "rules": "database.rules.json"
+    },
+    "emulators": {
+        "database": {
+            "host": "0.0.0.0",
+            "port": 9000
+        },
+        "auth": {
+            "host": "0.0.0.0",
+            "port": 9099
+        },
+        "ui": {
+            "enabled": true,
+            "host": "0.0.0.0",
+            "port": 4000
+        },
+        "firestore": {
+            "port": 8080
+        },
+        "singleProjectMode": true
+    },
+    "flutter": {
+        "platforms": {
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "wispin-999",
+                    "configurations": {
+                        "android": "1:772148163985:android:4e72e6416119570019d630",
+                        "web": "1:772148163985:web:253d944a6aef22f319d630"
+                    }
+                }
+            },
+            "android": {
+                "default": {
+                    "projectId": "wispin-999",
+                    "appId": "1:772148163985:android:4e72e6416119570019d630",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            }
+        }
+    }
+}

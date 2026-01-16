@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/services/storage_service.dart';
-
+import 'package:whispin/widgets/layout/app_page_scaffold.dart';
 import '../../services/user_auth_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_storage_service.dart';
@@ -42,7 +42,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
   Future<void> _login() async {
     logger.section('_login() 開始', name: _logName);
-    
+
     setState(() {
       _isLoading = true;
       message = '';
@@ -107,7 +107,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
       final storageService = context.read<StorageService>();
 
       logger.start('HomeScreen へ遷移', name: _logName);
-      
+
       // NavigationHelper使用
       await NavigationHelper.toHome(
         context,
@@ -227,8 +227,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           const SizedBox(height: 24),
 
                           // エラーメッセージ
-                          if (message.isNotBlank) // ✅ String拡張メソッド
+                          if (message.isNotBlank)
                             Container(
+                              width: double.infinity,
                               padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
@@ -240,19 +241,19 @@ class _UserLoginPageState extends State<UserLoginPage> {
                                   color: AppColors.error.withOpacity(0.3),
                                 ),
                               ),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color: AppColors.error,
+                                  Row(
+                                    children: [
+                                      Icon(Icons.error_outline,
+                                          color: AppColors.error),
+                                      const SizedBox(width: 8),
+                                      Text('エラー', style: AppTextStyles.error),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      message,
-                                      style: AppTextStyles.error,
-                                    ),
-                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(message, style: AppTextStyles.error),
                                 ],
                               ),
                             ),
@@ -278,9 +279,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                                   gradient: _isLoading
                                       ? null
                                       : AppColors.primaryGradient,
-                                  color: _isLoading 
-                                      ? AppColors.divider 
-                                      : null,
+                                  color: _isLoading ? AppColors.divider : null,
                                   borderRadius: BorderRadius.circular(
                                     AppConstants.defaultBorderRadius,
                                   ),
