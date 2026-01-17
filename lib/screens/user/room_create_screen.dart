@@ -98,6 +98,8 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       await _roomRepository.create(newRoom, id: roomId);
 
       logger.success('ルーム作成完了: $roomId', name: _logName);
+      logger.info('ルーム情報: $newRoom', name: _logName);
+
 
       if (!mounted) return;
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ChatRoom {
   final String id; // roomId (Primary Key)
   final String topic; // 話題 (formerly 'name')
@@ -10,7 +12,7 @@ class ChatRoom {
   final int extension; // 延長上限 (non-premium: 2)
   final DateTime startedAt; // ✅ 変更: createdAt → startedAt
   final DateTime expiresAt; // ルーム有効期限（開始時刻 + 10分）
-  
+
   ChatRoom({
     required this.id,
     required this.topic,
@@ -21,10 +23,10 @@ class ChatRoom {
     this.comment2,
     this.extensionCount = 0,
     this.extension = 2,
-    required this.startedAt, // ✅ 変更
+    required this.startedAt,
     DateTime? expiresAt,
-  }) : expiresAt = expiresAt ?? startedAt.add(Duration(minutes: 10)); // ✅ 変更
-  
+  }) : expiresAt = expiresAt ?? startedAt.add(Duration(minutes: 10));
+
   // Backward compatibility: get userIds array from id1/id2
   List<String> get userIds {
     final ids = <String>[];
@@ -32,44 +34,48 @@ class ChatRoom {
     if (id2 != null && id2!.isNotEmpty) ids.add(id2!);
     return ids;
   }
-  
+
   // Status helpers
   bool get isWaiting => status == 0;
   bool get isActive => status == 1;
   bool get isFinished => status == 2;
   String get statusText {
     switch (status) {
-      case 0: return '待機中';
-      case 1: return '会話中';
-      case 2: return '終了';
-      default: return '不明';
+      case 0:
+        return '待機中';
+      case 1:
+        return '会話中';
+      case 2:
+        return '終了';
+      default:
+        return '不明';
     }
   }
-  
+
   // Backward compatibility: 'name' field
   String get name => topic;
-  
+
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'topic': topic,
-    'status': status,
-    'id1': id1,
-    'id2': id2,
-    'comment1': comment1,
-    'comment2': comment2,
-    'extensionCount': extensionCount,
-    'extension': extension,
-    'startedAt': startedAt.toIso8601String(),
-    'expiresAt': expiresAt.toIso8601String(),
-    'name': topic,
-    'userIds': userIds,
-  };
-  
+        'id': id,
+        'topic': topic,
+        'status': status,
+        'id1': id1,
+        'id2': id2,
+        'comment1': comment1,
+        'comment2': comment2,
+        'extensionCount': extensionCount,
+        'extension': extension,
+        'startedAt': startedAt.toIso8601String(),
+        'expiresAt': expiresAt.toIso8601String(),
+        'name': topic,
+        'userIds': userIds,
+      };
+
   factory ChatRoom.fromMap(Map<String, dynamic> json) {
     // Backward compatibility: support old 'userIds' array format
     String id1Value;
     String? id2Value;
-    
+
     if (json.containsKey('id1')) {
       // New format
       id1Value = json['id1'] as String;
@@ -83,13 +89,13 @@ class ChatRoom {
       id1Value = '';
       id2Value = null;
     }
-    
+
     final startedAt = json['startedAt'] != null
         ? DateTime.parse(json['startedAt'] as String)
         : (json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)
             : DateTime.now());
-    
+
     return ChatRoom(
       id: json['id'] as String,
       topic: json['topic'] as String? ?? json['name'] as String? ?? '',
@@ -102,11 +108,11 @@ class ChatRoom {
       extension: json['extension'] as int? ?? 2,
       startedAt: startedAt,
       expiresAt: json['expiresAt'] != null
-        ? DateTime.parse(json['expiresAt'] as String)
-        : startedAt.add(Duration(minutes: 10)),
+          ? DateTime.parse(json['expiresAt'] as String)
+          : startedAt.add(Duration(minutes: 10)),
     );
   }
-  
+
   ChatRoom copyWith({
     String? id,
     String? topic,
@@ -133,5 +139,11 @@ class ChatRoom {
       startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt ?? this.expiresAt,
     );
+  }
+
+  @override
+  String toString() {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(toMap());
   }
 }

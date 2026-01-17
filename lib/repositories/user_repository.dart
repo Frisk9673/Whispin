@@ -27,7 +27,7 @@ class UserRepository extends BaseRepository<User> {
 
     try {
       // ===== 方法1: 'id' フィールドで検索 =====
-      logger.start('方法1: id フィールドで検索中...', name: _logName);
+      logger.start('方法1:id フィールドで検索中...', name: _logName);
       
       final snapshot1 = await firestore
           .collection(collectionName)
@@ -36,7 +36,7 @@ class UserRepository extends BaseRepository<User> {
           .get();
 
       if (snapshot1.docs.isNotEmpty) {
-        print('方法1で発見: ${snapshot1.docs.first.id}');
+        logger.success('方法1で発見: ${snapshot1.docs.first.id}', name: _logName);
         
         final data = snapshot1.docs.first.data();
         logger.info('取得データ:', name: _logName);
@@ -52,9 +52,9 @@ class UserRepository extends BaseRepository<User> {
       logger.warning('方法1: 見つかりませんでした', name: _logName);
 
       // ===== 全ての方法で見つからない場合 =====
-      print('全ての方法でユーザーが見つかりませんでした');
-      print('検索したメールアドレス: $email');
-      print('検索したコレクション: $collectionName');
+      logger.error('全ての方法でユーザーが見つかりませんでした');
+      logger.info('検索したメールアドレス: $email');
+      logger.info('検索したコレクション: $collectionName');
       
       // デバッグ用: コレクション内の全ドキュメントID表示
       logger.start('デバッグ: コレクション内の全ドキュメントIDを表示', name: _logName);

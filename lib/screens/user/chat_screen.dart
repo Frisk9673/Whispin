@@ -144,7 +144,6 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== ルーム状態ハンドラー =====
 
   void _handleRoomDisappeared() {
-    // ✅ context拡張メソッド使用
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
@@ -170,7 +169,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleRoomExpired() {
     if (!mounted) return;
 
-    // ✅ context拡張メソッド使用
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
@@ -197,7 +195,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showPartnerLeftDialog() {
-    // ✅ context拡張メソッド使用
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
@@ -227,14 +224,12 @@ class _ChatScreenState extends State<ChatScreen> {
       return AppConstants.waitingStatus;
     }
 
-    // ✅ DateTime拡張メソッド使用
     final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
 
     if (remaining.isNegative) {
       return '0:00';
     }
 
-    // ✅ Duration拡張メソッド（既存のtoTimeString相当）
     final minutes = remaining.inMinutes;
     final seconds = remaining.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
@@ -260,7 +255,6 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_messageController.text.trim().isEmpty) return;
     
     if (_messageController.text.trim().length > AppConstants.messageMaxLength) {
-      // ✅ context拡張メソッド使用
       context.showWarningSnackBar(
         'メッセージは${AppConstants.messageMaxLength}文字以内で入力してください'
       );
@@ -280,7 +274,6 @@ class _ChatScreenState extends State<ChatScreen> {
       
     } catch (e) {
       if (!mounted) return;
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('送信エラー: $e');
     }
   }
@@ -295,12 +288,10 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       if (!mounted) return;
-      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar('延長リクエストを送信しました');
       
     } catch (e) {
       if (!mounted) return;
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('エラー: $e');
     }
   }
@@ -334,7 +325,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (partnerId.isEmpty) return;
 
-    // ✅ context拡張メソッド使用
     await context.showCustomDialog(
       barrierDismissible: false,
       child: EvaluationDialog(

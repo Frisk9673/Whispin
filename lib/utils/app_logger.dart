@@ -1,11 +1,12 @@
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 /// アプリケーション全体のログ管理クラス
 /// 
-/// コンソール出力とファイル出力の両方をサポート
+/// コンソール出力（print + developer.log）とファイル出力の両方をサポート
 class AppLogger {
   static final AppLogger _instance = AppLogger._internal();
   factory AppLogger() => _instance;
@@ -21,13 +22,26 @@ class AppLogger {
     if (_isInitialized) return;
 
     try {
+      // Web環境ではファイル保存なし（printとdeveloper.logのみ）
+      if (kIsWeb) {
+        _isInitialized = true;
+        final initMessage = '📝 AppLogger初期化完了（Web環境: ファイル出力なし）';
+        print(initMessage);
+        developer.log(initMessage, name: 'AppLogger');
+        return;
+      }
+
+      // モバイル/デスクトップ環境
       final directory = await getApplicationDocumentsDirectory();
       final logDir = Directory('${directory.path}/logs');
       
+      // ログディレクトリが存在しない場合は作成
       if (!await logDir.exists()) {
         await logDir.create(recursive: true);
+        print('📁 ログディレクトリ作成: ${logDir.path}');
       }
 
+      // 本日のログファイルを作成
       final fileName = 'whispin_${_fileFormat.format(DateTime.now())}.log';
       _logFile = File('${logDir.path}/$fileName');
 
@@ -36,14 +50,26 @@ class AppLogger {
 
       _isInitialized = true;
       
-      log('📝', 'AppLogger初期化完了', name: 'AppLogger');
-      log('📁', 'ログファイル: ${_logFile!.path}', name: 'AppLogger');
-    } catch (e) {
-      developer.log(
-        'AppLogger初期化エラー: $e',
-        name: 'AppLogger',
-        error: e,
-      );
+      // 初期化完了メッセージ
+      final initMessage = '📝 AppLogger初期化完了\n📁 ログファイル: ${_logFile!.path}';
+      print(initMessage);
+      developer.log(initMessage, name: 'AppLogger');
+      
+      // ファイルにも書き込み
+      if (_logFile != null) {
+        await _logFile!.writeAsString(
+          '${_dateFormat.format(DateTime.now())} [INFO] [AppLogger] $initMessage\n',
+          mode: FileMode.append,
+          flush: true,
+        );
+      }
+    } catch (e, stack) {
+      final errorMsg = 'AppLogger初期化エラー: $e';
+      print('❌ $errorMsg');
+      developer.log(errorMsg, name: 'AppLogger', error: e, stackTrace: stack);
+      
+      // エラーでも初期化状態にする（print/developer.logは使える）
+      _isInitialized = true;
     }
   }
 
@@ -60,11 +86,13 @@ class AppLogger {
 
           if (age > 7) {
             await file.delete();
+            print('🗑️ 古いログファイルを削除: ${file.path}');
             developer.log('古いログファイルを削除: ${file.path}', name: 'AppLogger');
           }
         }
       }
     } catch (e) {
+      print('⚠️ ログクリーンアップエラー: $e');
       developer.log('ログクリーンアップエラー: $e', name: 'AppLogger', error: e);
     }
   }
@@ -94,7 +122,16 @@ class AppLogger {
     final timestamp = _dateFormat.format(DateTime.now());
     final logLine = '$timestamp [$level] [$name] $emoji $message';
 
-    // コンソール出力（developer.log使用）
+    // ===== 1. print出力（コンソール） =====
+    print(logLine);
+    if (error != null) {
+      print('  Error: $error');
+    }
+    if (stackTrace != null) {
+      print('  StackTrace: $stackTrace');
+    }
+
+    // ===== 2. developer.log出力（Dart DevTools用） =====
     developer.log(
       '$emoji $message',
       name: name,
@@ -103,7 +140,7 @@ class AppLogger {
       level: _getLevelValue(level),
     );
 
-    // ファイル出力
+    // ===== 3. ファイル出力 =====
     _writeToFile(logLine, error, stackTrace);
   }
 
@@ -125,7 +162,15 @@ class AppLogger {
 
   /// ファイルにログを書き込み
   void _writeToFile(String logLine, Object? error, StackTrace? stackTrace) {
-    if (!_isInitialized || _logFile == null) return;
+    // Web環境またはログファイルが未設定の場合はスキップ
+    if (kIsWeb || _logFile == null) {
+      return;
+    }
+
+    // 初期化前の場合もスキップ（printは既に実行済み）
+    if (!_isInitialized) {
+      return;
+    }
 
     try {
       final buffer = StringBuffer(logLine);
@@ -139,12 +184,14 @@ class AppLogger {
         buffer.writeln('  StackTrace: $stackTrace');
       }
 
+      // 同期書き込み（確実に保存）
       _logFile!.writeAsStringSync(
         buffer.toString(),
         mode: FileMode.append,
         flush: true,
       );
     } catch (e) {
+      print('❌ ログファイル書き込みエラー: $e');
       developer.log('ログファイル書き込みエラー: $e', name: 'AppLogger', error: e);
     }
   }
@@ -212,6 +259,14 @@ class AppLogger {
   void database(String operation, {String name = 'Database'}) {
     log('💾', 'DB操作: $operation', name: name);
   }
+
+  /// ログファイルのパスを取得（デバッグ用）
+  String? getLogFilePath() {
+    return _logFile?.path;
+  }
+
+  /// 初期化状態を確認
+  bool get isInitialized => _isInitialized;
 }
 
 final logger = AppLogger();

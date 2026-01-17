@@ -89,7 +89,6 @@ class AuthService {
   }
   
   Future<User> login(String email, String password) async {
-    // ✅ String拡張メソッドを使用
     if (email.isBlank || password.isBlank) {
       throw Exception('メールアドレスとパスワードを入力してください');
     }

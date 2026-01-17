@@ -58,12 +58,9 @@ class ChatService {
     
     // Repository経由でFirestoreに保存
     await _roomRepository.create(newRoom, id: roomId);
-    
-    // StorageServiceにも追加（互換性維持）
-    _storageService.rooms.add(newRoom);
-    await _storageService.save();
 
     logger.success('ルーム作成完了: $roomId', name: _logName);
+    logger.info('ルーム情報: $newRoom', name: _logName);
     logger.section('createRoom() 終了', name: _logName);
     
     return newRoom;
@@ -85,7 +82,6 @@ class ChatService {
       throw Exception('ルームが見つかりません');
     }
     
-    // ✅ Duration を使用（標準の add メソッド）
     final now = DateTime.now();
     final expiresAt = now.add(Duration(minutes: AppConstants.defaultChatDurationMinutes));
     
@@ -217,7 +213,6 @@ class ChatService {
     logger.debug('startRoomTimer() - roomId: $roomId', name: _logName);
     _roomTimers[roomId]?.cancel();
     
-    // ✅ DateTime拡張メソッドを使用（残り時間計算）
     final duration = expiresAt.timeUntil(DateTime.now());
     if (duration.isNegative) {
       logger.warning('既に期限切れのため削除します', name: _logName);
