@@ -24,14 +24,14 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   }
 
   Future<void> _handleSearch(PremiumLogProvider provider) async {
-    final tel = _controller.text.trim();
+    final email = _controller.text.trim();
     
-    if (tel.isEmpty) {
-      context.showWarningSnackBar('電話番号を入力してください');
+    if (email.isEmpty) {
+      context.showWarningSnackBar('メールアドレスを入力してください');
       return;
     }
 
-    await provider.filterByTel(tel);
+    await provider.filterByEmail(email);
     
     if (!mounted) return;
     
@@ -109,7 +109,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
               Icon(Icons.search, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                '電話番号で検索',
+                'メールアドレスで検索',
                 style: AppTextStyles.titleSmall,
               ),
             ],
@@ -122,8 +122,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
             TextField(
               controller: _controller,
               decoration: InputDecoration(
-                hintText: '電話番号を入力',
-                prefixIcon: Icon(Icons.phone, color: AppColors.primary),
+                hintText: 'メールアドレスを入力',
+                prefixIcon: Icon(Icons.email, color: AppColors.primary),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -139,7 +139,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                   ),
                 ),
               ),
-              keyboardType: TextInputType.phone,
+              keyboardType: TextInputType.emailAddress,
               onChanged: (value) => setState(() {}),
               onSubmitted: (_) => _handleSearch(provider),
             ),
@@ -196,8 +196,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: '電話番号を入力',
-                      prefixIcon: Icon(Icons.phone, color: AppColors.primary),
+                      hintText: 'メールアドレスを入力',
+                      prefixIcon: Icon(Icons.email, color: AppColors.primary),
                       suffixIcon: _controller.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -213,7 +213,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                         ),
                       ),
                     ),
-                    keyboardType: TextInputType.phone,
+                    keyboardType: TextInputType.emailAddress,
                     onChanged: (value) => setState(() {}),
                     onSubmitted: (_) => _handleSearch(provider),
                   ),

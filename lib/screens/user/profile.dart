@@ -1,10 +1,8 @@
-import 'dart:io' show File, Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import '../../widgets/common/header.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
@@ -22,122 +20,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String? _selectedImagePath;
   static const String _logName = 'ProfileScreen';
-
-  Future<void> _pickImage() async {
-    final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
-    final bool isDesktop = kIsWeb || (!Platform.isAndroid && !Platform.isIOS);
-
-    // ✅ context拡張メソッド使用
-    NavigationHelper.showBottomSheet(
-      context: context,
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (isMobile) ...[
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.camera_alt, color: AppColors.primary),
-                ),
-                title: const Text('写真を撮る'),
-                onTap: () {
-                  context.pop(); // ✅ context拡張メソッド
-                  _getImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.photo_library, color: AppColors.secondary),
-                ),
-                title: const Text('ライブラリから選択'),
-                onTap: () {
-                  context.pop(); // ✅ context拡張メソッド
-                  _getImage(ImageSource.gallery);
-                },
-              ),
-            ],
-            if (isDesktop)
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.folder, color: AppColors.primary),
-                ),
-                title: const Text('フォルダから選択'),
-                onTap: () {
-                  context.pop(); // ✅ context拡張メソッド
-                  _getImage(ImageSource.gallery);
-                },
-              ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.inputBackground,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.cancel, color: AppColors.textSecondary),
-              ),
-              title: const Text('キャンセル'),
-              onTap: () => context.pop(), // ✅ context拡張メソッド
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _getImage(ImageSource source) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source);
-
-      if (image != null && mounted) {
-        setState(() {
-          _selectedImagePath = image.path;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      // ✅ context拡張メソッド使用
-      context.showErrorSnackBar('画像の選択に失敗しました: $e');
-    }
-  }
-
-  ImageProvider? _buildProfileImage() {
-    if (_selectedImagePath == null) return null;
-
-    if (kIsWeb) {
-      return NetworkImage(_selectedImagePath!);
-    }
-    return FileImage(File(_selectedImagePath!));
-  }
 
   Future<void> _logout() async {
     logger.section('ログアウト処理開始', name: _logName);
@@ -149,23 +32,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       logger.success('ログアウト成功', name: _logName);
-
       NavigationHelper.toLogin(context);
     } catch (e) {
       logger.error('ログアウトエラー: $e', name: _logName, error: e);
       if (!mounted) return;
-      // ✅ context拡張メソッド使用
       context.showErrorSnackBar('ログアウトエラー: $e');
     }
   }
 
   Future<void> _handlePremiumButton(
-      BuildContext context, UserProvider userProvider) async {
+    BuildContext context,
+    UserProvider userProvider,
+  ) async {
     logger.section('プレミアムボタン押下', name: _logName);
     logger.info('現在のユーザー: ${userProvider.currentUser?.id}', name: _logName);
     logger.info('現在のプレミアム状態: ${userProvider.isPremium}', name: _logName);
 
-    // ユーザー情報の事前チェック
     if (userProvider.currentUser == null) {
       logger.error('currentUserがnull', name: _logName);
       context.showErrorSnackBar('ユーザー情報が読み込まれていません。再ログインしてください。');
@@ -174,7 +56,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final isPremium = userProvider.isPremium;
 
-    // 確認ダイアログ
     final result = await context.showConfirmDialog(
       title: isPremium ? 'プレミアム解約' : 'プレミアムプラン加入',
       message: isPremium
@@ -194,11 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     try {
-      logger.start('UserProvider.updatePremiumStatus() 呼び出し', name: _logName);
-
       await userProvider.updatePremiumStatus(!isPremium);
-
-      logger.success('プレミアムステータス更新成功', name: _logName);
 
       context.hideLoadingDialog();
 
@@ -209,31 +86,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         context.showSuccessSnackBar('プレミアムに加入しました！');
       }
-
-      logger.section('_handlePremiumButton() 完了', name: _logName);
     } catch (e, stack) {
-      logger.error('プレミアムステータス更新エラー',
-          name: _logName, error: e, stackTrace: stack);
-      logger.info('エラー詳細: ${e.toString()}', name: _logName);
+      logger.error(
+        'プレミアムステータス更新エラー',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
 
       context.hideLoadingDialog();
 
       if (!mounted) return;
 
-      // エラーメッセージを詳細化
-      String errorMessage;
-      if (e.toString().contains('見つかりません') ||
-          e.toString().contains('not-found')) {
-        errorMessage = 'ユーザー情報の更新に失敗しました。\n\n'
-            'アカウント: ${userProvider.currentUser?.id ?? "不明"}\n'
-            '再ログインをお試しください。';
-      } else {
-        errorMessage = 'エラーが発生しました。\n\n${e.toString()}';
-      }
-
-      context.showErrorSnackBar(errorMessage);
-
-      logger.section('_handlePremiumButton() エラー終了', name: _logName);
+      context.showErrorSnackBar('エラーが発生しました。\n\n${e.toString()}');
     }
   }
 
@@ -243,10 +108,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = userProvider.currentUser;
 
     return Scaffold(
-      appBar: CommonHeader(
+      appBar: const CommonHeader(
         title: 'プロフィール',
         showNotifications: true,
-        showProfile: false, // プロフィール画面なので自分自身のアイコンは非表示
+        showProfile: false,
         showPremiumBadge: true,
       ),
       body: userProvider.isLoading
@@ -265,71 +130,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: EdgeInsets.all(AppConstants.defaultPadding),
                       child: Column(
                         children: [
-                          Stack(
-                            children: [
-                              Container(
-                                width: AppConstants.avatarSize,
-                                height: AppConstants.avatarSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: AppColors.primaryGradient,
-                                  border: Border.all(
-                                    color: AppColors.cardBackground,
-                                    width: 4,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: _selectedImagePath != null
-                                    ? ClipOval(
-                                        child: Image(
-                                          image: _buildProfileImage()!,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : Icon(
-                                        Icons.account_circle,
-                                        size: AppConstants.avatarSize,
-                                        color: AppColors.textWhite,
-                                      ),
+                          Container(
+                            width: AppConstants.avatarSize,
+                            height: AppConstants.avatarSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppColors.primaryGradient,
+                              border: Border.all(
+                                color: AppColors.cardBackground,
+                                width: 4,
                               ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: InkWell(
-                                  onTap: _pickImage,
-                                  child: Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.primary,
-                                      border: Border.all(
-                                        color: AppColors.cardBackground,
-                                        width: 3,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.shadowMedium,
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      Icons.camera_alt,
-                                      color: AppColors.textWhite,
-                                      size: 20,
-                                    ),
-                                  ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.account_circle,
+                              size: AppConstants.avatarSize,
+                              color: AppColors.textWhite,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           Text(
@@ -424,14 +247,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 24),
 
-                  // アクションボタン群
                   _buildActionButton(
                     icon: userProvider.isPremium
                         ? Icons.diamond_outlined
                         : Icons.diamond,
-                    label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
+                    label:
+                        userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
                     gradient: AppColors.primaryGradient,
-                    onTap: () => _handlePremiumButton(context, userProvider),
+                    onTap: () =>
+                        _handlePremiumButton(context, userProvider),
                   ),
 
                   const SizedBox(height: 12),
@@ -461,7 +285,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     onTap: _logout,
                   ),
-
                   const SizedBox(height: 12),
 
                   _buildActionButton(
@@ -469,8 +292,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'アカウント削除',
                     gradient: LinearGradient(
                       colors: [
-                        Colors.grey.shade600,
-                        Colors.grey.shade800,
+                      Colors.grey.shade600,
+                      Colors.grey.shade800,
                       ],
                     ),
                     onTap: () {
@@ -519,11 +342,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       elevation: AppConstants.cardElevation,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius:
+            BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius:
+            BorderRadius.circular(AppConstants.defaultBorderRadius),
         child: Container(
           decoration: BoxDecoration(
             gradient: gradient,
@@ -535,7 +360,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
-                  color: AppColors.textWhite, size: AppConstants.iconSize),
+                  color: AppColors.textWhite,
+                  size: AppConstants.iconSize),
               const SizedBox(width: 12),
               Text(label, style: AppTextStyles.buttonMedium),
             ],

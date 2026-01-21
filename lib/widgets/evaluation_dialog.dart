@@ -3,10 +3,13 @@ import '../models/user_evaluation.dart';
 import '../models/friend_request.dart';
 import '../models/block.dart';
 import '../services/storage_service.dart';
+import '../repositories/friendship_repository.dart'; // ✅ 追加
+import '../repositories/block_repository.dart'; // ✅ 追加
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../extensions/context_extensions.dart';
+import '../utils/app_logger.dart'; // ✅ 追加
 
 class EvaluationDialog extends StatefulWidget {
   final String partnerId;
@@ -28,86 +31,153 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   String? _selectedRating;
   bool _addFriend = false;
   bool _blockUser = false;
+  bool _isSubmitting = false; // ✅ 追加
+  static const String _logName = 'EvaluationDialog';
+
+  // ✅ 追加: Repositoryインスタンス
+  final FriendRequestRepository _friendRequestRepository =
+    FriendRequestRepository();
+  final BlockRepository _blockRepository = BlockRepository();
 
   Future<void> _handleSubmit() async {
-    if (_selectedRating != null) {
-      final evaluation = UserEvaluation(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        evaluatorId: widget.currentUserId,
-        evaluatedId: widget.partnerId,
-        rating: _selectedRating!,
-        createdAt: DateTime.now(),
-      );
-      widget.storageService.evaluations.add(evaluation);
-    }
+    // ✅ 追加: 二重送信防止
+    if (_isSubmitting) return;
+    
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    if (_addFriend) {
-      final existingRequest = widget.storageService.friendRequests.firstWhere(
-        (f) =>
-            (f.senderId == widget.currentUserId &&
-                f.receiverId == widget.partnerId) ||
-            (f.senderId == widget.partnerId &&
-                f.receiverId == widget.currentUserId),
-        orElse: () => FriendRequest(
-          id: '',
-          senderId: '',
-          receiverId: '',
-          status: '',
-          createdAt: DateTime.now(),
-        ),
-      );
+    logger.section('評価ダイアログ送信開始', name: _logName);
+    logger.info('currentUserId: ${widget.currentUserId}', name: _logName);
+    logger.info('partnerId: ${widget.partnerId}', name: _logName);
+    logger.info('評価: $_selectedRating', name: _logName);
+    logger.info('フレンド追加: $_addFriend', name: _logName);
+    logger.info('ブロック: $_blockUser', name: _logName);
 
-      if (existingRequest.id.isEmpty) {
-        final friendRequest = FriendRequest(
+    try {
+      // ===== 1. 評価の保存 =====
+      if (_selectedRating != null) {
+        logger.start('評価を保存中...', name: _logName);
+        final evaluation = UserEvaluation(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          senderId: widget.currentUserId,
-          receiverId: widget.partnerId,
-          status: AppConstants.friendRequestStatusPending,
+          evaluatorId: widget.currentUserId,
+          evaluatedId: widget.partnerId,
+          rating: _selectedRating!,
           createdAt: DateTime.now(),
         );
-        widget.storageService.friendRequests.add(friendRequest);
+        widget.storageService.evaluations.add(evaluation);
+        logger.success('評価保存完了', name: _logName);
       }
-    }
 
-    if (_blockUser) {
-      final existingBlock = widget.storageService.blocks.firstWhere(
-        (b) =>
-            b.blockerId == widget.currentUserId &&
-            b.blockedId == widget.partnerId,
-        orElse: () => Block(
-          id: '',
-          blockerId: '',
-          blockedId: '',
-          active: false,
-          createdAt: DateTime.now(),
-        ),
-      );
-
-      if (existingBlock.id.isEmpty) {
-        final block = Block(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          blockerId: widget.currentUserId,
-          blockedId: widget.partnerId,
-          active: true,
-          createdAt: DateTime.now(),
+      // ===== 2. フレンドリクエストの送信 =====
+      if (_addFriend) {
+        logger.start('フレンドリクエストを送信中...', name: _logName);
+        
+        // ✅ 修正: Repository経由で既存チェック
+        final hasExisting = await _friendRequestRepository.hasExistingRequest(
+          widget.currentUserId,
+          widget.partnerId,
         );
-        widget.storageService.blocks.add(block);
-      } else {
-        final index = widget.storageService.blocks.indexOf(existingBlock);
-        widget.storageService.blocks[index] =
-            existingBlock.copyWith(active: true);
-      }
-    }
 
-    await widget.storageService.save();
-    if (mounted) {
-      Navigator.of(context).pop();
+        if (!hasExisting) {
+          final friendRequest = FriendRequest(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            senderId: widget.currentUserId, // ✅ 確実にcurrentUserIdを設定
+            receiverId: widget.partnerId,
+            status: AppConstants.friendRequestStatusPending,
+            createdAt: DateTime.now(),
+          );
+          
+          logger.debug('FriendRequest作成:', name: _logName);
+          logger.debug('  id: ${friendRequest.id}', name: _logName);
+          logger.debug('  senderId: ${friendRequest.senderId}', name: _logName);
+          logger.debug('  receiverId: ${friendRequest.receiverId}', name: _logName);
+          
+          widget.storageService.friendRequests.add(friendRequest);
+          
+          // ✅ 追加: Repository経由でFirestoreにも保存
+          try {
+            await _friendRequestRepository.create(friendRequest, id: friendRequest.id);
+            logger.success('Firestore保存完了', name: _logName);
+          } catch (e) {
+            logger.warning('Firestore保存失敗（StorageServiceには保存済み）: $e', name: _logName);
+          }
+          
+          logger.success('フレンドリクエスト送信完了', name: _logName);
+        } else {
+          logger.info('既存のフレンドリクエストが存在するためスキップ', name: _logName);
+        }
+      }
+
+      // ===== 3. ブロックの実行 =====
+      if (_blockUser) {
+        logger.start('ブロック処理中...', name: _logName);
+        
+        // ✅ 修正: Repository経由でブロック実行
+        try {
+          final blockId = await _blockRepository.blockUser(
+            widget.currentUserId,
+            widget.partnerId,
+          );
+          
+          logger.success('ブロック完了: $blockId', name: _logName);
+          
+          // StorageServiceにも追加
+          final block = Block(
+            id: blockId,
+            blockerId: widget.currentUserId, // ✅ 確実にcurrentUserIdを設定
+            blockedId: widget.partnerId,
+            active: true,
+            createdAt: DateTime.now(),
+          );
+          
+          logger.debug('Block作成:', name: _logName);
+          logger.debug('  id: ${block.id}', name: _logName);
+          logger.debug('  blockerId: ${block.blockerId}', name: _logName);
+          logger.debug('  blockedId: ${block.blockedId}', name: _logName);
+          
+          // 既存のブロックを検索
+          final existingIndex = widget.storageService.blocks.indexWhere(
+            (b) => b.id == blockId
+          );
+          
+          if (existingIndex == -1) {
+            widget.storageService.blocks.add(block);
+          } else {
+            widget.storageService.blocks[existingIndex] = block;
+          }
+          
+        } catch (e, stack) {
+          logger.error('ブロック処理エラー: $e', name: _logName, error: e, stackTrace: stack);
+        }
+      }
+
+      // ===== 4. StorageService保存 =====
+      logger.start('StorageService保存中...', name: _logName);
+      await widget.storageService.save();
+      logger.success('全データ保存完了', name: _logName);
+
+      logger.section('評価ダイアログ送信完了', name: _logName);
+
+      // ✅ ダイアログを閉じる
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      
+    } catch (e, stack) {
+      logger.error('送信エラー: $e', name: _logName, error: e, stackTrace: stack);
+      
+      if (mounted) {
+        context.showErrorSnackBar('送信に失敗しました: $e');
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ context拡張メソッド使用
     final isMobile = context.isMobile;
 
     if (isMobile) {
@@ -124,7 +194,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       ),
       child: Container(
         padding: EdgeInsets.all(AppConstants.defaultPadding),
-        constraints: BoxConstraints(maxWidth: 400),
+        constraints: const BoxConstraints(maxWidth: 400),
         child: _buildContent(),
       ),
     );
@@ -134,13 +204,12 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppConstants.defaultPadding,
         12,
         AppConstants.defaultPadding,
-        // ✅ context拡張メソッド使用
         AppConstants.defaultPadding + context.padding.bottom,
       ),
       child: Column(
@@ -200,7 +269,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         const SizedBox(height: 16),
         CheckboxListTile(
           value: _addFriend,
-          onChanged: (value) {
+          onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _addFriend = value ?? false;
             });
@@ -211,7 +280,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         ),
         CheckboxListTile(
           value: _blockUser,
-          onChanged: (value) {
+          onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _blockUser = value ?? false;
             });
@@ -222,19 +291,28 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         ),
         const SizedBox(height: 24),
         ElevatedButton(
-          onPressed: _handleSubmit,
+          onPressed: _isSubmitting ? null : _handleSubmit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.textWhite,
-            padding: EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
             ),
           ),
-          child: Text(
-            '送信',
-            style: AppTextStyles.buttonMedium,
-          ),
+          child: _isSubmitting
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  '送信',
+                  style: AppTextStyles.buttonMedium,
+                ),
         ),
       ],
     );
@@ -249,14 +327,14 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     final isSelected = _selectedRating == value;
 
     return InkWell(
-      onTap: () {
+      onTap: _isSubmitting ? null : () {
         setState(() {
           _selectedRating = value;
         });
       },
       borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       child: Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isSelected ? color.withOpacity(0.1) : AppColors.inputBackground,
           border: Border.all(

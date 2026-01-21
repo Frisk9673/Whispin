@@ -94,10 +94,9 @@ Future<void> updatePremiumStatus(bool isPremium) async {
     );
 
     // ★ 追加：プレミアム契約・解約ログを作成
-    if (_currentUser!.phoneNumber != null &&
-        _currentUser!.phoneNumber!.isNotEmpty) {
+    if (_currentUser!.id.isNotEmpty) {
       await _userRepository.createPremiumLog(
-        phoneNumber: _currentUser!.phoneNumber!, // ← ここで ! を使う
+        id: _currentUser!.id, // ← メールアドレスを使用
         isPremium: isPremium,
       );
     }

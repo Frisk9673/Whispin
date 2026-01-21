@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // ✅ 追加
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
 import '../../services/storage_service.dart';
+import '../../providers/user_provider.dart'; // ✅ 追加
 import '../../models/chat_room.dart';
 import '../../widgets/evaluation_dialog.dart';
 import '../../routes/navigation_helper.dart';
@@ -36,11 +38,34 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _updateTimer;
   ChatRoom? _currentRoom;
   bool _partnerHasLeft = false;
+  String? _partnerUserId;
   static const String _logName = 'ChatScreen';
+
+  // ✅ 修正: 現在のユーザーIDを確実に取得するヘルパーメソッド
+  String _getCurrentUserId() {
+    // 1. UserProviderから取得を試みる（最優先）
+    try {
+      final userProvider = context.read<UserProvider>();
+      final userId = userProvider.currentUser?.id;
+      if (userId != null && userId.isNotEmpty) {
+        return userId;
+      }
+    } catch (e) {
+      logger.warning('UserProvider取得失敗: $e', name: _logName);
+    }
+
+    logger.error('ユーザーIDが取得できません', name: _logName);
+    return '';
+  }
 
   @override
   void initState() {
     super.initState();
+    
+    // ✅ 追加: ユーザーID取得確認
+    final userId = _getCurrentUserId();
+    logger.info('初期化時のユーザーID: $userId', name: _logName);
+    
     _loadRoom();
     if (_currentRoom != null) {
       widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
@@ -53,6 +78,13 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentRoom = widget.storageService.rooms.firstWhere(
         (r) => r.id == widget.roomId,
       );
+      
+      final myId = _getCurrentUserId();
+
+      if (_partnerUserId == null && _currentRoom != null) {
+        _partnerUserId =
+          _currentRoom!.id1 == myId ? _currentRoom!.id2 : _currentRoom!.id1;
+      }
     } catch (e) {
       logger.error('ルーム読み込みエラー: $e', name: _logName, error: e);
     }
@@ -63,7 +95,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String _getMyComment() {
     if (_currentRoom == null) return '';
 
-    final currentUserId = widget.authService.currentUser?.id ?? '';
+    final currentUserId = _getCurrentUserId(); // ✅ 修正
 
     if (_currentRoom!.id1 == currentUserId) {
       return _currentRoom!.comment1 ?? '';
@@ -77,7 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String _getPartnerComment() {
     if (_currentRoom == null) return AppConstants.waitingForUser;
 
-    final currentUserId = widget.authService.currentUser?.id ?? '';
+    final currentUserId = _getCurrentUserId(); // ✅ 修正
 
     if (_currentRoom!.id1 == currentUserId) {
       return _currentRoom!.comment2 ?? AppConstants.waitingForUser;
@@ -118,7 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       // 相手の退出チェック
-      final currentUserId = widget.authService.currentUser?.id ?? '';
+      final currentUserId = _getCurrentUserId(); // ✅ 修正
       final partnerId = _currentRoom!.id1 == currentUserId
           ? _currentRoom!.id2
           : _currentRoom!.id1;
@@ -152,7 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              context.pop(); // ダイアログを閉じる
+              context.pop();
               NavigationHelper.toHome(
                 context,
                 authService: widget.authService,
@@ -179,7 +211,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              context.pop(); // ダイアログを閉じる
+              context.pop();
               await _showEvaluationDialog();
               NavigationHelper.toHome(
                 context,
@@ -202,7 +234,10 @@ class _ChatScreenState extends State<ChatScreen> {
         content: const Text('退出ボタンを押してください'),
         actions: [
           TextButton(
-            onPressed: _handleLeave,
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _handleLeave();
+            },
             child: const Text('退出する'),
           ),
         ],
@@ -215,7 +250,6 @@ class _ChatScreenState extends State<ChatScreen> {
   String _formatRemainingTime() {
     if (_currentRoom == null) return AppConstants.waitingStatus;
 
-    // チャット開始前チェック
     final isChatStarted = _currentRoom!.startedAt.isBefore(
       DateTime.now().add(const Duration(days: 300))
     );
@@ -261,10 +295,21 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    final currentUserId = _getCurrentUserId(); // ✅ 修正
+    
+    // ✅ 追加: ユーザーID検証
+    if (currentUserId.isEmpty) {
+      logger.error('メッセージ送信失敗: ユーザーIDが空', name: _logName);
+      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
+      return;
+    }
+
+    logger.debug('メッセージ送信: userId=$currentUserId', name: _logName);
+
     try {
       await widget.chatService.sendComment(
         widget.roomId,
-        widget.authService.currentUser!.id,
+        currentUserId,
         _messageController.text.trim(),
       );
 
@@ -281,10 +326,19 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== 延長リクエスト =====
 
   Future<void> _requestExtension() async {
+    final currentUserId = _getCurrentUserId(); // ✅ 修正
+    
+    // ✅ 追加: ユーザーID検証
+    if (currentUserId.isEmpty) {
+      logger.error('延長リクエスト失敗: ユーザーIDが空', name: _logName);
+      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
+      return;
+    }
+
     try {
       await widget.chatService.requestExtension(
         widget.roomId,
-        widget.authService.currentUser!.id,
+        currentUserId,
       );
 
       if (!mounted) return;
@@ -299,40 +353,54 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== 退出処理 =====
 
   Future<void> _handleLeave() async {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    await widget.chatService.leaveRoom(widget.roomId, currentUserId);
+    final currentUserId = _getCurrentUserId(); // ✅ 修正
+    
+    // ✅ 追加: ユーザーID検証
+    if (currentUserId.isEmpty) {
+      logger.error('退出処理失敗: ユーザーIDが空', name: _logName);
+      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
+      return;
+    }
 
+    logger.info('退出処理: userId=$currentUserId, roomId=${widget.roomId}', name: _logName);
+
+    // ✅ 修正: 評価ダイアログを先に表示してから退出処理
     if (mounted) {
       await _showEvaluationDialog();
-      NavigationHelper.toHome(
-        context,
-        authService: widget.authService,
-        storageService: widget.storageService,
-      );
+      
+      // 評価ダイアログ後に退出処理
+      await widget.chatService.leaveRoom(widget.roomId, currentUserId);
+      
+      if (mounted) {
+        NavigationHelper.toHome(
+          context,
+          authService: widget.authService,
+          storageService: widget.storageService,
+        );
+      }
     }
   }
 
   // ===== 評価ダイアログ =====
 
   Future<void> _showEvaluationDialog() async {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
+    final currentUserId = _getCurrentUserId();
 
-    final rawPartnerId = (_currentRoom!.id1 == currentUserId
-        ? _currentRoom!.id2
-        : _currentRoom!.id1);
+    if (_partnerUserId == null || _partnerUserId!.isEmpty) {
+      logger.warning('評価ダイアログ: パートナーIDなし', name: _logName);
+      return;
+    }
 
-    final partnerId = rawPartnerId ?? '';
-
-    if (partnerId.isEmpty) return;
-
-    await context.showCustomDialog(
+    await showDialog(
+      context: context,
       barrierDismissible: false,
-      child: EvaluationDialog(
-        partnerId: partnerId,
+      builder: (_) => EvaluationDialog(
+        partnerId: _partnerUserId!,
         currentUserId: currentUserId,
         storageService: widget.storageService,
       ),
     );
+    logger.info('評価ダイアログ閉じた', name: _logName);
   }
 
   // ===== クリーンアップ =====
@@ -356,7 +424,6 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    // チャット開始前チェック
     final isChatStarted = _currentRoom!.startedAt.isBefore(
       DateTime.now().add(const Duration(days: 300))
     );
@@ -368,7 +435,6 @@ class _ChatScreenState extends State<ChatScreen> {
         foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false,
         actions: [
-          // タイマー表示
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Center(
@@ -382,14 +448,12 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          // 延長ボタン
           if (_canRequestExtension())
             IconButton(
               icon: const Icon(Icons.access_time),
               onPressed: _requestExtension,
               tooltip: '延長リクエスト',
             ),
-          // 退出ボタン
           IconButton(
             icon: const Icon(Icons.exit_to_app),
             onPressed: _handleLeave,
@@ -399,7 +463,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // 待機中メッセージ
           if (!isChatStarted)
             Container(
               width: double.infinity,
@@ -437,7 +500,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 padding: EdgeInsets.all(AppConstants.defaultPadding),
                 child: Column(
                   children: [
-                    // 相手のメッセージパネル
                     Expanded(
                       child: Card(
                         elevation: AppConstants.cardElevation,
@@ -475,7 +537,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 自分のメッセージパネル
                     Expanded(
                       child: Card(
                         elevation: AppConstants.cardElevation,
@@ -517,7 +578,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // メッセージ入力欄
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(

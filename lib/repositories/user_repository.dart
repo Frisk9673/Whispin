@@ -175,7 +175,6 @@ class UserRepository extends BaseRepository<User> {
     
     await firestore.collection(collectionName).doc(docId).update({
       'premium': isPremium,
-      'Premium': isPremium,
       'lastUpdatedPremium': FieldValue.serverTimestamp(),
       'LastUpdated_Premium': FieldValue.serverTimestamp(),
     });
@@ -301,20 +300,20 @@ class UserRepository extends BaseRepository<User> {
 
   /// プレミアム契約・解約ログ作成
   Future<void> createPremiumLog({
-    required String phoneNumber,
+    required String id,
     required bool isPremium,
   }) async {
     try {
       final detail = isPremium ? '契約' : '解約';
 
       await firestore.collection('Log_Premium').add({
-        'ID': phoneNumber,
+        'ID': id,
         'Timestamp': FieldValue.serverTimestamp(),
         'Detail': detail,
       });
 
       logger.success(
-        'Log_Premium 作成完了: $phoneNumber / $detail',
+        'Log_Premium 作成完了: $id / $detail',
         name: _logName,
       );
     } catch (e, stack) {

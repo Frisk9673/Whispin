@@ -16,28 +16,32 @@ class PremiumLogListTile extends StatelessWidget {
 
   Future<void> _showDetailDialog(BuildContext context) async {
     logger.section('タイルタップ', name: _logName);
-    logger.info('TEL: ${log.email}', name: _logName);
+    logger.info('email: ${log.email}', name: _logName);
     logger.start('Firestoreからユーザー情報を取得します...', name: _logName);
 
     User? user;
 
     try {
-      user = await PremiumLogService().fetchUser(log.email);
-      if(!context.mounted) return;
-      logger.success('fetchUser 完了', name: _logName);
+      user = await PremiumLogService().fetchUserByEmail(log.email);
+      if (!context.mounted) return;
+      logger.success('fetchUserByEmail 完了', name: _logName);
     } catch (e, stack) {
-      logger.error('fetchUser 実行中に例外発生: $e', 
-        name: _logName, 
-        error: e, 
+      logger.error(
+        'fetchUserByEmail 実行中に例外発生: $e',
+        name: _logName,
+        error: e,
         stackTrace: stack,
       );
       return;
     }
 
     if (user == null) {
-      logger.warning('ユーザーが存在しません (TEL: ${log.email})', name: _logName);
+      logger.warning(
+        'ユーザーが存在しません (email: ${log.email})',
+        name: _logName,
+      );
       logger.section('処理終了', name: _logName);
-      
+
       if (context.mounted) {
         showDialog(
           context: context,
@@ -67,12 +71,15 @@ class PremiumLogListTile extends StatelessWidget {
       return;
     }
 
-    logger.info('ユーザー情報取得成功: ${user.lastName} ${user.firstName}, Premium: ${user.premium}',
-        name: _logName);
+    logger.info(
+      'ユーザー情報取得成功: ${user.lastName} ${user.firstName}, Premium: ${user.premium}',
+      name: _logName,
+    );
     logger.start('ダイアログを表示します', name: _logName);
 
-    final String statusText = user.premium ? "契約中" : "未契約";
-    final Color statusColor = user.premium ? AppColors.success : AppColors.textSecondary;
+    final String statusText = user.premium ? '契約中' : '未契約';
+    final Color statusColor =
+        user.premium ? AppColors.success : AppColors.textSecondary;
 
     showDialog(
       context: context,
@@ -122,29 +129,44 @@ class PremiumLogListTile extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      logger.info('ダイアログを閉じました (TEL: ${log.email})', name: _logName);
+                      logger.info(
+                        'ダイアログを閉じました (email: ${log.email})',
+                        name: _logName,
+                      );
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.close),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // 基本情報
               _buildInfoSection(
                 title: '基本情報',
                 icon: Icons.info_outline,
                 children: [
-                  _buildInfoRow(Icons.phone, '電話番号', user?.phoneNumber ?? '未設定'),
-                  _buildInfoRow(Icons.email, 'メール', user!.id),
-                  _buildInfoRow(Icons.badge, 'ニックネーム', user.nickname.isEmpty ? '未設定' : user.nickname),
+                  _buildInfoRow(
+                    Icons.email,
+                    'メールアドレス',
+                    user!.id,
+                  ),
+                  _buildInfoRow(
+                    Icons.phone,
+                    '電話番号',
+                    user.phoneNumber ?? '未設定',
+                  ),
+                  _buildInfoRow(
+                    Icons.badge,
+                    'ニックネーム',
+                    user.nickname.isEmpty ? '未設定' : user.nickname,
+                  ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // 契約状況
               _buildInfoSection(
                 title: '契約状況',
@@ -165,7 +187,9 @@ class PremiumLogListTile extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          user!.premium ? Icons.check_circle : Icons.cancel,
+                          user.premium
+                              ? Icons.check_circle
+                              : Icons.cancel,
                           color: statusColor,
                           size: 32,
                         ),
@@ -193,9 +217,9 @@ class PremiumLogListTile extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // ログ情報
               _buildInfoSection(
                 title: 'ログ情報',
@@ -209,7 +233,9 @@ class PremiumLogListTile extends StatelessWidget {
                   _buildInfoRow(
                     Icons.access_time,
                     '日時',
-                    log.timestamp.toJapaneseDateWithWeekday + '\n' + log.timestamp.toTimeString,
+                    log.timestamp.toJapaneseDateWithWeekday +
+                        '\n' +
+                        log.timestamp.toTimeString,
                   ),
                   _buildInfoRow(
                     Icons.schedule,
@@ -218,13 +244,15 @@ class PremiumLogListTile extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
-              // 閉じるボタン
+
               ElevatedButton(
                 onPressed: () {
-                  logger.info('ダイアログを閉じました (TEL: ${log.email})', name: _logName);
+                  logger.info(
+                    'ダイアログを閉じました (email: ${log.email})',
+                    name: _logName,
+                  );
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
@@ -247,7 +275,7 @@ class PremiumLogListTile extends StatelessWidget {
         ),
       ),
     );
-    
+
     logger.section('処理完了', name: _logName);
   }
 
@@ -310,20 +338,26 @@ class PremiumLogListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    logger.debug('ListTile が描画されました (TEL: ${log.email})', name: _logName);
-    
+    logger.debug(
+      'ListTile が描画されました (email: ${log.email})',
+      name: _logName,
+    );
+
     final isSubscription = log.detail == '契約';
-    final actionColor = isSubscription ? AppColors.success : AppColors.error;
+    final actionColor =
+        isSubscription ? AppColors.success : AppColors.error;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: AppConstants.cardElevation,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius:
+            BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
       child: InkWell(
         onTap: () => _showDetailDialog(context),
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius:
+            BorderRadius.circular(AppConstants.defaultBorderRadius),
         child: Padding(
           padding: EdgeInsets.all(AppConstants.defaultPadding),
           child: Row(
@@ -343,14 +377,16 @@ class PremiumLogListTile extends StatelessWidget {
                   ),
                 ),
                 child: Icon(
-                  isSubscription ? Icons.add_circle : Icons.remove_circle,
+                  isSubscription
+                      ? Icons.add_circle
+                      : Icons.remove_circle,
                   color: actionColor,
                   size: 32,
                 ),
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               // 情報
               Expanded(
                 child: Column(
@@ -358,7 +394,11 @@ class PremiumLogListTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.phone, size: 16, color: AppColors.primary),
+                        Icon(
+                          Icons.email,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -423,10 +463,9 @@ class PremiumLogListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(width: 8),
-              
-              // 矢印アイコン
+
               Icon(
                 Icons.chevron_right,
                 color: AppColors.textSecondary,

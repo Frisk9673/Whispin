@@ -5,6 +5,7 @@ import 'base_repository.dart';
 import '../utils/app_logger.dart';
 
 /// プレミアムログのリポジトリ
+/// ※ 検索キーはすべて「メールアドレス」で統一
 class PremiumLogRepository extends BaseRepository<PremiumLog> {
   static const String _logName = 'PremiumLogRepository';
 
@@ -14,12 +15,13 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
   String get collectionName => AppConstants.premiumLogCollection;
 
   @override
-  PremiumLog fromMap(Map<String, dynamic> map) => PremiumLog.fromMap(map);
+  PremiumLog fromMap(Map<String, dynamic> map) =>
+      PremiumLog.fromMap(map);
 
   @override
   Map<String, dynamic> toMap(PremiumLog model) {
     return {
-      'ID': model.email,
+      'ID': model.email, // メールアドレス
       'Timestamp': Timestamp.fromDate(model.timestamp),
       'Detail': model.detail,
     };
@@ -27,7 +29,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
 
   // ===== PremiumLog Specific Methods =====
 
-  /// 全てのプレミアムログを取得（降順）
+  /// 全てのプレミアムログを取得（Timestamp 降順）
   Future<List<PremiumLog>> findAllOrderedByTimestamp() async {
     logger.start('findAllOrderedByTimestamp() 開始', name: _logName);
 
@@ -43,18 +45,23 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       logger.success('取得件数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findAllOrderedByTimestamp() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'findAllOrderedByTimestamp() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
 
-  /// 電話番号でログを検索
-  Future<List<PremiumLog>> findByPhoneNumber(String phoneNumber) async {
-    logger.debug('findByPhoneNumber($phoneNumber)', name: _logName);
+  /// メールアドレスでログを検索
+  Future<List<PremiumLog>> findByEmail(String email) async {
+    logger.debug('findByEmail($email)', name: _logName);
 
     try {
       final snapshot = await collection
-          .where('ID', isEqualTo: phoneNumber)
+          .where('ID', isEqualTo: email)
           .orderBy('Timestamp', descending: true)
           .get();
 
@@ -65,17 +72,25 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       logger.success('検索結果: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findByPhoneNumber() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'findByEmail() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
 
-  /// ログを追加
+  /// プレミアムログを追加
   Future<void> addLog({
     required String email,
     required String detail,
   }) async {
-    logger.start('addLog() 開始 - email: $email, detail: $detail', name: _logName);
+    logger.start(
+      'addLog() 開始 - email: $email, detail: $detail',
+      name: _logName,
+    );
 
     try {
       await collection.add({
@@ -86,7 +101,12 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
 
       logger.success('ログ追加完了', name: _logName);
     } catch (e, stack) {
-      logger.error('addLog() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'addLog() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
@@ -96,12 +116,21 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    logger.debug('findByDateRange($startDate ~ $endDate)', name: _logName);
+    logger.debug(
+      'findByDateRange($startDate ~ $endDate)',
+      name: _logName,
+    );
 
     try {
       final snapshot = await collection
-          .where('Timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-          .where('Timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .where(
+            'Timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+          )
+          .where(
+            'Timestamp',
+            isLessThanOrEqualTo: Timestamp.fromDate(endDate),
+          )
           .orderBy('Timestamp', descending: true)
           .get();
 
@@ -112,12 +141,17 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       logger.success('期間検索結果: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findByDateRange() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'findByDateRange() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
 
-  /// 詳細でフィルタ（加入/解約）
+  /// 詳細でフィルタ（加入 / 解約など）
   Future<List<PremiumLog>> findByDetail(String detail) async {
     logger.debug('findByDetail($detail)', name: _logName);
 
@@ -131,15 +165,23 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
           .map((doc) => fromMap(doc.data()))
           .toList();
 
-      logger.success('フィルタ結果($detail): ${results.length}件', name: _logName);
+      logger.success(
+        'フィルタ結果($detail): ${results.length}件',
+        name: _logName,
+      );
       return results;
     } catch (e, stack) {
-      logger.error('findByDetail() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'findByDetail() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
 
-  /// 最新のN件を取得
+  /// 最新の N 件を取得
   Future<List<PremiumLog>> findLatest(int limit) async {
     logger.debug('findLatest($limit)', name: _logName);
 
@@ -156,12 +198,17 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       logger.success('最新${limit}件取得完了', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findLatest() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'findLatest() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }
 
-  /// ログをリアルタイム監視
+  /// ログをリアルタイム監視（全件）
   Stream<List<PremiumLog>> watchAllLogs() {
     logger.debug('watchAllLogs() - Stream開始', name: _logName);
 
@@ -175,12 +222,15 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
     });
   }
 
-  /// 特定ユーザーのログを監視
-  Stream<List<PremiumLog>> watchUserLogs(String phoneNumber) {
-    logger.debug('watchUserLogs($phoneNumber) - Stream開始', name: _logName);
+  /// 特定ユーザー（メールアドレス）のログをリアルタイム監視
+  Stream<List<PremiumLog>> watchUserLogsByEmail(String email) {
+    logger.debug(
+      'watchUserLogsByEmail($email) - Stream開始',
+      name: _logName,
+    );
 
     return collection
-        .where('ID', isEqualTo: phoneNumber)
+        .where('ID', isEqualTo: email)
         .orderBy('Timestamp', descending: true)
         .snapshots()
         .map((snapshot) {

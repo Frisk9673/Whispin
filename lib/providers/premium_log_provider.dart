@@ -28,21 +28,21 @@ class PremiumLogProvider extends ChangeNotifier {
     logger.section('loadAllLogs() 完了', name: _logName);
   }
 
-  /// 電話番号でフィルタ（空欄なら全件）
-  Future<void> filterByTel(String? tel) async {
-    logger.section('filterByTel() 開始', name: _logName);
-    logger.info('入力された電話番号: "$tel"', name: _logName);
+  /// メールアドレスでフィルタ（空欄なら全件）
+  Future<void> filterByEmail(String? email) async {
+    logger.section('filterByEmail() 開始', name: _logName);
+    logger.info('入力された email: "$email"', name: _logName);
 
     isLoading = true;
     logger.debug('isLoading = true -> notifyListeners()', name: _logName);
     notifyListeners();
 
-    if (tel == null || tel.isEmpty) {
-      logger.info('電話番号未入力なので全件取得します', name: _logName);
+    if (email == null || email.isEmpty) {
+      logger.info('メール未入力なので全件取得します', name: _logName);
       logs = await _service.fetchLogs();
     } else {
-      logger.info('電話番号 "$tel" のログを取得します', name: _logName);
-      logs = await _service.fetchLogsByTel(tel);
+      logger.info('メール "$email" のログを取得します', name: _logName);
+      logs = await _service.fetchLogsByEmail(email);
     }
 
     logger.info('取得件数: ${logs.length} 件', name: _logName);
@@ -51,6 +51,6 @@ class PremiumLogProvider extends ChangeNotifier {
     logger.debug('isLoading = false -> notifyListeners()', name: _logName);
     notifyListeners();
 
-    logger.section('filterByTel() 完了', name: _logName);
+    logger.section('filterByEmail() 完了', name: _logName);
   }
 }
