@@ -26,9 +26,16 @@ class FirebaseConfig {
 
       logger.success('Firebase Core 初期化完了', name: _logName);
 
-      if (Environment.isFirebaseEmulator) {
+      // ✅ 修正: shouldUseFirebaseEmulator を使用
+      if (Environment.shouldUseFirebaseEmulator) {
+        logger.warning('⚠️ デバッグモード: Firebaseエミュレーターを使用します', name: _logName);
         await _configureEmulators();
+      } else {
+        logger.success('✅ 本番モード: Firebase本番環境に接続します', name: _logName);
       }
+
+      // 環境情報を出力
+      Environment.printConfiguration();
 
       logger.success('✨ Firebase初期化完了', name: _logName);
     } catch (e, stack) {
@@ -89,5 +96,5 @@ class FirebaseConfig {
   static bool get isSignedIn => currentUser != null;
 
   /// エミュレーター接続状態確認
-  static bool get isUsingEmulator => Environment.isFirebaseEmulator;
+  static bool get isUsingEmulator => Environment.shouldUseFirebaseEmulator;
 }
