@@ -4,7 +4,6 @@ import 'package:whispin/providers/premium_log_provider.dart';
 import 'package:whispin/screens/admin/admin_question_list_screen.dart';
 import '../constants/routes.dart';
 import '../screens/user/home_screen.dart';
-import '../screens/user/auth_screen.dart';
 import '../screens/user/profile.dart';
 import '../screens/user/chat_screen.dart';
 import '../screens/user/friend_list_screen.dart';
