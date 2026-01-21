@@ -13,7 +13,6 @@ import '../../extensions/context_extensions.dart';
 import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 import '../../services/auth_service.dart';
-import '../../services/firestore_storage_service.dart';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
