@@ -25,8 +25,13 @@ import 'utils/app_logger.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // .env読み込み
   await dotenv.load(fileName: '.env');
   Environment.loadFromEnv();
+  
+  // ✅ 追加: 起動時に環境情報を表示
+  Environment.printConfiguration();
+  
   await FirebaseConfig.initialize(); 
   await initializeDateFormatting('ja_JP', null);
 
@@ -34,8 +39,17 @@ Future<void> main() async {
   await logger.initialize();
 
   logger.section('🚀 Whispin アプリ起動中...', name: 'Main');
+  
+  // ✅ 追加: エミュレーター使用状況をログ出力
+  if (Environment.shouldUseFirebaseEmulator) {
+    logger.warning('⚠️ Firebaseエミュレーターモードで起動', name: 'Main');
+    logger.info('  Auth: ${Environment.emulatorHost}:${Environment.authEmulatorPort}', name: 'Main');
+    logger.info('  Firestore: ${Environment.emulatorHost}:${Environment.firestoreEmulatorPort}', name: 'Main');
+  } else {
+    logger.success('✅ Firebase本番モードで起動', name: 'Main');
+  }
 
-  // Firebase初期化
+  // Firebase初期化（後方互換性のため残す）
   logger.start('Firebase 初期化中...', name: 'Main');
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

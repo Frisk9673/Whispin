@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart' as app_user;
 import '../repositories/user_repository.dart';
-import '../constants/app_constants.dart';
 import '../utils/app_logger.dart';
 
 class UserProvider extends ChangeNotifier {
