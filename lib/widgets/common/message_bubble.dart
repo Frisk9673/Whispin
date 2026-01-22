@@ -13,8 +13,7 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment:
-          isAdmin ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: isAdmin ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
         margin: const EdgeInsets.symmetric(vertical: 4),

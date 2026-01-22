@@ -21,7 +21,8 @@ class FriendRequestsScreen extends StatefulWidget {
 }
 
 class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
-  final FriendRequestRepository _friendRequestRepository = FriendRequestRepository();
+  final FriendRequestRepository _friendRequestRepository =
+      FriendRequestRepository();
   final FriendshipRepository _friendshipRepository = FriendshipRepository();
   final UserRepository _userRepository = UserRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -55,8 +56,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       // フレンドリクエスト取得
       logger.start('Repository経由でフレンドリクエスト取得中...', name: _logName);
-      _friendRequests = await _friendRequestRepository.findReceivedRequests(currentUserEmail);
-      
+      _friendRequests =
+          await _friendRequestRepository.findReceivedRequests(currentUserEmail);
+
       logger.success('フレンドリクエスト取得: ${_friendRequests.length}件', name: _logName);
 
       setState(() => _isLoading = false);
@@ -65,7 +67,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     } catch (e, stack) {
       logger.error('読み込みエラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
-      
+
       if (mounted) {
         context.showErrorSnackBar('読み込みに失敗しました: $e');
       }
@@ -110,18 +112,18 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       if (!mounted) return;
 
       context.showSuccessSnackBar('フレンド申請を承認しました');
-      
+
       // リスト再読み込み
       await _loadFriendRequests();
 
       logger.section('フレンドリクエスト承認処理完了', name: _logName);
     } catch (e, stack) {
       logger.error('承認エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       context.hideLoadingDialog();
-      
+
       if (!mounted) return;
-      
+
       context.showErrorSnackBar('承認に失敗しました: $e');
     }
   }
@@ -154,18 +156,18 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       if (!mounted) return;
 
       context.showInfoSnackBar('フレンドリクエストを拒否しました');
-      
+
       // リスト再読み込み
       await _loadFriendRequests();
 
       logger.section('フレンドリクエスト拒否処理完了', name: _logName);
     } catch (e, stack) {
       logger.error('拒否エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       context.hideLoadingDialog();
-      
+
       if (!mounted) return;
-      
+
       context.showErrorSnackBar('拒否に失敗しました: $e');
     }
   }
@@ -250,7 +252,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius:
+                BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
               color: AppColors.primary.withOpacity(0.2),
               width: 2,
@@ -392,12 +395,12 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     try {
       logger.debug('ユーザー名取得: $userId', name: _logName);
       final user = await _userRepository.findById(userId);
-      
+
       if (user != null) {
         logger.debug('  → ${user.displayName}', name: _logName);
         return user.displayName;
       }
-      
+
       logger.warning('ユーザー情報なし: $userId', name: _logName);
       return userId;
     } catch (e) {

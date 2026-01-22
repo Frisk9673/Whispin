@@ -64,13 +64,14 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _invitationService = InvitationService(widget.storageService);
-    
+
     final userId = _getCurrentUserId();
     logger.info('初期化時のユーザーID: $userId', name: _logName);
-    
+
     _loadRoom();
     if (_currentRoom != null) {
-      widget.chatService.startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
+      widget.chatService
+          .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
     _startUpdateTimer();
   }
@@ -80,12 +81,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentRoom = widget.storageService.rooms.firstWhere(
         (r) => r.id == widget.roomId,
       );
-      
+
       final myId = _getCurrentUserId();
 
       if (_partnerUserId == null && _currentRoom != null) {
         _partnerUserId =
-          _currentRoom!.id1 == myId ? _currentRoom!.id2 : _currentRoom!.id1;
+            _currentRoom!.id1 == myId ? _currentRoom!.id2 : _currentRoom!.id1;
       }
     } catch (e) {
       logger.error('ルーム読み込みエラー: $e', name: _logName, error: e);
@@ -106,8 +107,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // フレンド一覧を取得
     final friendships = widget.storageService.friendships.where((f) {
-      return f.active && 
-             (f.userId == currentUserId || f.friendId == currentUserId);
+      return f.active &&
+          (f.userId == currentUserId || f.friendId == currentUserId);
     }).toList();
 
     if (friendships.isEmpty) {
@@ -237,13 +238,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
       context.showSuccessSnackBar('招待を送信しました！');
       logger.success('招待送信完了', name: _logName);
-
     } catch (e, stack) {
       logger.error('招待送信エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       if (!mounted) return;
       context.hideLoadingDialog();
-      
+
       context.showErrorSnackBar('招待の送信に失敗しました: $e');
     }
   }
@@ -297,9 +297,8 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
-      final isChatStarted = _currentRoom!.startedAt.isBefore(
-        DateTime.now().add(const Duration(days: 300))
-      );
+      final isChatStarted = _currentRoom!.startedAt
+          .isBefore(DateTime.now().add(const Duration(days: 300)));
 
       if (!isChatStarted) {
         setState(() {});
@@ -360,21 +359,20 @@ class _ChatScreenState extends State<ChatScreen> {
       barrierDismissible: false,
       child: AlertDialog(
         title: const Text('チャット時間終了'),
-        content: Text(
-          '${AppConstants.defaultChatDurationMinutes}分間のチャット時間が終了しました。'
-        ),
+        content:
+            Text('${AppConstants.defaultChatDurationMinutes}分間のチャット時間が終了しました。'),
         actions: [
           TextButton(
             onPressed: () async {
               context.pop();
-              
+
               final isPrivateRoom = _currentRoom?.private ?? false;
               if (!isPrivateRoom) {
                 await _showEvaluationDialog();
               } else {
                 logger.info('Privateルームのため評価ダイアログをスキップ', name: _logName);
               }
-              
+
               NavigationHelper.toHome(
                 context,
                 authService: widget.authService,
@@ -412,9 +410,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String _formatRemainingTime() {
     if (_currentRoom == null) return AppConstants.waitingStatus;
 
-    final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(const Duration(days: 300))
-    );
+    final isChatStarted = _currentRoom!.startedAt
+        .isBefore(DateTime.now().add(const Duration(days: 300)));
 
     if (!isChatStarted) {
       return AppConstants.waitingStatus;
@@ -434,14 +431,14 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _canRequestExtension() {
     if (_currentRoom == null) return false;
 
-    final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(const Duration(days: 300))
-    );
+    final isChatStarted = _currentRoom!.startedAt
+        .isBefore(DateTime.now().add(const Duration(days: 300)));
 
     if (!isChatStarted) return false;
 
     final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
-    return remaining.inMinutes <= AppConstants.extensionRequestThresholdMinutes &&
+    return remaining.inMinutes <=
+            AppConstants.extensionRequestThresholdMinutes &&
         _currentRoom!.extensionCount < _currentRoom!.extension;
   }
 
@@ -449,16 +446,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-    
+
     if (_messageController.text.trim().length > AppConstants.messageMaxLength) {
       context.showWarningSnackBar(
-        'メッセージは${AppConstants.messageMaxLength}文字以内で入力してください'
-      );
+          'メッセージは${AppConstants.messageMaxLength}文字以内で入力してください');
       return;
     }
 
     final currentUserId = _getCurrentUserId();
-    
+
     if (currentUserId.isEmpty) {
       logger.error('メッセージ送信失敗: ユーザーIDが空', name: _logName);
       context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
@@ -477,7 +473,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
       _loadRoom();
       setState(() {});
-      
     } catch (e) {
       if (!mounted) return;
       context.showErrorSnackBar('送信エラー: $e');
@@ -488,7 +483,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _requestExtension() async {
     final currentUserId = _getCurrentUserId();
-    
+
     if (currentUserId.isEmpty) {
       logger.error('延長リクエスト失敗: ユーザーIDが空', name: _logName);
       context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
@@ -503,7 +498,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (!mounted) return;
       context.showSuccessSnackBar('延長リクエストを送信しました');
-      
     } catch (e) {
       if (!mounted) return;
       context.showErrorSnackBar('エラー: $e');
@@ -514,26 +508,27 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _handleLeave() async {
     final currentUserId = _getCurrentUserId();
-    
+
     if (currentUserId.isEmpty) {
       logger.error('退出処理失敗: ユーザーIDが空', name: _logName);
       context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
       return;
     }
 
-    logger.info('退出処理: userId=$currentUserId, roomId=${widget.roomId}', name: _logName);
+    logger.info('退出処理: userId=$currentUserId, roomId=${widget.roomId}',
+        name: _logName);
 
     if (mounted) {
       final isPrivateRoom = _currentRoom?.private ?? false;
-      
+
       if (!isPrivateRoom) {
         await _showEvaluationDialog();
       } else {
         logger.info('Privateルームのため評価ダイアログをスキップ', name: _logName);
       }
-      
+
       await widget.chatService.leaveRoom(widget.roomId, currentUserId);
-      
+
       if (mounted) {
         NavigationHelper.toHome(
           context,
@@ -587,9 +582,8 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    final isChatStarted = _currentRoom!.startedAt.isBefore(
-      DateTime.now().add(const Duration(days: 300))
-    );
+    final isChatStarted = _currentRoom!.startedAt
+        .isBefore(DateTime.now().add(const Duration(days: 300)));
 
     // ✅ 相手がいるかどうかを判定
     final currentUserId = _getCurrentUserId();
@@ -611,8 +605,8 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Text(
                 _formatRemainingTime(),
                 style: AppTextStyles.titleMedium.copyWith(
-                  color: isChatStarted 
-                      ? AppColors.textWhite 
+                  color: isChatStarted
+                      ? AppColors.textWhite
                       : AppColors.textWhite.withOpacity(0.7),
                 ),
               ),
@@ -653,7 +647,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-          
+
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -692,7 +686,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 : BorderSide.none,
                           ),
                           child: Container(
-                            padding: EdgeInsets.all(AppConstants.defaultPadding),
+                            padding:
+                                EdgeInsets.all(AppConstants.defaultPadding),
                             width: double.infinity,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,7 +701,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                       ),
                                     ),
                                     // ✅ 招待可能アイコン
-                                    if (!hasPartner && _currentRoom!.private) ...[
+                                    if (!hasPartner &&
+                                        _currentRoom!.private) ...[
                                       const Spacer(),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
@@ -715,7 +711,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -728,7 +725,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                             const SizedBox(width: 4),
                                             Text(
                                               'タップして招待',
-                                              style: AppTextStyles.labelSmall.copyWith(
+                                              style: AppTextStyles.labelSmall
+                                                  .copyWith(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -744,25 +742,30 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Center(
                                     child: !hasPartner && _currentRoom!.private
                                         ? Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.person_add,
                                                 size: 48,
-                                                color: AppColors.primary.withOpacity(0.5),
+                                                color: AppColors.primary
+                                                    .withOpacity(0.5),
                                               ),
                                               const SizedBox(height: 12),
                                               Text(
                                                 'フレンドを招待',
-                                                style: AppTextStyles.titleMedium.copyWith(
+                                                style: AppTextStyles.titleMedium
+                                                    .copyWith(
                                                   color: AppColors.primary,
                                                 ),
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
                                                 'ここをタップして招待を送信',
-                                                style: AppTextStyles.bodySmall.copyWith(
-                                                  color: AppColors.textSecondary,
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                  color:
+                                                      AppColors.textSecondary,
                                                 ),
                                               ),
                                             ],
@@ -852,10 +855,15 @@ class _ChatScreenState extends State<ChatScreen> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      suffixText: '${_messageController.text.length}/${AppConstants.messageMaxLength}',
+                      suffixText:
+                          '${_messageController.text.length}/${AppConstants.messageMaxLength}',
                     ),
                     maxLength: AppConstants.messageMaxLength,
-                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                    buildCounter: (context,
+                            {required currentLength,
+                            required isFocused,
+                            maxLength}) =>
+                        null,
                     onChanged: (value) => setState(() {}),
                     onSubmitted: (_) => _sendMessage(),
                     style: AppTextStyles.bodyMedium,

@@ -16,16 +16,16 @@ class Environment {
   Environment._();
 
   // ===== Build Mode Detection =====
-  
+
   /// リリースビルドかどうか
   static bool get isReleaseBuild => kReleaseMode;
-  
+
   /// デバッグビルドかどうか
   static bool get isDebugBuild => kDebugMode;
-  
+
   /// プロファイルビルドかどうか
   static bool get isProfileBuild => kProfileMode;
-  
+
   /// Webプラットフォームかどうか
   static bool get isWeb => kIsWeb;
 
@@ -43,9 +43,9 @@ class Environment {
 
   // ===== Firebase Mode =====
   static late final FirebaseMode firebaseMode;
-  
+
   /// Firebaseエミュレーターを使用すべきか
-  /// 
+  ///
   /// **重要:** リリースビルド時は常に false を返す
   /// これにより、APK・Firebase Hosting・AWS Hostingでは
   /// 本番Firebaseに接続される
@@ -54,15 +54,15 @@ class Environment {
     if (isReleaseBuild) {
       return false;
     }
-    
+
     // デバッグビルドでは .env の設定に従う
     return firebaseMode == FirebaseMode.emulator;
   }
-  
+
   // 後方互換性のため残す（非推奨）
   @Deprecated('Use shouldUseFirebaseEmulator instead')
   static bool get isFirebaseEmulator => shouldUseFirebaseEmulator;
-  
+
   @Deprecated('Use shouldUseFirebaseEmulator instead')
   static bool get isFirebaseProduction => !shouldUseFirebaseEmulator;
 
@@ -115,9 +115,11 @@ class Environment {
   /// 環境設定をコンソールに表示
   static void printConfiguration() {
     debugPrint('===== Environment Configuration =====');
-    debugPrint('Build Mode: ${isReleaseBuild ? "RELEASE" : (isDebugBuild ? "DEBUG" : "PROFILE")}');
+    debugPrint(
+        'Build Mode: ${isReleaseBuild ? "RELEASE" : (isDebugBuild ? "DEBUG" : "PROFILE")}');
     debugPrint('Platform: ${isWeb ? "Web" : "Native"}');
-    debugPrint('Firebase Emulator: ${shouldUseFirebaseEmulator ? "ENABLED ⚠️" : "DISABLED ✅"}');
+    debugPrint(
+        'Firebase Emulator: ${shouldUseFirebaseEmulator ? "ENABLED ⚠️" : "DISABLED ✅"}');
     debugPrint('Environment: $_environment');
     debugPrint('Backend: $backend');
     debugPrint('Debug Mode: $isDebugMode');

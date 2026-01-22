@@ -34,13 +34,11 @@ class QuestionChatService {
 
   Future<void> sendMessage({
     required String chatId,
-    required String text, required String senderRole,
+    required String text,
+    required String senderRole,
   }) async {
-    final msgRef = _db
-        .collection("QuestionChat")
-        .doc(chatId)
-        .collection("Messages")
-        .doc();
+    final msgRef =
+        _db.collection("QuestionChat").doc(chatId).collection("Messages").doc();
 
     final message = Message(
       id: msgRef.id,

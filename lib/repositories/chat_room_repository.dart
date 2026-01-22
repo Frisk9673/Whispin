@@ -25,18 +25,16 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
     logger.debug('findByStatus($status)', name: _logName);
 
     try {
-      final snapshot = await collection
-          .where('status', isEqualTo: status)
-          .get();
+      final snapshot =
+          await collection.where('status', isEqualTo: status).get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('ステータス$status のルーム数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findByStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findByStatus() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -57,14 +55,10 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
     try {
       // id1がuserIdのルームを検索
-      final snapshot1 = await collection
-          .where('id1', isEqualTo: userId)
-          .get();
+      final snapshot1 = await collection.where('id1', isEqualTo: userId).get();
 
       // id2がuserIdのルームを検索
-      final snapshot2 = await collection
-          .where('id2', isEqualTo: userId)
-          .get();
+      final snapshot2 = await collection.where('id2', isEqualTo: userId).get();
 
       final results = [
         ...snapshot1.docs.map((doc) => fromMap(doc.data())),
@@ -74,7 +68,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
       logger.success('ユーザー$userId のルーム数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findUserRooms() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findUserRooms() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -88,9 +83,7 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
           .where('status', isEqualTo: AppConstants.roomStatusWaiting)
           .get();
 
-      var results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      var results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       // 期限切れでないルームのみフィルタ
       results = results.where((room) {
@@ -108,7 +101,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
       logger.success('参加可能なルーム数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findJoinableRooms() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findJoinableRooms() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -121,7 +115,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
       await updateFields(roomId, {'status': status});
       logger.success('ルームステータス更新完了', name: _logName);
     } catch (e, stack) {
-      logger.error('updateStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('updateStatus() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -137,7 +132,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
       }
 
       final now = DateTime.now();
-      final expiresAt = now.add(const Duration(minutes: AppConstants.defaultChatDurationMinutes));
+      final expiresAt = now.add(
+          const Duration(minutes: AppConstants.defaultChatDurationMinutes));
 
       if (room.id1 == null || room.id1!.isEmpty) {
         // id1スロットに参加
@@ -161,7 +157,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
       logger.success('ルーム参加完了', name: _logName);
     } catch (e, stack) {
-      logger.error('joinRoom() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('joinRoom() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -194,13 +191,15 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
         logger.success('ルーム退出完了', name: _logName);
       }
     } catch (e, stack) {
-      logger.error('leaveRoom() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('leaveRoom() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
 
   /// コメントを更新
-  Future<void> updateComment(String roomId, String userId, String comment) async {
+  Future<void> updateComment(
+      String roomId, String userId, String comment) async {
     logger.debug('updateComment($roomId, $userId)', name: _logName);
 
     try {
@@ -219,7 +218,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
       logger.success('コメント更新完了', name: _logName);
     } catch (e, stack) {
-      logger.error('updateComment() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('updateComment() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -239,7 +239,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
       logger.success('延長回数更新: $newCount', name: _logName);
     } catch (e, stack) {
-      logger.error('incrementExtensionCount() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('incrementExtensionCount() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -261,9 +262,11 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
       await incrementExtensionCount(roomId);
 
-      logger.success('有効期限延長完了: ${newExpiresAt.toIso8601String()}', name: _logName);
+      logger.success('有効期限延長完了: ${newExpiresAt.toIso8601String()}',
+          name: _logName);
     } catch (e, stack) {
-      logger.error('extendExpiration() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('extendExpiration() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -286,7 +289,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
       logger.success('期限切れルーム数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findExpiredRooms() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findExpiredRooms() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }

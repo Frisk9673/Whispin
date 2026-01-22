@@ -42,7 +42,7 @@ class NavigationHelper {
     required StorageService storageService,
   }) {
     logger.navigation('current', 'Home', name: _logName);
-    
+
     return AppRouter.navigateAndRemoveUntil(
       context,
       AppRoutes.home,
@@ -69,7 +69,7 @@ class NavigationHelper {
     required StorageService storageService,
   }) {
     logger.navigation('current', 'CreateRoom', name: _logName);
-    
+
     return AppRouter.navigateTo(
       context,
       AppRoutes.createRoom,
@@ -90,7 +90,7 @@ class NavigationHelper {
     required StorageService storageService,
   }) {
     logger.navigation('current', 'Chat(roomId=$roomId)', name: _logName);
-    
+
     return AppRouter.navigateTo(
       context,
       AppRoutes.chat,
@@ -174,7 +174,7 @@ class NavigationHelper {
     Color? backgroundColor,
   }) {
     logger.debug('BottomSheet表示', name: _logName);
-    
+
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
@@ -194,7 +194,7 @@ class NavigationHelper {
     bool barrierDismissible = true,
   }) {
     logger.debug('Dialog表示', name: _logName);
-    
+
     return showDialog<T>(
       context: context,
       barrierDismissible: barrierDismissible,
@@ -211,7 +211,7 @@ class NavigationHelper {
     SnackBarAction? action,
   }) {
     logger.debug('SnackBar表示: $message', name: _logName);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

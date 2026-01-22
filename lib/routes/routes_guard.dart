@@ -71,10 +71,10 @@ class RouteGuard {
   /// プレミアム会員チェック
   static bool checkPremium(BuildContext context, AuthService authService) {
     final user = authService.currentUser;
-    
+
     if (user == null || !user.premium) {
       logger.warning('非プレミアムユーザーのアクセス', name: _logName);
-      
+
       _showPremiumRequiredDialog(context);
       return false;
     }
@@ -144,7 +144,7 @@ class RouteGuard {
     // - ルームが存在するか
     // - ブロックされていないか
     // - 満員でないか
-    
+
     logger.debug('ルームアクセスチェック: roomId=$roomId, userId=$userId', name: _logName);
     return true;
   }
@@ -205,7 +205,7 @@ class RouteGuardWrapper extends StatelessWidget {
         canPop: false,
         onPopInvoked: (didPop) {
           if (didPop) return;
-          
+
           if (onBackPressed != null) {
             onBackPressed!();
           } else {

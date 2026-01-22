@@ -12,7 +12,7 @@ import '../../utils/app_logger.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
-  
+
   static const String _logName = 'AdminHomeScreen';
 
   @override
@@ -31,13 +31,14 @@ class AdminHomeScreen extends StatelessWidget {
             child: GestureDetector(
               onTap: () async {
                 logger.info('ログアウトボタン押下', name: _logName);
-                
+
                 // ログアウト確認ダイアログ
                 final result = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                      borderRadius: BorderRadius.circular(
+                          AppConstants.defaultBorderRadius),
                     ),
                     title: Text('ログアウト', style: AppTextStyles.titleLarge),
                     content: Text(
@@ -96,7 +97,8 @@ class AdminHomeScreen extends StatelessWidget {
           children: [
             // 有料会員数表示
             Padding(
-              padding: const EdgeInsets.only(top: 24.0, left: 16.0, right: 16.0),
+              padding:
+                  const EdgeInsets.only(top: 24.0, left: 16.0, right: 16.0),
               child: admin.isLoading
                   ? const SizedBox(
                       height: 120,
@@ -115,7 +117,8 @@ class AdminHomeScreen extends StatelessWidget {
                           ),
                           child: InkWell(
                             onTap: () {
-                              logger.info('有料会員数カードタップ → PremiumLogListScreen', name: _logName);
+                              logger.info('有料会員数カードタップ → PremiumLogListScreen',
+                                  name: _logName);
                               AppRouter.navigateTo(
                                 context,
                                 AppRoutes.premiumLogs,
@@ -125,7 +128,8 @@ class AdminHomeScreen extends StatelessWidget {
                               AppConstants.defaultBorderRadius,
                             ),
                             child: Container(
-                              padding: EdgeInsets.all(AppConstants.defaultPadding),
+                              padding:
+                                  EdgeInsets.all(AppConstants.defaultPadding),
                               decoration: BoxDecoration(
                                 gradient: AppColors.primaryGradient,
                                 borderRadius: BorderRadius.circular(
@@ -145,14 +149,16 @@ class AdminHomeScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         '有料会員数',
-                                        style: AppTextStyles.titleMedium.copyWith(
+                                        style:
+                                            AppTextStyles.titleMedium.copyWith(
                                           color: AppColors.textWhite,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${admin.paidMemberCount}人',
-                                        style: AppTextStyles.headlineLarge.copyWith(
+                                        style: AppTextStyles.headlineLarge
+                                            .copyWith(
                                           color: AppColors.textWhite,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -165,7 +171,7 @@ class AdminHomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // 機能ボタン
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -176,11 +182,12 @@ class AdminHomeScreen extends StatelessWidget {
                               icon: Icons.support_agent,
                               onPressed: () {
                                 logger.info('お問い合わせボタン押下', name: _logName);
-                                Navigator.of(context).pushNamed(AppRoutes.questionChat);
+                                Navigator.of(context)
+                                    .pushNamed(AppRoutes.questionChat);
                               },
                               backgroundColor: Colors.green,
                             ),
-                            
+
                             // 有料会員ログボタン（青）
                             _buildCircleButton(
                               label: '有料会員\nログ',
@@ -199,7 +206,7 @@ class AdminHomeScreen extends StatelessWidget {
                       ],
                     ),
             ),
-            
+
             // スペーサー
             const Expanded(
               child: SizedBox(),
@@ -223,9 +230,8 @@ class AdminHomeScreen extends StatelessWidget {
           height: 88,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: backgroundColor != null
-                ? null
-                : AppColors.primaryGradient,
+            gradient:
+                backgroundColor != null ? null : AppColors.primaryGradient,
             color: backgroundColor,
             boxShadow: [
               BoxShadow(

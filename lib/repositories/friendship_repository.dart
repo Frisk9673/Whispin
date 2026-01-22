@@ -46,7 +46,8 @@ class FriendshipRepository extends BaseRepository<Friendship> {
       logger.success('フレンド数: ${results.length}人', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findUserFriends() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findUserFriends() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -74,7 +75,8 @@ class FriendshipRepository extends BaseRepository<Friendship> {
 
       return snapshot2.docs.isNotEmpty;
     } catch (e, stack) {
-      logger.error('isFriend() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('isFriend() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -87,7 +89,8 @@ class FriendshipRepository extends BaseRepository<Friendship> {
       await updateFields(friendshipId, {'active': false});
       logger.success('フレンドシップ削除完了', name: _logName);
     } catch (e, stack) {
-      logger.error('deactivateFriendship() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('deactivateFriendship() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -117,7 +120,8 @@ class FriendshipRepository extends BaseRepository<Friendship> {
 
       logger.success('フレンドシップ削除完了', name: _logName);
     } catch (e, stack) {
-      logger.error('removeFriendship() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('removeFriendship() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -158,7 +162,7 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
     try {
       final results = await findWhere(field: 'receiverId', value: userId);
-      
+
       final pending = results
           .where((r) => r.status == AppConstants.friendRequestStatusPending)
           .toList();
@@ -166,7 +170,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
       logger.success('受信リクエスト数: ${pending.length}件', name: _logName);
       return pending;
     } catch (e, stack) {
-      logger.error('findReceivedRequests() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findReceivedRequests() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -180,7 +185,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
       logger.success('送信リクエスト数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findSentRequests() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findSentRequests() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -197,7 +203,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
       logger.success('リクエスト承認完了', name: _logName);
     } catch (e, stack) {
-      logger.error('acceptRequest() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('acceptRequest() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -214,7 +221,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
       logger.success('リクエスト拒否完了', name: _logName);
     } catch (e, stack) {
-      logger.error('rejectRequest() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('rejectRequest() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -233,7 +241,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
       return snapshot.docs.isNotEmpty;
     } catch (e, stack) {
-      logger.error('hasExistingRequest() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('hasExistingRequest() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -247,9 +256,7 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
         .where('status', isEqualTo: AppConstants.friendRequestStatusPending)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 }

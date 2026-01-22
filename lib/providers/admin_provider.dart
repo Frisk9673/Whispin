@@ -53,8 +53,7 @@ class AdminProvider extends ChangeNotifier {
     // 既存の購読があればキャンセル
     _messageSubscription?.cancel();
 
-    _messageSubscription =
-        _chatService.messageStream(chatId).listen((event) {
+    _messageSubscription = _chatService.messageStream(chatId).listen((event) {
       messages = event;
       notifyListeners();
     });

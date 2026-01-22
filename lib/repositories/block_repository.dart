@@ -30,14 +30,13 @@ class BlockRepository extends BaseRepository<Block> {
           .where('active', isEqualTo: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('ブロック数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findBlockedUsers() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findBlockedUsers() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -52,14 +51,13 @@ class BlockRepository extends BaseRepository<Block> {
           .where('active', isEqualTo: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('ブロックされている数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findBlockedBy() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findBlockedBy() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -78,7 +76,8 @@ class BlockRepository extends BaseRepository<Block> {
 
       return snapshot.docs.isNotEmpty;
     } catch (e, stack) {
-      logger.error('isBlocked() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('isBlocked() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -93,7 +92,8 @@ class BlockRepository extends BaseRepository<Block> {
 
       return blocked1 || blocked2;
     } catch (e, stack) {
-      logger.error('isMutuallyBlocked() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('isMutuallyBlocked() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -131,7 +131,8 @@ class BlockRepository extends BaseRepository<Block> {
         return blockId;
       }
     } catch (e, stack) {
-      logger.error('blockUser() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('blockUser() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -152,7 +153,8 @@ class BlockRepository extends BaseRepository<Block> {
 
       logger.success('ブロック解除完了', name: _logName);
     } catch (e, stack) {
-      logger.error('unblockUser() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('unblockUser() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -165,7 +167,8 @@ class BlockRepository extends BaseRepository<Block> {
       await updateFields(blockId, {'active': false});
       logger.success('ブロック解除完了', name: _logName);
     } catch (e, stack) {
-      logger.error('unblockById() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('unblockById() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -179,9 +182,7 @@ class BlockRepository extends BaseRepository<Block> {
         .where('active', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 
@@ -197,7 +198,8 @@ class BlockRepository extends BaseRepository<Block> {
 
       return snapshot.docs.length;
     } catch (e, stack) {
-      logger.error('countActiveBlocks() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('countActiveBlocks() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return 0;
     }
   }

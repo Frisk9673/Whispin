@@ -123,7 +123,8 @@ extension ListExtensions<T> on List<T> {
     if (this is! List<Comparable>) {
       throw UnsupportedError('List must contain Comparable elements');
     }
-    return (this as List<Comparable>).reduce((a, b) => a.compareTo(b) > 0 ? a : b) as T;
+    return (this as List<Comparable>)
+        .reduce((a, b) => a.compareTo(b) > 0 ? a : b) as T;
   }
 
   /// 最小値を取得（Comparable型のみ）
@@ -132,7 +133,8 @@ extension ListExtensions<T> on List<T> {
     if (this is! List<Comparable>) {
       throw UnsupportedError('List must contain Comparable elements');
     }
-    return (this as List<Comparable>).reduce((a, b) => a.compareTo(b) < 0 ? a : b) as T;
+    return (this as List<Comparable>)
+        .reduce((a, b) => a.compareTo(b) < 0 ? a : b) as T;
   }
 
   /// プロパティで最大値を取得

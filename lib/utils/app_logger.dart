@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 /// アプリケーション全体のログ管理クラス
-/// 
+///
 /// コンソール出力（print + developer.log）とファイル出力の両方をサポート
 class AppLogger {
   static final AppLogger _instance = AppLogger._internal();
@@ -34,7 +34,7 @@ class AppLogger {
       // モバイル/デスクトップ環境
       final directory = await getApplicationDocumentsDirectory();
       final logDir = Directory('${directory.path}/logs');
-      
+
       // ログディレクトリが存在しない場合は作成
       if (!await logDir.exists()) {
         await logDir.create(recursive: true);
@@ -49,12 +49,12 @@ class AppLogger {
       await _cleanOldLogs(logDir);
 
       _isInitialized = true;
-      
+
       // 初期化完了メッセージ
       final initMessage = '📝 AppLogger初期化完了\n📁 ログファイル: ${_logFile!.path}';
       print(initMessage);
       developer.log(initMessage, name: 'AppLogger');
-      
+
       // ファイルにも書き込み
       if (_logFile != null) {
         await _logFile!.writeAsString(
@@ -67,7 +67,7 @@ class AppLogger {
       final errorMsg = 'AppLogger初期化エラー: $e';
       print('❌ $errorMsg');
       developer.log(errorMsg, name: 'AppLogger', error: e, stackTrace: stack);
-      
+
       // エラーでも初期化状態にする（print/developer.logは使える）
       _isInitialized = true;
     }
@@ -104,7 +104,7 @@ class AppLogger {
   static const String levelError = 'ERROR';
 
   /// メインのログ出力メソッド
-  /// 
+  ///
   /// [emoji] ログの絵文字（視認性向上）
   /// [message] ログメッセージ
   /// [name] ログの発信元（通常はクラス名）

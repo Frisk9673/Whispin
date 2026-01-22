@@ -8,7 +8,7 @@ import '../../constants/text_styles.dart';
 import '../../constants/routes.dart';
 
 /// 統一されたヘッダーコンポーネント（AppBar形式）
-/// 
+///
 /// フレンドリクエスト数をリアルタイムで表示
 class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -38,12 +38,13 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
     try {
       final userProvider = context.read<UserProvider>();
       final currentUserId = userProvider.currentUser?.id;
-      
+
       if (currentUserId == null) return 0;
 
       final friendRequestRepository = FriendRequestRepository();
-      final requests = await friendRequestRepository.findReceivedRequests(currentUserId);
-      
+      final requests =
+          await friendRequestRepository.findReceivedRequests(currentUserId);
+
       return requests.length;
     } catch (e) {
       return 0;

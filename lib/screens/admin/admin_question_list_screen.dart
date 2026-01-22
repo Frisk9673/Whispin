@@ -11,12 +11,11 @@ class AdminQuestionListScreen extends StatefulWidget {
   const AdminQuestionListScreen({super.key});
 
   @override
-  State<AdminQuestionListScreen> createState() => 
+  State<AdminQuestionListScreen> createState() =>
       _AdminQuestionListScreenState();
 }
 
-class _AdminQuestionListScreenState 
-    extends State<AdminQuestionListScreen> {
+class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _logName = 'AdminQuestionListScreen';
 
@@ -43,6 +42,7 @@ class _AdminQuestionListScreenState
       ),
     );
   }
+
   // Part 2: StreamBuilderとリスト表示
   Widget _buildChatList() {
     return StreamBuilder<QuerySnapshot>(
@@ -52,18 +52,13 @@ class _AdminQuestionListScreenState
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          logger.error(
-            'エラー: ${snapshot.error}', 
-            name: _logName
-          );
+          logger.error('エラー: ${snapshot.error}', name: _logName);
           return _buildErrorView();
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primary
-            ),
+            child: CircularProgressIndicator(color: AppColors.primary),
           );
         }
 
@@ -93,11 +88,7 @@ class _AdminQuestionListScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline, 
-            size: 64, 
-            color: AppColors.error
-          ),
+          Icon(Icons.error_outline, size: 64, color: AppColors.error),
           const SizedBox(height: 16),
           Text(
             'データの取得に失敗しました',
@@ -138,30 +129,25 @@ class _AdminQuestionListScreenState
       ),
     );
   }
+
   // Part 3: チャットカードの表示
   Widget _buildChatCard(BuildContext context, QuestionChat chat) {
     return Card(
       elevation: AppConstants.cardElevation,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppConstants.defaultBorderRadius
-        ),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
       child: InkWell(
         onTap: () {
           logger.info('チャットタップ: ${chat.id}', name: _logName);
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => AdminQuestionChatScreen(
-                chatId: chat.id
-              ),
+              builder: (_) => AdminQuestionChatScreen(chatId: chat.id),
             ),
           );
         },
-        borderRadius: BorderRadius.circular(
-          AppConstants.defaultBorderRadius
-        ),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         child: Padding(
           padding: EdgeInsets.all(AppConstants.defaultPadding),
           child: Row(
@@ -199,9 +185,7 @@ class _AdminQuestionListScreenState
       ),
       child: Center(
         child: Text(
-          chat.userId.isNotEmpty 
-              ? chat.userId[0].toUpperCase() 
-              : '?',
+          chat.userId.isNotEmpty ? chat.userId[0].toUpperCase() : '?',
           style: AppTextStyles.headlineSmall.copyWith(
             color: AppColors.textWhite,
             fontWeight: FontWeight.bold,
@@ -246,9 +230,7 @@ class _AdminQuestionListScreenState
         ),
         const SizedBox(height: 4),
         Text(
-          chat.lastMessage.isEmpty 
-              ? 'メッセージなし' 
-              : chat.lastMessage,
+          chat.lastMessage.isEmpty ? 'メッセージなし' : chat.lastMessage,
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),

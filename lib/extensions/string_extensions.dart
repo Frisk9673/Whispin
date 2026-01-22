@@ -224,7 +224,8 @@ extension StringExtensions on String {
 
     if (local.length <= 2) return this;
 
-    final maskedLocal = '${local[0]}${'*' * (local.length - 2)}${local[local.length - 1]}';
+    final maskedLocal =
+        '${local[0]}${'*' * (local.length - 2)}${local[local.length - 1]}';
     return '$maskedLocal@$domain';
   }
 
@@ -236,4 +237,3 @@ extension StringExtensions on String {
     return mask(visibleStart: 3, visibleEnd: 4);
   }
 }
-

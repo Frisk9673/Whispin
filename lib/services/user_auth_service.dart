@@ -17,10 +17,12 @@ class UserAuthService {
     logger.info('入力されたログイン情報', name: _logName);
     logger.info('  email: $email', name: _logName);
     logger.info('  password: ${'*' * password.length}', name: _logName);
-    logger.info('----------------------------------------------', name: _logName);
+    logger.info('----------------------------------------------',
+        name: _logName);
 
     try {
-      logger.start('FirebaseAuth.signInWithEmailAndPassword() 呼び出し中...', name: _logName);
+      logger.start('FirebaseAuth.signInWithEmailAndPassword() 呼び出し中...',
+          name: _logName);
 
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
@@ -53,7 +55,8 @@ class UserAuthService {
       data.forEach((key, value) {
         logger.info('  $key: $value', name: _logName);
       });
-      logger.info('============================================', name: _logName);
+      logger.info('============================================',
+          name: _logName);
 
       // 自動整合性チェック
       logger.section('自動整合性チェック開始', name: _logName);
@@ -66,7 +69,6 @@ class UserAuthService {
       logger.section('loginUser() 正常終了', name: _logName);
 
       return user;
-
     } catch (e, stack) {
       logger.error(
         'ログインエラー発生: $e',

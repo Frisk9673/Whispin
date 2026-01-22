@@ -25,16 +25,16 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
 
   Future<void> _handleSearch(PremiumLogProvider provider) async {
     final email = _controller.text.trim();
-    
+
     if (email.isEmpty) {
       context.showWarningSnackBar('メールアドレスを入力してください');
       return;
     }
 
     await provider.filterByEmail(email);
-    
+
     if (!mounted) return;
-    
+
     if (provider.logs.isEmpty) {
       context.showInfoSnackBar('該当するログが見つかりませんでした');
     } else {
@@ -45,7 +45,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   Future<void> _handleClear(PremiumLogProvider provider) async {
     _controller.clear();
     await provider.loadAllLogs();
-    
+
     if (!mounted) return;
     context.showSuccessSnackBar('全件表示に戻しました');
   }
@@ -82,10 +82,10 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
           children: [
             // 検索エリア
             _buildSearchArea(provider, isMobile),
-            
+
             // 統計情報
             _buildStatsCard(provider),
-            
+
             // ログリスト
             Expanded(
               child: _buildLogList(provider),
@@ -115,7 +115,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // 検索フィールドとボタン
           if (isMobile) ...[
             // モバイル: 縦並び
@@ -148,8 +148,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: provider.isLoading 
-                        ? null 
+                    onPressed: provider.isLoading
+                        ? null
                         : () => _handleSearch(provider),
                     icon: const Icon(Icons.search),
                     label: const Text('検索'),
@@ -168,8 +168,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: provider.isLoading 
-                        ? null 
+                    onPressed: provider.isLoading
+                        ? null
                         : () => _handleClear(provider),
                     icon: const Icon(Icons.refresh),
                     label: const Text('クリア'),
@@ -220,9 +220,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: provider.isLoading 
-                      ? null 
-                      : () => _handleSearch(provider),
+                  onPressed:
+                      provider.isLoading ? null : () => _handleSearch(provider),
                   icon: const Icon(Icons.search),
                   label: const Text('検索'),
                   style: ElevatedButton.styleFrom(
@@ -241,9 +240,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
-                  onPressed: provider.isLoading 
-                      ? null 
-                      : () => _handleClear(provider),
+                  onPressed:
+                      provider.isLoading ? null : () => _handleClear(provider),
                   icon: const Icon(Icons.refresh),
                   label: const Text('クリア'),
                   style: OutlinedButton.styleFrom(

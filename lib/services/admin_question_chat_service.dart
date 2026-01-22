@@ -21,11 +21,8 @@ class AdminQuestionChatService {
     required String chatId,
     required String text,
   }) async {
-    final msgRef = _db
-        .collection("QuestionChat")
-        .doc(chatId)
-        .collection("Messages")
-        .doc();
+    final msgRef =
+        _db.collection("QuestionChat").doc(chatId).collection("Messages").doc();
 
     final message = Message(
       id: msgRef.id,

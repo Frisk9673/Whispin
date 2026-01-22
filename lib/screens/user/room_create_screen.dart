@@ -104,9 +104,9 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       if (!mounted) return;
 
       logger.start('チャット画面へ自動遷移します', name: _logName);
-      
+
       setState(() => _isLoading = false);
-      
+
       // NavigationHelperを使用してチャット画面へ遷移
       await NavigationHelper.toChat(
         context,
@@ -118,7 +118,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       logger.success('チャット画面遷移完了', name: _logName);
       logger.section('ルーム作成処理完了', name: _logName);
-
     } catch (e, stack) {
       logger.error('ルーム作成エラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
@@ -244,9 +243,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      _isPrivate
-                                          ? 'プライベートルーム'
-                                          : 'パブリックルーム',
+                                      _isPrivate ? 'プライベートルーム' : 'パブリックルーム',
                                       style: AppTextStyles.titleMedium.copyWith(
                                         color: _isPrivate
                                             ? AppColors.primary
@@ -368,9 +365,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                               : '作成後、チャット画面で相手の参加を待ちます',
                         ),
                         _buildInfoItem(
-                          _isPrivate
-                              ? 'ルーム検索には表示されません'
-                              : 'ルーム名で検索して参加してもらえます',
+                          _isPrivate ? 'ルーム検索には表示されません' : 'ルーム名で検索して参加してもらえます',
                         ),
                         _buildInfoItem('最大2人まで参加可能'),
                         _buildInfoItem(

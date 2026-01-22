@@ -93,7 +93,8 @@ class AppConstants {
   // ===== Validation Messages =====
   static const String validationRequired = 'この項目は必須です';
   static const String validationEmailInvalid = '有効なメールアドレスを入力してください';
-  static const String validationPasswordShort = 'パスワードは$passwordMinLength文字以上にしてください';
+  static const String validationPasswordShort =
+      'パスワードは$passwordMinLength文字以上にしてください';
   static const String validationPasswordMismatch = 'パスワードが一致しません';
   static const String validationMaxLength = '最大文字数を超えています';
 

@@ -16,24 +16,24 @@ class FriendRequest {
   });
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'senderId': senderId,
-    'receiverId': receiverId,
-    'status': status,
-    'createdAt': createdAt.toIso8601String(),
-    'respondedAt': respondedAt?.toIso8601String(),
-  };
+        'id': id,
+        'senderId': senderId,
+        'receiverId': receiverId,
+        'status': status,
+        'createdAt': createdAt.toIso8601String(),
+        'respondedAt': respondedAt?.toIso8601String(),
+      };
 
   factory FriendRequest.fromMap(Map<String, dynamic> json) => FriendRequest(
-    id: json['id'] as String,
-    senderId: json['senderId'] as String,
-    receiverId: json['receiverId'] as String,
-    status: json['status'] as String,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-    respondedAt: json['respondedAt'] != null
-        ? DateTime.parse(json['respondedAt'] as String)
-        : null,
-  );
+        id: json['id'] as String,
+        senderId: json['senderId'] as String,
+        receiverId: json['receiverId'] as String,
+        status: json['status'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        respondedAt: json['respondedAt'] != null
+            ? DateTime.parse(json['respondedAt'] as String)
+            : null,
+      );
 
   FriendRequest copyWith({
     String? id,

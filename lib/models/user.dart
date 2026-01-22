@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class User{
+class User {
   final String id; // Email (Primary Key)
   final String password; // hashed password (JSON 用)
   final String firstName;
@@ -48,16 +48,13 @@ class User{
     }
 
     return User(
-      id: map['id'] ??
-          map['EmailAddress'] ??
-          '', // Firestore 旧形式もサポート
+      id: map['id'] ?? map['EmailAddress'] ?? '', // Firestore 旧形式もサポート
 
       password: map['password'] ?? '',
 
       firstName: map['firstName'] ?? map['FirstName'] ?? '',
       lastName: map['lastName'] ?? map['LastName'] ?? '',
-      nickname:
-          map['nickname'] ?? map['Nickname'] ?? map['username'] ?? '',
+      nickname: map['nickname'] ?? map['Nickname'] ?? map['username'] ?? '',
 
       phoneNumber: map['phoneNumber'] ?? map['TEL_ID'],
 
@@ -66,8 +63,8 @@ class User{
       premium: map['premium'] ?? map['Premium'] ?? false,
       roomCount: map['roomCount'] ?? map['RoomCount'] ?? 0,
 
-      createdAt: _toDate(map['createdAt'] ?? map['CreatedAt']) ??
-          DateTime.now(),
+      createdAt:
+          _toDate(map['createdAt'] ?? map['CreatedAt']) ?? DateTime.now(),
 
       lastUpdatedPremium:
           _toDate(map['lastUpdatedPremium'] ?? map['LastUpdated_Premium']),
@@ -78,8 +75,7 @@ class User{
 
   // ===== Firestore / JSON 両対応 Map 変換 =====
   Map<String, dynamic> toMap() {
-    Timestamp? _ts(DateTime? d) =>
-        d != null ? Timestamp.fromDate(d) : null;
+    Timestamp? _ts(DateTime? d) => d != null ? Timestamp.fromDate(d) : null;
 
     return {
       'id': id,
@@ -88,11 +84,9 @@ class User{
       'lastName': lastName,
       'nickname': nickname,
       'phoneNumber': phoneNumber,
-
       'rate': rate,
       'premium': premium,
       'roomCount': roomCount,
-
       'createdAt': _ts(createdAt),
       'lastUpdatedPremium': _ts(lastUpdatedPremium),
       'deletedAt': _ts(deletedAt),

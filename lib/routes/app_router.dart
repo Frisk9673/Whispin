@@ -111,7 +111,7 @@ class AppRouter {
           const FriendListScreen(),
           settings: settings,
         );
-      
+
       // ✅ 追加: フレンドリクエスト画面
       case AppRoutes.friendRequests:
         return _buildRoute(

@@ -28,7 +28,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const String _logName = 'HomeScreen';
-  
+
   late ChatService _chatService;
   int _pendingFriendRequestCount = 0;
 
@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _chatService = ChatService(widget.storageService);
     _updatePendingFriendRequests();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
     });
@@ -45,49 +45,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkAndLoadUserData() async {
     logger.section('UserProvider状態確認', name: _logName);
-    
+
     final userProvider = context.read<UserProvider>();
-    
+
     if (userProvider.currentUser == null && !userProvider.isLoading) {
       logger.warning('ユーザー情報が未読み込み → 読み込みを開始', name: _logName);
-      
+
       final currentUser = FirebaseAuth.instance.currentUser;
       final email = currentUser?.email;
-      
+
       if (email == null) {
         logger.error('Firebase Auth ユーザーのメールアドレスが取得できません', name: _logName);
-        
+
         if (mounted) {
           context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
         }
         return;
       }
-      
+
       logger.info('取得したメールアドレス: $email', name: _logName);
-      
+
       await userProvider.loadUserData(email);
-      
+
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
-        
+
         if (mounted) {
-          context.showErrorSnackBar(
-            'ユーザー情報の読み込みに失敗しました: ${userProvider.error}'
-          );
+          context
+              .showErrorSnackBar('ユーザー情報の読み込みに失敗しました: ${userProvider.error}');
         }
       } else {
         logger.success('ユーザー情報読み込み完了', name: _logName);
-        logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
-        logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
+        logger.info('  名前: ${userProvider.currentUser?.fullName}',
+            name: _logName);
+        logger.info('  プレミアム: ${userProvider.currentUser?.premium}',
+            name: _logName);
       }
     } else if (userProvider.currentUser != null) {
       logger.success('ユーザー情報は既に読み込み済み', name: _logName);
-      logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
-      logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
+      logger.info('  名前: ${userProvider.currentUser?.fullName}',
+          name: _logName);
+      logger.info('  プレミアム: ${userProvider.currentUser?.premium}',
+          name: _logName);
     } else {
       logger.info('ユーザー情報読み込み中...', name: _logName);
     }
-    
+
     logger.section('状態確認完了', name: _logName);
   }
 
@@ -100,26 +103,26 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _pendingFriendRequestCount = count;
     });
-    
+
     logger.debug('フレンドリクエスト未読数: $count', name: _logName);
   }
 
   Future<void> _handleLogout() async {
     logger.section('ログアウト処理開始', name: _logName);
-    
+
     logger.start('UserProviderクリア中...', name: _logName);
     context.read<UserProvider>().clearUser();
     logger.success('UserProviderクリア完了', name: _logName);
-    
+
     logger.start('AuthServiceログアウト中...', name: _logName);
     await widget.authService.logout();
     logger.success('AuthServiceログアウト完了', name: _logName);
-    
+
     if (mounted) {
       logger.start('Login画面へ遷移', name: _logName);
       await NavigationHelper.toLogin(context);
     }
-    
+
     logger.section('ログアウト処理完了', name: _logName);
   }
 
@@ -153,10 +156,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppConstants.appName, 
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textWhite)
-        ),
+        title: Text(AppConstants.appName,
+            style:
+                AppTextStyles.titleLarge.copyWith(color: AppColors.textWhite)),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textWhite,
         actions: [
@@ -199,10 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.only(right: 8.0),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.premiumGold,
-                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.defaultBorderRadius),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

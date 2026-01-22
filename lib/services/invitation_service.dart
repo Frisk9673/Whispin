@@ -6,7 +6,7 @@ import 'storage_service.dart';
 import '../utils/app_logger.dart';
 
 /// 招待機能を管理するサービス
-/// 
+///
 /// ユーザーがルームに他のユーザーを招待する機能を提供します。
 /// 招待の送信、承認、拒否、有効期限の管理を行います。
 class InvitationService {
@@ -18,13 +18,13 @@ class InvitationService {
   // ===== 招待の作成 =====
 
   /// 招待を送信
-  /// 
+  ///
   /// [roomId] 招待先のルームID
   /// [inviterId] 招待者のユーザーID
   /// [inviteeId] 招待されるユーザーID
-  /// 
+  ///
   /// 戻り値: 作成された Invitation
-  /// 
+  ///
   /// エラー:
   /// - ルームが存在しない
   /// - ルームが満員
@@ -124,11 +124,11 @@ class InvitationService {
   // ===== 招待の承認 =====
 
   /// 招待を承認してルームに参加
-  /// 
+  ///
   /// [invitationId] 招待ID
-  /// 
+  ///
   /// 戻り値: 更新された ChatRoom
-  /// 
+  ///
   /// エラー:
   /// - 招待が見つからない
   /// - 招待が既に処理済み
@@ -233,9 +233,9 @@ class InvitationService {
   // ===== 招待の拒否 =====
 
   /// 招待を拒否
-  /// 
+  ///
   /// [invitationId] 招待ID
-  /// 
+  ///
   /// エラー:
   /// - 招待が見つからない
   /// - 招待が既に処理済み
@@ -279,12 +279,12 @@ class InvitationService {
   /// 特定ユーザーが受け取った招待一覧を取得（ペンディングのみ）
   List<Invitation> getReceivedInvitations(String userId) {
     logger.debug('getReceivedInvitations() - userId: $userId', name: _logName);
-    
+
     final invitations = _storageService.invitations
         .where((inv) => inv.inviteeId == userId && inv.status == 'pending')
         .where((inv) => !inv.isExpired) // 期限切れを除外
         .toList();
-    
+
     logger.debug('受信招待数: ${invitations.length}件', name: _logName);
     return invitations;
   }
@@ -292,11 +292,11 @@ class InvitationService {
   /// 特定ユーザーが送信した招待一覧を取得
   List<Invitation> getSentInvitations(String userId) {
     logger.debug('getSentInvitations() - userId: $userId', name: _logName);
-    
+
     final invitations = _storageService.invitations
         .where((inv) => inv.inviterId == userId)
         .toList();
-    
+
     logger.debug('送信招待数: ${invitations.length}件', name: _logName);
     return invitations;
   }
@@ -304,11 +304,11 @@ class InvitationService {
   /// 特定ルームへの招待一覧を取得（ペンディングのみ）
   List<Invitation> getRoomInvitations(String roomId) {
     logger.debug('getRoomInvitations() - roomId: $roomId', name: _logName);
-    
+
     final invitations = _storageService.invitations
         .where((inv) => inv.roomId == roomId && inv.status == 'pending')
         .toList();
-    
+
     logger.debug('ルーム招待数: ${invitations.length}件', name: _logName);
     return invitations;
   }
@@ -342,17 +342,17 @@ class InvitationService {
     } else {
       logger.info('期限切れの招待はありません', name: _logName);
     }
-    
+
     logger.section('cleanupExpiredInvitations() 完了', name: _logName);
   }
 
   // ===== 招待のキャンセル =====
 
   /// 招待をキャンセル（招待者のみ可能）
-  /// 
+  ///
   /// [invitationId] 招待ID
   /// [inviterId] 招待者のユーザーID（確認用）
-  /// 
+  ///
   /// エラー:
   /// - 招待が見つからない
   /// - 招待者が一致しない
@@ -377,7 +377,8 @@ class InvitationService {
 
     if (invitation.inviterId != inviterId) {
       logger.error('この招待をキャンセルする権限がありません', name: _logName);
-      logger.info('  invitation.inviterId: ${invitation.inviterId}', name: _logName);
+      logger.info('  invitation.inviterId: ${invitation.inviterId}',
+          name: _logName);
       logger.info('  要求者ID: $inviterId', name: _logName);
       throw Exception('この招待をキャンセルする権限がありません');
     }

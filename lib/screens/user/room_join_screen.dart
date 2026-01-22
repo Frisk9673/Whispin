@@ -417,7 +417,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                   Icon(Icons.access_time, size: 16, color: AppColors.info),
                   const SizedBox(width: 4),
                   Text(
-                    '参加待ち' ,
+                    '参加待ち',
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.info,
                     ),

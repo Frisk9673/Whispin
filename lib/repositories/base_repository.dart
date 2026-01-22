@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/app_logger.dart';
 
 /// リポジトリの基底クラス
-/// 
+///
 /// 全てのリポジトリで共通する基本操作を提供
 abstract class BaseRepository<T> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -35,7 +35,7 @@ abstract class BaseRepository<T> {
 
     try {
       final data = toMap(model);
-      
+
       if (id != null) {
         // IDを指定して作成
         await collection.doc(id).set(data);
@@ -48,7 +48,8 @@ abstract class BaseRepository<T> {
         return docRef.id;
       }
     } catch (e, stack) {
-      logger.error('create() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('create() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -73,7 +74,8 @@ abstract class BaseRepository<T> {
 
       return fromMap(data);
     } catch (e, stack) {
-      logger.error('findById() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findById() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -84,14 +86,13 @@ abstract class BaseRepository<T> {
 
     try {
       final snapshot = await collection.get();
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('取得件数: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findAll() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findAll() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -105,21 +106,21 @@ abstract class BaseRepository<T> {
     logger.debug('$_logName.findWhere($field = $value)', name: _logName);
 
     try {
-      Query<Map<String, dynamic>> query = collection.where(field, isEqualTo: value);
+      Query<Map<String, dynamic>> query =
+          collection.where(field, isEqualTo: value);
 
       if (limit != null) {
         query = query.limit(limit);
       }
 
       final snapshot = await query.get();
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('検索結果: ${results.length}件', name: _logName);
       return results;
     } catch (e, stack) {
-      logger.error('findWhere() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('findWhere() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -133,7 +134,8 @@ abstract class BaseRepository<T> {
       await collection.doc(id).update(data);
       logger.success('ドキュメント更新完了: $id', name: _logName);
     } catch (e, stack) {
-      logger.error('update() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('update() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -146,7 +148,8 @@ abstract class BaseRepository<T> {
       await collection.doc(id).update(fields);
       logger.success('フィールド更新完了: $id', name: _logName);
     } catch (e, stack) {
-      logger.error('updateFields() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('updateFields() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -159,7 +162,8 @@ abstract class BaseRepository<T> {
       await collection.doc(id).delete();
       logger.success('ドキュメント削除完了: $id', name: _logName);
     } catch (e, stack) {
-      logger.error('delete() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('delete() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -172,7 +176,8 @@ abstract class BaseRepository<T> {
       final doc = await collection.doc(id).get();
       return doc.exists;
     } catch (e, stack) {
-      logger.error('exists() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('exists() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return false;
     }
   }
@@ -185,7 +190,8 @@ abstract class BaseRepository<T> {
       final snapshot = await collection.get();
       return snapshot.docs.length;
     } catch (e, stack) {
-      logger.error('count() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('count() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       return 0;
     }
   }
@@ -198,10 +204,10 @@ abstract class BaseRepository<T> {
 
     return collection.doc(id).snapshots().map((snapshot) {
       if (!snapshot.exists) return null;
-      
+
       final data = snapshot.data();
       if (data == null) return null;
-      
+
       return fromMap(data);
     });
   }
@@ -211,9 +217,7 @@ abstract class BaseRepository<T> {
     logger.debug('$_logName.watchAll() - Stream開始', name: _logName);
 
     return collection.snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 
@@ -223,18 +227,18 @@ abstract class BaseRepository<T> {
     required dynamic value,
     int? limit,
   }) {
-    logger.debug('$_logName.watchWhere($field = $value) - Stream開始', name: _logName);
+    logger.debug('$_logName.watchWhere($field = $value) - Stream開始',
+        name: _logName);
 
-    Query<Map<String, dynamic>> query = collection.where(field, isEqualTo: value);
+    Query<Map<String, dynamic>> query =
+        collection.where(field, isEqualTo: value);
 
     if (limit != null) {
       query = query.limit(limit);
     }
 
     return query.snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 }

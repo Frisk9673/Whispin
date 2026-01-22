@@ -4,7 +4,7 @@ class ExtensionRequest {
   final String requesterId; // User who requested extension
   final String status; // 'pending', 'approved', 'rejected'
   final DateTime createdAt;
-  
+
   ExtensionRequest({
     required this.id,
     required this.roomId,
@@ -12,23 +12,24 @@ class ExtensionRequest {
     this.status = 'pending',
     required this.createdAt,
   });
-  
+
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'roomId': roomId,
-    'requesterId': requesterId,
-    'status': status,
-    'createdAt': createdAt.toIso8601String(),
-  };
-  
-  factory ExtensionRequest.fromMap(Map<String, dynamic> json) => ExtensionRequest(
-    id: json['id'] as String,
-    roomId: json['roomId'] as String,
-    requesterId: json['requesterId'] as String,
-    status: json['status'] as String? ?? 'pending',
-    createdAt: DateTime.parse(json['createdAt'] as String),
-  );
-  
+        'id': id,
+        'roomId': roomId,
+        'requesterId': requesterId,
+        'status': status,
+        'createdAt': createdAt.toIso8601String(),
+      };
+
+  factory ExtensionRequest.fromMap(Map<String, dynamic> json) =>
+      ExtensionRequest(
+        id: json['id'] as String,
+        roomId: json['roomId'] as String,
+        requesterId: json['requesterId'] as String,
+        status: json['status'] as String? ?? 'pending',
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+
   ExtensionRequest copyWith({
     String? id,
     String? roomId,

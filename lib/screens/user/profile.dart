@@ -249,11 +249,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: userProvider.isPremium
                         ? Icons.diamond_outlined
                         : Icons.diamond,
-                    label:
-                        userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
+                    label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
                     gradient: AppColors.primaryGradient,
-                    onTap: () =>
-                        _handlePremiumButton(context, userProvider),
+                    onTap: () => _handlePremiumButton(context, userProvider),
                   ),
 
                   const SizedBox(height: 12),
@@ -290,8 +288,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'アカウント削除',
                     gradient: LinearGradient(
                       colors: [
-                      Colors.grey.shade600,
-                      Colors.grey.shade800,
+                        Colors.grey.shade600,
+                        Colors.grey.shade800,
                       ],
                     ),
                     onTap: () {
@@ -340,13 +338,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       elevation: AppConstants.cardElevation,
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-            BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         child: Container(
           decoration: BoxDecoration(
             gradient: gradient,
@@ -358,8 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
-                  color: AppColors.textWhite,
-                  size: AppConstants.iconSize),
+                  color: AppColors.textWhite, size: AppConstants.iconSize),
               const SizedBox(width: 12),
               Text(label, style: AppTextStyles.buttonMedium),
             ],

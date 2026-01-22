@@ -15,8 +15,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
   String get collectionName => AppConstants.premiumLogCollection;
 
   @override
-  PremiumLog fromMap(Map<String, dynamic> map) =>
-      PremiumLog.fromMap(map);
+  PremiumLog fromMap(Map<String, dynamic> map) => PremiumLog.fromMap(map);
 
   @override
   Map<String, dynamic> toMap(PremiumLog model) {
@@ -34,13 +33,10 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
     logger.start('findAllOrderedByTimestamp() 開始', name: _logName);
 
     try {
-      final snapshot = await collection
-          .orderBy('Timestamp', descending: true)
-          .get();
+      final snapshot =
+          await collection.orderBy('Timestamp', descending: true).get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('取得件数: ${results.length}件', name: _logName);
       return results;
@@ -65,9 +61,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
           .orderBy('Timestamp', descending: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('検索結果: ${results.length}件', name: _logName);
       return results;
@@ -134,9 +128,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
           .orderBy('Timestamp', descending: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('期間検索結果: ${results.length}件', name: _logName);
       return results;
@@ -161,9 +153,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
           .orderBy('Timestamp', descending: true)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success(
         'フィルタ結果($detail): ${results.length}件',
@@ -191,9 +181,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
           .limit(limit)
           .get();
 
-      final results = snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
 
       logger.success('最新${limit}件取得完了', name: _logName);
       return results;
@@ -216,9 +204,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
         .orderBy('Timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 
@@ -234,9 +220,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
         .orderBy('Timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
     });
   }
 }

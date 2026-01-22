@@ -19,8 +19,7 @@ class MessageInputField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              decoration:
-                  const InputDecoration(hintText: "メッセージを入力"),
+              decoration: const InputDecoration(hintText: "メッセージを入力"),
             ),
           ),
           IconButton(

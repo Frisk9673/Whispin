@@ -111,8 +111,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
   /// メッセージ吹き出し
   Widget _buildMessageBubble(Message message) {
     final isAdmin = message.isAdmin;
-    final alignment =
-        isAdmin ? Alignment.centerRight : Alignment.centerLeft;
+    final alignment = isAdmin ? Alignment.centerRight : Alignment.centerLeft;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -134,9 +133,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isAdmin
-                      ? AppColors.primary
-                      : Colors.grey.shade200,
+                  color: isAdmin ? AppColors.primary : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(

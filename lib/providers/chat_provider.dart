@@ -45,10 +45,9 @@ class ChatProvider extends ChangeNotifier {
   Future<void> send(String text) async {
     if (chatId == null || text.trim().isEmpty) return;
 
-    final senderRole =
-        administrator != null && administrator!.role == 'admin'
-            ? 'admin'
-            : 'user';
+    final senderRole = administrator != null && administrator!.role == 'admin'
+        ? 'admin'
+        : 'user';
 
     await _service.sendMessage(
       chatId: chatId!,

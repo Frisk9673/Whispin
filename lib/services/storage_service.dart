@@ -10,58 +10,58 @@ import '../models/invitation.dart';
 import '../models/local_auth_user.dart';
 
 /// データ永続化のための抽象インターフェース
-/// 
+///
 /// localStorage（Web）とFirestore（Flutter）の両方の実装をサポートします。
 abstract class StorageService {
   /// サービスの初期化
   Future<void> initialize();
-  
+
   /// データの読み込み
   Future<void> load();
-  
+
   /// データの保存
   Future<void> save();
-  
+
   /// ユーザー一覧
   List<User> get users;
   set users(List<User> value);
-  
+
   /// チャットルーム一覧
   List<ChatRoom> get rooms;
   set rooms(List<ChatRoom> value);
-  
+
   /// ローカル認証ユーザー一覧（localStorage mode only）
   List<LocalAuthUser> get authUsers;
   set authUsers(List<LocalAuthUser> value);
-  
+
   /// フレンドシップ一覧
   List<Friendship> get friendships;
   set friendships(List<Friendship> value);
-  
+
   /// フレンドリクエスト一覧
   List<FriendRequest> get friendRequests;
   set friendRequests(List<FriendRequest> value);
-  
+
   /// ユーザー評価一覧
   List<UserEvaluation> get evaluations;
   set evaluations(List<UserEvaluation> value);
-  
+
   /// 延長リクエスト一覧
   List<ExtensionRequest> get extensionRequests;
   set extensionRequests(List<ExtensionRequest> value);
-  
+
   /// ブロック一覧
   List<Block> get blocks;
   set blocks(List<Block> value);
-  
+
   /// 招待一覧
   List<Invitation> get invitations;
   set invitations(List<Invitation> value);
-  
+
   /// 現在ログイン中のユーザー
   User? get currentUser;
   set currentUser(User? value);
-  
+
   /// データベースのクリア
   Future<void> clear();
 }

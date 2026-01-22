@@ -68,7 +68,7 @@ extension ColorExtension on Color {
   Color withOpacityPercent(int percent) {
     return withValues(alpha: percent / 100);
   }
-  
+
   /// 明度を調整したカラーを返す
   Color lighten([double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
@@ -76,7 +76,7 @@ extension ColorExtension on Color {
     final lightness = (hsl.lightness + amount).clamp(0.0, 1.0);
     return hsl.withLightness(lightness).toColor();
   }
-  
+
   /// 暗度を調整したカラーを返す
   Color darken([double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);

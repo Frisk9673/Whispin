@@ -38,7 +38,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => message = "メールアドレス または パスワードが未入力です");
-      logger.warning('入力不足: email=$email, password=${password.isNotEmpty}', name: _logName);
+      logger.warning('入力不足: email=$email, password=${password.isNotEmpty}',
+          name: _logName);
       return;
     }
 
@@ -63,7 +64,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
       // NavigationHelperを使用
       await NavigationHelper.toAdminHome(context);
-
     } catch (e, stack) {
       logger.error('ログインエラー: $e', name: _logName, error: e, stackTrace: stack);
       setState(() {

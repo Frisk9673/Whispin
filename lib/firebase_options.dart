@@ -66,5 +66,4 @@ class DefaultFirebaseOptions {
     projectId: 'wispin-999',
     storageBucket: 'wispin-999.firebasestorage.app',
   );
-
 }

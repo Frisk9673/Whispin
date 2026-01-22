@@ -187,9 +187,7 @@ class PremiumLogListTile extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          user.premium
-                              ? Icons.check_circle
-                              : Icons.cancel,
+                          user.premium ? Icons.check_circle : Icons.cancel,
                           color: statusColor,
                           size: 32,
                         ),
@@ -344,20 +342,17 @@ class PremiumLogListTile extends StatelessWidget {
     );
 
     final isSubscription = log.detail == '契約';
-    final actionColor =
-        isSubscription ? AppColors.success : AppColors.error;
+    final actionColor = isSubscription ? AppColors.success : AppColors.error;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: AppConstants.cardElevation,
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
       child: InkWell(
         onTap: () => _showDetailDialog(context),
-        borderRadius:
-            BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         child: Padding(
           padding: EdgeInsets.all(AppConstants.defaultPadding),
           child: Row(
@@ -377,9 +372,7 @@ class PremiumLogListTile extends StatelessWidget {
                   ),
                 ),
                 child: Icon(
-                  isSubscription
-                      ? Icons.add_circle
-                      : Icons.remove_circle,
+                  isSubscription ? Icons.add_circle : Icons.remove_circle,
                   color: actionColor,
                   size: 32,
                 ),

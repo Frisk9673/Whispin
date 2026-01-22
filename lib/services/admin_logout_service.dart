@@ -22,7 +22,6 @@ class AdminLogoutService {
 
       logger.success('ログアウト成功しました！', name: _logName);
       logger.section('logout() 完了', name: _logName);
-
     } catch (e, stack) {
       logger.error(
         'ログアウト処理中にエラー発生: $e',

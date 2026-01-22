@@ -1,18 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 招待モデル
-/// 
+///
 /// ユーザーがルームに他のユーザーを招待する際に使用されます。
 /// 招待はペンディング状態から承認または拒否されます。
 class Invitation {
-  final String id;              // 招待ID (Primary Key)
-  final String roomId;          // ルームID
-  final String inviterId;       // 招待者のユーザーID
-  final String inviteeId;       // 招待されるユーザーID
-  final String status;          // ステータス: 'pending', 'accepted', 'rejected', 'expired'
-  final DateTime createdAt;     // 作成日時
-  final DateTime? respondedAt;  // 応答日時（承認/拒否された時刻）
-  final DateTime expiresAt;     // 有効期限（デフォルト: 作成から24時間）
+  final String id; // 招待ID (Primary Key)
+  final String roomId; // ルームID
+  final String inviterId; // 招待者のユーザーID
+  final String inviteeId; // 招待されるユーザーID
+  final String status; // ステータス: 'pending', 'accepted', 'rejected', 'expired'
+  final DateTime createdAt; // 作成日時
+  final DateTime? respondedAt; // 応答日時（承認/拒否された時刻）
+  final DateTime expiresAt; // 有効期限（デフォルト: 作成から24時間）
 
   Invitation({
     required this.id,
@@ -24,20 +24,20 @@ class Invitation {
     this.respondedAt,
     DateTime? expiresAt,
   })  : createdAt = createdAt ?? DateTime.now(),
-        expiresAt = expiresAt ?? 
+        expiresAt = expiresAt ??
             (createdAt ?? DateTime.now()).add(const Duration(hours: 24));
 
   // ===== ステータスチェック用 Getter =====
-  
+
   /// ペンディング状態か
   bool get isPending => status == 'pending';
-  
+
   /// 承認済みか
   bool get isAccepted => status == 'accepted';
-  
+
   /// 拒否済みか
   bool get isRejected => status == 'rejected';
-  
+
   /// 期限切れか
   bool get isExpired {
     if (status == 'expired') return true;
@@ -79,7 +79,7 @@ class Invitation {
       status: map['status'] as String? ?? 'pending',
       createdAt: _toDate(map['createdAt']) ?? DateTime.now(),
       respondedAt: _toDate(map['respondedAt']),
-      expiresAt: _toDate(map['expiresAt']) ?? 
+      expiresAt: _toDate(map['expiresAt']) ??
           DateTime.now().add(const Duration(hours: 24)),
     );
   }

@@ -28,7 +28,7 @@ class UserRepository extends BaseRepository<User> {
     try {
       // ===== 方法1: 'id' フィールドで検索 =====
       logger.start('方法1:id フィールドで検索中...', name: _logName);
-      
+
       final snapshot1 = await firestore
           .collection(collectionName)
           .where('id', isEqualTo: email)
@@ -37,13 +37,13 @@ class UserRepository extends BaseRepository<User> {
 
       if (snapshot1.docs.isNotEmpty) {
         logger.success('方法1で発見: ${snapshot1.docs.first.id}', name: _logName);
-        
+
         final data = snapshot1.docs.first.data();
         logger.info('取得データ:', name: _logName);
         data.forEach((key, value) {
           logger.info('  $key: $value', name: _logName);
         });
-        
+
         final user = fromMap(data);
         logger.section('findByEmail() 完了', name: _logName);
         return user;
@@ -55,14 +55,12 @@ class UserRepository extends BaseRepository<User> {
       logger.error('全ての方法でユーザーが見つかりませんでした');
       logger.info('検索したメールアドレス: $email');
       logger.info('検索したコレクション: $collectionName');
-      
+
       // デバッグ用: コレクション内の全ドキュメントID表示
       logger.start('デバッグ: コレクション内の全ドキュメントIDを表示', name: _logName);
-      final allDocs = await firestore
-          .collection(collectionName)
-          .limit(10)
-          .get();
-      
+      final allDocs =
+          await firestore.collection(collectionName).limit(10).get();
+
       if (allDocs.docs.isEmpty) {
         logger.warning('コレクションが空です！', name: _logName);
       } else {
@@ -74,7 +72,6 @@ class UserRepository extends BaseRepository<User> {
 
       logger.section('findByEmail() 完了（null）', name: _logName);
       return null;
-
     } catch (e, stack) {
       logger.error('findByEmail() エラー: $e',
           name: _logName, error: e, stackTrace: stack);
@@ -130,7 +127,7 @@ class UserRepository extends BaseRepository<User> {
     try {
       // ユーザー検索して実際のドキュメントIDを取得
       logger.start('ユーザー検索中...', name: _logName);
-      
+
       // メールアドレスで検索
       final userSnapshot = await firestore
           .collection(collectionName)
@@ -145,26 +142,27 @@ class UserRepository extends BaseRepository<User> {
             .where('EmailAddress', isEqualTo: userId)
             .limit(1)
             .get();
-        
+
         if (altSnapshot.docs.isEmpty) {
           logger.error('ユーザーが見つかりません: $userId', name: _logName);
           throw Exception('ユーザー情報が見つかりません');
         }
-        
+
         final docId = altSnapshot.docs.first.id;
         logger.success('ドキュメントID取得: $docId', name: _logName);
-        
+
         await _updatePremiumFields(docId, isPremium);
       } else {
         final docId = userSnapshot.docs.first.id;
         logger.success('ドキュメントID取得: $docId', name: _logName);
-        
+
         await _updatePremiumFields(docId, isPremium);
       }
 
       logger.section('updatePremiumStatus() 完了', name: _logName);
     } catch (e, stack) {
-      logger.error('updatePremiumStatus() エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('updatePremiumStatus() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -172,13 +170,13 @@ class UserRepository extends BaseRepository<User> {
   /// プレミアムフィールドを更新する内部メソッド
   Future<void> _updatePremiumFields(String docId, bool isPremium) async {
     logger.start('Firestore更新中... (docId: $docId)', name: _logName);
-    
+
     await firestore.collection(collectionName).doc(docId).update({
       'premium': isPremium,
       'lastUpdatedPremium': FieldValue.serverTimestamp(),
       'LastUpdated_Premium': FieldValue.serverTimestamp(),
     });
-    
+
     logger.success('Firestore更新完了', name: _logName);
   }
 

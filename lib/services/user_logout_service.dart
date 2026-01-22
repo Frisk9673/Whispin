@@ -30,7 +30,6 @@ class AdminLogoutService {
           (_) => false,
         );
       }
-
     } catch (e, stack) {
       developer.log(
         "❌ ログアウトエラー: $e",

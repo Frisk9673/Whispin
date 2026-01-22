@@ -23,9 +23,9 @@ extension NumExtensions on num {
   /// パーセント表記
   String toPercent([int decimals = 0]) {
     return NumberFormat.percentPattern('ja_JP')
-        .format(this / 100)
-        .replaceAll('%', '')
-        .padRight(decimals + 1, '0') +
+            .format(this / 100)
+            .replaceAll('%', '')
+            .padRight(decimals + 1, '0') +
         '%';
   }
 
