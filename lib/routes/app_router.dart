@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/providers/premium_log_provider.dart';
 import 'package:whispin/screens/admin/admin_question_list_screen.dart';
+import 'package:whispin/screens/user/notifications.dart';
 import '../constants/routes.dart';
 import '../screens/user/home_screen.dart';
 import '../screens/user/auth_screen.dart';
@@ -109,6 +110,13 @@ class AppRouter {
       case AppRoutes.friendList:
         return _buildRoute(
           const FriendListScreen(),
+          settings: settings,
+        );
+      
+      // ✅ 追加: フレンドリクエスト画面
+      case AppRoutes.friendRequests:
+        return _buildRoute(
+          const FriendRequestsScreen(),
           settings: settings,
         );
 
