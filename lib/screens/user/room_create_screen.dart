@@ -14,7 +14,7 @@ import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
-/// ルーム作成画面（Repository版）
+/// ルーム作成画面（Private対応版）
 class RoomCreateScreen extends StatefulWidget {
   const RoomCreateScreen({super.key});
 
@@ -28,6 +28,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isLoading = false;
+  bool _isPrivate = false; // ✅ 追加: Privateフラグ
   static const String _logName = 'RoomCreateScreen';
 
   @override
@@ -57,7 +58,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
     try {
       logger.section('ルーム作成開始', name: _logName);
 
-      // 現在のユーザーを取得
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
         context.showErrorSnackBar('ログインしてください');
@@ -74,12 +74,12 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       logger.info('作成者: $currentUserEmail', name: _logName);
       logger.info('ルーム名: $roomName', name: _logName);
+      logger.info('プライベート: $_isPrivate', name: _logName); // ✅ ログ追加
 
-      // ルームIDを生成
       final roomId = DateTime.now().millisecondsSinceEpoch.toString();
       final farFuture = DateTime.now().add(const Duration(days: 365));
 
-      // ChatRoomオブジェクトを作成
+      // ✅ Private設定を含むChatRoomオブジェクトを作成
       final newRoom = ChatRoom(
         id: roomId,
         topic: roomName,
@@ -92,6 +92,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         extension: AppConstants.defaultExtensionLimit,
         comment1: '',
         comment2: '',
+        private: _isPrivate, // ✅ Private設定を反映
       );
 
       // Repository経由でFirestoreに保存
@@ -99,7 +100,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       logger.success('ルーム作成完了: $roomId', name: _logName);
       logger.info('ルーム情報: $newRoom', name: _logName);
-
 
       if (!mounted) return;
 
@@ -129,7 +129,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 統一ヘッダーを使用
       appBar: CommonHeader(
         title: '部屋を作成',
         showNotifications: true,
@@ -211,6 +210,72 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                                 '${_roomNameController.text.length}/${AppConstants.roomNameMaxLength}',
                           ),
                           onChanged: (_) => setState(() {}),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ✅ Private/Public切り替え
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: _isPrivate
+                                ? AppColors.primary.withOpacity(0.1)
+                                : AppColors.inputBackground,
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius),
+                            border: Border.all(
+                              color: _isPrivate
+                                  ? AppColors.primary
+                                  : AppColors.divider,
+                              width: 2,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _isPrivate ? Icons.lock : Icons.public,
+                                    color: _isPrivate
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _isPrivate
+                                          ? 'プライベートルーム'
+                                          : 'パブリックルーム',
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: _isPrivate
+                                            ? AppColors.primary
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  Switch(
+                                    value: _isPrivate,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _isPrivate = value;
+                                      });
+                                    },
+                                    activeColor: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _isPrivate
+                                    ? '招待したフレンドのみ参加可能です'
+                                    : '誰でも検索して参加できます',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 24),
@@ -297,8 +362,16 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _buildInfoItem('作成後、チャット画面で相手の参加を待ちます'),
-                        _buildInfoItem('ルーム名で検索して参加してもらえます'),
+                        _buildInfoItem(
+                          _isPrivate
+                              ? '作成後、フレンドを招待できます'
+                              : '作成後、チャット画面で相手の参加を待ちます',
+                        ),
+                        _buildInfoItem(
+                          _isPrivate
+                              ? 'ルーム検索には表示されません'
+                              : 'ルーム名で検索して参加してもらえます',
+                        ),
                         _buildInfoItem('最大2人まで参加可能'),
                         _buildInfoItem(
                             '2人目が参加すると${AppConstants.defaultChatDurationMinutes}分間のチャット開始'),

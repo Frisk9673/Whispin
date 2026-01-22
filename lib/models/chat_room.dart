@@ -10,8 +10,9 @@ class ChatRoom {
   final String? comment2; // コメント2 (participant's comment, nullable)
   final int extensionCount; // 延長回数
   final int extension; // 延長上限 (non-premium: 2)
-  final DateTime startedAt; // ✅ 変更: createdAt → startedAt
+  final DateTime startedAt; // 開始時刻
   final DateTime expiresAt; // ルーム有効期限（開始時刻 + 10分）
+  final bool private; // ✅ 追加: プライベートルームフラグ
 
   ChatRoom({
     required this.id,
@@ -25,6 +26,7 @@ class ChatRoom {
     this.extension = 2,
     required this.startedAt,
     DateTime? expiresAt,
+    this.private = false, // ✅ デフォルトはPublic
   }) : expiresAt = expiresAt ?? startedAt.add(Duration(minutes: 10));
 
   // Backward compatibility: get userIds array from id1/id2
@@ -52,6 +54,10 @@ class ChatRoom {
     }
   }
 
+  // ✅ 追加: Privateルーム判定
+  bool get isPrivate => private;
+  bool get isPublic => !private;
+
   // Backward compatibility: 'name' field
   String get name => topic;
 
@@ -67,6 +73,7 @@ class ChatRoom {
         'extension': extension,
         'startedAt': startedAt.toIso8601String(),
         'expiresAt': expiresAt.toIso8601String(),
+        'private': private, // ✅ 追加
         'name': topic,
         'userIds': userIds,
       };
@@ -110,6 +117,7 @@ class ChatRoom {
       expiresAt: json['expiresAt'] != null
           ? DateTime.parse(json['expiresAt'] as String)
           : startedAt.add(Duration(minutes: 10)),
+      private: json['private'] as bool? ?? false, // ✅ 追加（デフォルトfalse）
     );
   }
 
@@ -125,6 +133,7 @@ class ChatRoom {
     int? extension,
     DateTime? startedAt,
     DateTime? expiresAt,
+    bool? private, // ✅ 追加
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -138,6 +147,7 @@ class ChatRoom {
       extension: extension ?? this.extension,
       startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt ?? this.expiresAt,
+      private: private ?? this.private, // ✅ 追加
     );
   }
 
