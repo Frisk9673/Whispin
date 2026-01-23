@@ -1,17 +1,24 @@
-const functions = require("firebase-functions");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 
 /**
- * 招待ドキュメント作成時に通知を送信
+ * 招待ドキュメント作成時に通知を送信（Cloud Functions v2）
  */
-exports.sendInvitationNotification = functions.firestore
-  .document("invitations/{invitationId}")
-  .onCreate(async (snapshot) => {
+exports.sendInvitationNotification = onDocumentCreated(
+  "invitations/{invitationId}",
+  async (event) => {
+    const snapshot = event.data;
+
+    if (!snapshot) {
+      console.log("No snapshot data");
+      return;
+    }
+
     const data = snapshot.data();
 
-    if (!data || !data.fcmToken) {
+    if (!data?.fcmToken) {
       console.log("FCM token not found");
       return;
     }
@@ -25,4 +32,5 @@ exports.sendInvitationNotification = functions.firestore
     });
 
     console.log("Notification sent");
-  });
+  }
+);
