@@ -46,8 +46,6 @@ class UserProvider extends ChangeNotifier {
         logger.warning('削除済みユーザー: $email', name: _logName);
         _error = 'このアカウントは削除されています';
         _currentUser = null;
-        _isLoading = false;
-        notifyListeners();
         return;
       }
 
@@ -66,7 +64,7 @@ class UserProvider extends ChangeNotifier {
         error: e,
         stackTrace: stack,
       );
-      _error = 'ユーザー情報の読み込みに失敗しました: $e';
+      _error ??= 'ユーザー情報の読み込みに失敗しました: $e';
       _isLoading = false;
       notifyListeners();
     }
@@ -126,6 +124,44 @@ class UserProvider extends ChangeNotifier {
       logger.section('updatePremiumStatus() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// アカウント削除（論理削除）
+  Future<void> deleteAccount() async {
+    logger.section('deleteAccount() 開始', name: _logName);
+
+    if (_currentUser == null) {
+      logger.error('ユーザー情報が存在しません', name: _logName);
+      throw Exception('ユーザー情報が存在しません');
+    }
+
+    try {
+      logger.info(
+        'アカウント削除実行: ${_currentUser!.id}',
+        name: _logName,
+      );
+
+      // Repository 経由で deletedAt を更新
+      await _userRepository.softDelete(_currentUser!.id);
+
+      logger.success('Firestore deletedAt 更新完了', name: _logName);
+
+      // ★ 削除後は完全にログアウト状態へ
+      _currentUser = null;
+      _error = null;
+
+      notifyListeners();
+
+      logger.section('deleteAccount() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error(
+        'アカウント削除エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }

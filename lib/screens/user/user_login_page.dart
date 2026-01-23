@@ -95,7 +95,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
         setState(() {
-          message = "ユーザー情報の読み込みに失敗しました";
+          message = userProvider.error!;
           _isLoading = false;
         });
         return;

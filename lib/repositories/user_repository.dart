@@ -186,14 +186,17 @@ class UserRepository extends BaseRepository<User> {
 
     try {
       await updateFields(userId, {
-        'deletedAt': DateTime.now().toIso8601String(),
-        'DeletedAt': DateTime.now().toIso8601String(),
+        'deletedAt': FieldValue.serverTimestamp(),
       });
 
       logger.success('ユーザー論理削除完了: $userId', name: _logName);
     } catch (e, stack) {
-      logger.error('softDelete() エラー: $e',
-          name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'softDelete() エラー: $e',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }

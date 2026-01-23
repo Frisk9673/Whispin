@@ -1,0 +1,101 @@
+// lib/widgets/extension_request_dialog.dart
+import 'package:flutter/material.dart';
+import '../models/extension_request.dart';
+import '../constants/app_constants.dart';
+import '../constants/colors.dart';
+import '../constants/text_styles.dart';
+
+class ExtensionRequestDialog extends StatelessWidget {
+  final ExtensionRequest request;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  const ExtensionRequestDialog({
+    super.key,
+    required this.request,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.access_time,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('延長リクエスト'),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '相手がチャット時間の延長を希望しています。',
+            style: AppTextStyles.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.1),
+              borderRadius:
+                  BorderRadius.circular(AppConstants.defaultBorderRadius),
+              border: Border.all(
+                color: AppColors.info.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '延長すると${AppConstants.extensionDurationMinutes}分間追加されます',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.info,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: onReject,
+          child: Text(
+            '拒否',
+            style: TextStyle(color: AppColors.error),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: onApprove,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.success,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('承認'),
+        ),
+      ],
+    );
+  }
+}

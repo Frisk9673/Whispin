@@ -122,15 +122,15 @@ class AuthService {
       throw Exception('メールアドレスまたはパスワードが正しくありません');
     }
 
+    // 🔥 ここで deletedAt をチェック
     final user = _storageService.users.firstWhere(
       (u) => u.id == email,
-      orElse: () => User(
-        id: email,
-        firstName: 'Unknown',
-        lastName: 'User',
-        nickname: authUser.username,
-      ),
+      orElse: () => throw Exception('ユーザー情報が存在しません'),
     );
+
+    if (user.deletedAt != null) {
+      throw Exception('このアカウントは削除されています');
+    }
 
     _storageService.currentUser = user;
     _currentUser = user;
@@ -148,5 +148,41 @@ class AuthService {
 
   bool isLoggedIn() {
     return currentUser != null;
+  }
+
+  Future<void> deleteAccount(String email) async {
+    final now = DateTime.now();
+
+    final index = _storageService.users.indexWhere((u) => u.id == email);
+    if (index == -1) {
+      throw Exception('ユーザーが存在しません');
+    }
+
+    final user = _storageService.users[index];
+
+    // 🔥 すでに削除されていたら弾く
+    if (user.deletedAt != null) {
+      throw Exception('このアカウントは既に削除されています');
+    }
+
+    _storageService.users[index] = User(
+      id: user.id,
+      password: user.password,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      nickname: user.nickname,
+      phoneNumber: user.phoneNumber,
+      rate: user.rate,
+      premium: user.premium,
+      roomCount: user.roomCount,
+      createdAt: user.createdAt,
+      lastUpdatedPremium: user.lastUpdatedPremium,
+      deletedAt: now,
+    );
+
+    _storageService.currentUser = null;
+    _currentUser = null;
+
+    await _storageService.save();
   }
 }

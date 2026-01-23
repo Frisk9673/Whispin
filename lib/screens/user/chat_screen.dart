@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/models/extension_request.dart';
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
 import '../../services/storage_service.dart';
@@ -43,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _partnerHasLeft = false;
   String? _partnerUserId;
   late InvitationService _invitationService;
+  List<ExtensionRequest> _pendingExtensionRequests = [];
   static const String _logName = 'ChatScreen';
 
   String _getCurrentUserId() {
@@ -278,6 +280,177 @@ class _ChatScreenState extends State<ChatScreen> {
     return AppConstants.waitingForUser;
   }
 
+  // ===== 延長リクエスト確認 =====
+  
+  /// ✅ 追加: 自分宛の延長リクエストをチェック
+  void _checkExtensionRequests() {
+    if (_currentRoom == null) return;
+    
+    final currentUserId = _getCurrentUserId();
+    if (currentUserId.isEmpty) return;
+
+    // 自分が受信者となっている未承認の延長リクエストを取得
+    final newRequests = widget.storageService.extensionRequests
+        .where((req) =>
+            req.roomId == widget.roomId &&
+            req.status == AppConstants.extensionStatusPending &&
+            req.requesterId != currentUserId) // 自分以外からのリクエスト
+        .toList();
+
+    // 新しいリクエストがある場合のみダイアログ表示
+    if (newRequests.isNotEmpty && newRequests.length != _pendingExtensionRequests.length) {
+      _pendingExtensionRequests = newRequests;
+      
+      // 最新のリクエストを表示
+      final latestRequest = newRequests.last;
+      _showExtensionRequestDialog(latestRequest);
+    } else if (newRequests.isEmpty) {
+      _pendingExtensionRequests.clear();
+    }
+  }
+
+  /// ✅ 追加: 延長リクエストダイアログを表示
+  Future<void> _showExtensionRequestDialog(ExtensionRequest request) async {
+    logger.section('延長リクエストダイアログ表示', name: _logName);
+    logger.info('requestId: ${request.id}', name: _logName);
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.access_time,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('延長リクエスト'),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '相手がチャット時間の延長を希望しています。',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                border: Border.all(
+                  color: AppColors.info.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '延長すると${AppConstants.extensionDurationMinutes}分間追加されます',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              '拒否',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('承認'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _approveExtension(request.id);
+    } else if (result == false) {
+      await _rejectExtension(request.id);
+    }
+  }
+
+  /// ✅ 追加: 延長承認処理
+  Future<void> _approveExtension(String requestId) async {
+    logger.section('延長承認処理開始', name: _logName);
+    logger.info('requestId: $requestId', name: _logName);
+
+    try {
+      await widget.chatService.approveExtension(requestId);
+      
+      if (!mounted) return;
+      
+      context.showSuccessSnackBar(
+        'チャット時間が${AppConstants.extensionDurationMinutes}分延長されました'
+      );
+
+      // ルーム情報を再読み込み
+      _loadRoom();
+      setState(() {});
+
+      logger.success('延長承認完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('延長承認エラー: $e', name: _logName, error: e, stackTrace: stack);
+      
+      if (!mounted) return;
+      context.showErrorSnackBar('延長の承認に失敗しました: $e');
+    }
+  }
+
+  /// ✅ 追加: 延長拒否処理
+  Future<void> _rejectExtension(String requestId) async {
+    logger.section('延長拒否処理開始', name: _logName);
+    logger.info('requestId: $requestId', name: _logName);
+
+    try {
+      await widget.chatService.rejectExtension(requestId);
+      
+      if (!mounted) return;
+      
+      context.showInfoSnackBar('延長リクエストを拒否しました');
+
+      logger.success('延長拒否完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('延長拒否エラー: $e', name: _logName, error: e, stackTrace: stack);
+      
+      if (!mounted) return;
+      context.showErrorSnackBar('延長の拒否に失敗しました: $e');
+    }
+  }
+
   // ===== 更新タイマー =====
 
   void _startUpdateTimer() {
@@ -288,6 +461,9 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _loadRoom();
+      
+      // ✅ 追加: 延長リクエストをチェック
+      _checkExtensionRequests();
 
       if (_currentRoom == null) {
         timer.cancel();
@@ -417,7 +593,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return AppConstants.waitingStatus;
     }
 
-    final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
+    final remaining = DateTime.now().timeUntil(_currentRoom!.expiresAt);
 
     if (remaining.isNegative) {
       return '0:00';
@@ -436,7 +612,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!isChatStarted) return false;
 
-    final remaining = _currentRoom!.expiresAt.timeUntil(DateTime.now());
+    final remaining = DateTime.now().timeUntil(_currentRoom!.expiresAt);
     return remaining.inMinutes <=
             AppConstants.extensionRequestThresholdMinutes &&
         _currentRoom!.extensionCount < _currentRoom!.extension;
@@ -810,10 +986,12 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               const SizedBox(height: 8),
                               Expanded(
-                                child: SingleChildScrollView(
-                                  child: Text(
-                                    _getMyComment(),
-                                    style: AppTextStyles.bodyLarge,
+                                child: Center(
+                                  child: SingleChildScrollView(
+                                    child: Text(
+                                      _getMyComment(),
+                                      style: AppTextStyles.bodyLarge,
+                                    ),
                                   ),
                                 ),
                               ),

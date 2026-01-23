@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/services/auth_service.dart';
 import '../../widgets/common/header.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
@@ -97,6 +98,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       context.showErrorSnackBar('エラーが発生しました。\n\n${e.toString()}');
+    }
+  }
+
+  Future<void> _deleteAccount(BuildContext context) async {
+    logger.section('アカウント削除開始', name: _logName);
+
+    final userProvider = context.read<UserProvider>();
+    final email = userProvider.currentUser?.id;
+
+    if (email == null) {
+      context.showErrorSnackBar('ユーザー情報が取得できません');
+      return;
+    }
+
+    final result = await context.showConfirmDialog(
+      title: 'アカウント削除',
+      message: '本当にアカウントを削除しますか？\n\nこの操作は取り消せません。',
+      confirmText: '削除する',
+      cancelText: 'キャンセル',
+    );
+
+    if (!result) return;
+
+    context.showLoadingDialog(message: 'アカウントを削除しています...');
+
+    try {
+      // 🔥 ここで「処理を呼び出す」
+      await context.read<AuthService>().deleteAccount(email);
+
+      userProvider.clearUser();
+      await FirebaseAuth.instance.signOut();
+
+      context.hideLoadingDialog();
+
+      if (!mounted) return;
+      NavigationHelper.toLogin(context);
+    } catch (e, stack) {
+      logger.error(
+        'アカウント削除失敗',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
+
+      context.hideLoadingDialog();
+      context.showErrorSnackBar(e.toString());
     }
   }
 
@@ -294,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     onTap: () {
                       logger.info('アカウント削除ボタン押下', name: _logName);
-                      context.showInfoSnackBar('この機能は準備中です');
+                      _deleteAccount(context);
                     },
                   ),
                 ],
