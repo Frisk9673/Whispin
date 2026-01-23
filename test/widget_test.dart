@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:whispin/services/firestore_storage_service.dart';
 import 'package:whispin/services/auth_service.dart';
 import 'package:whispin/services/chat_service.dart';
+import 'package:whispin/services/fcm_service.dart';
 import 'package:whispin/services/invitation_service.dart';
+import 'package:whispin/services/startup_invitation_service.dart';
 import 'package:whispin/providers/chat_provider.dart';
 import 'package:whispin/providers/user_provider.dart';
 import 'package:whispin/providers/admin_provider.dart';
@@ -25,6 +27,17 @@ void main() {
     
     final chatService = ChatService(storageService);
     final invitationService = InvitationService(storageService);
+    
+    // FCMサービスの初期化
+    final fcmService = FCMService();
+    await fcmService.initialize();
+    
+    // StartupInvitationServiceの初期化
+    final startupInvitationService = StartupInvitationService(
+      storageService: storageService,
+      invitationService: invitationService,
+      fcmService: fcmService,
+    );
 
     // Repository層の初期化
     final userRepository = UserRepository();
@@ -49,7 +62,9 @@ void main() {
           Provider<FirestoreStorageService>.value(value: storageService),
           Provider<AuthService>.value(value: authService),
           Provider<ChatService>.value(value: chatService),
+          Provider<FCMService>.value(value: fcmService),
           Provider<InvitationService>.value(value: invitationService),
+          Provider<StartupInvitationService>.value(value: startupInvitationService),
 
           // Repositories
           Provider<UserRepository>.value(value: userRepository),
@@ -60,6 +75,7 @@ void main() {
         child: MyApp(
           authService: authService,
           storageService: storageService,
+          startupInvitationService: startupInvitationService, // ✅ 追加
         ),
       ),
     );
