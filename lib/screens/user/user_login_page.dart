@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:whispin/services/storage_service.dart';
 import '../../services/user_auth_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/fcm_service.dart';
 import '../../providers/user_provider.dart';
+import '../../repositories/user_repository.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
@@ -100,6 +102,32 @@ class _UserLoginPageState extends State<UserLoginPage> {
       }
 
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
+
+      // ✅ 追加: FCMトークンを取得して保存
+      try {
+        logger.section('FCMトークン保存処理開始', name: _logName);
+        
+        final fcmService = context.read<FCMService>();
+        final fcmToken = fcmService.fcmToken;
+        
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          logger.info('FCMトークン取得成功', name: _logName);
+          logger.debug('Token: ${fcmToken.substring(0, 20)}...', name: _logName);
+          
+          final userRepository = context.read<UserRepository>();
+          await userRepository.updateFCMToken(email, fcmToken);
+          
+          logger.success('FCMトークン保存完了', name: _logName);
+        } else {
+          logger.warning('FCMトークンが取得できませんでした', name: _logName);
+        }
+        
+        logger.section('FCMトークン保存処理完了', name: _logName);
+      } catch (e, stack) {
+        // FCMトークン保存失敗はログインを妨げない
+        logger.error('FCMトークン保存エラー（無視）: $e', 
+            name: _logName, error: e, stackTrace: stack);
+      }
 
       final authService = context.read<AuthService>();
       final storageService = context.read<StorageService>();

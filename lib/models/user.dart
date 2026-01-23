@@ -1,3 +1,4 @@
+// lib/models/user.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
@@ -7,13 +8,14 @@ class User {
   final String lastName;
   final String nickname;
   final String? phoneNumber;
-  final double rate; // double に統一
+  final double rate;
   final bool premium;
   final int roomCount;
-
   final DateTime createdAt;
   final DateTime? lastUpdatedPremium;
   final DateTime? deletedAt;
+  final String? fcmToken;
+  final DateTime? fcmTokenUpdatedAt;
 
   User({
     required this.id,
@@ -28,14 +30,13 @@ class User {
     DateTime? createdAt,
     this.lastUpdatedPremium,
     this.deletedAt,
+    this.fcmToken,
+    this.fcmTokenUpdatedAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // ===== Getter =====
   String get displayName =>
       nickname.isNotEmpty ? nickname : '$firstName $lastName';
-
   String get fullName => '$firstName $lastName';
-
   bool get isDeleted => deletedAt != null;
 
   // ===== Firestore + JSON 両対応の fromMap =====
@@ -48,7 +49,7 @@ class User {
     }
 
     return User(
-      id: map['id'] ?? map['EmailAddress'] ?? '', // Firestore 旧形式もサポート
+      id: map['id'] ?? map['EmailAddress'] ?? '',
 
       password: map['password'] ?? '',
 
@@ -70,6 +71,9 @@ class User {
           _toDate(map['lastUpdatedPremium'] ?? map['LastUpdated_Premium']),
 
       deletedAt: _toDate(map['deletedAt'] ?? map['DeletedAt']),
+      
+      fcmToken: map['fcmToken'] as String?,
+      fcmTokenUpdatedAt: _toDate(map['fcmTokenUpdatedAt']),
     );
   }
 
@@ -90,6 +94,8 @@ class User {
       'createdAt': _ts(createdAt),
       'lastUpdatedPremium': _ts(lastUpdatedPremium),
       'deletedAt': _ts(deletedAt),
+      'fcmToken': fcmToken,
+      'fcmTokenUpdatedAt': _ts(fcmTokenUpdatedAt),
     };
   }
 }

@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'package:whispin/config/environment.dart';
-import 'package:whispin/config/firebase_config.dart';
-import 'package:whispin/firebase_options.dart';
-import 'package:whispin/routes/app_router.dart';
-import 'package:whispin/constants/routes.dart';
-import 'package:whispin/services/storage_service.dart';
+import 'config/environment.dart';
+import 'config/firebase_config.dart';
+import 'firebase_options.dart';
+import 'routes/app_router.dart';
+import 'constants/routes.dart';
+import 'services/storage_service.dart';
 import 'services/firestore_storage_service.dart';
 import 'services/auth_service.dart';
 import 'services/chat_service.dart';
+import 'services/fcm_service.dart';
+import 'services/invitation_service.dart';
+import 'services/startup_invitation_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/admin_provider.dart';
@@ -22,43 +26,38 @@ import 'repositories/block_repository.dart';
 import 'utils/navigation_logger.dart';
 import 'utils/app_logger.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  logger.section('バックグラウンドメッセージ受信', name: 'FCM_BG');
+  logger.info('Message ID: ${message.messageId}', name: 'FCM_BG');
+  logger.info('Data: ${message.data}', name: 'FCM_BG');
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // .env読み込み
   await dotenv.load(fileName: '.env');
   Environment.loadFromEnv();
-
-  // ✅ 追加: 起動時に環境情報を表示
   Environment.printConfiguration();
 
+  // Firebase初期化
   await FirebaseConfig.initialize();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // FCMバックグラウンドハンドラー登録
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  
+  // 日付フォーマット初期化
   await initializeDateFormatting('ja_JP', null);
 
   // ログシステムの初期化
   await logger.initialize();
 
   logger.section('🚀 Whispin アプリ起動中...', name: 'Main');
-
-  // ✅ 追加: エミュレーター使用状況をログ出力
-  if (Environment.shouldUseFirebaseEmulator) {
-    logger.warning('⚠️ Firebaseエミュレーターモードで起動', name: 'Main');
-    logger.info(
-        '  Auth: ${Environment.emulatorHost}:${Environment.authEmulatorPort}',
-        name: 'Main');
-    logger.info(
-        '  Firestore: ${Environment.emulatorHost}:${Environment.firestoreEmulatorPort}',
-        name: 'Main');
-  } else {
-    logger.success('✅ Firebase本番モードで起動', name: 'Main');
-  }
-
-  // Firebase初期化（後方互換性のため残す）
-  logger.start('Firebase 初期化中...', name: 'Main');
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  logger.success('Firebase 初期化完了', name: 'Main');
 
   // Services層の初期化
   logger.start('Services 初期化中...', name: 'Main');
@@ -71,6 +70,18 @@ Future<void> main() async {
   await authService.initialize();
 
   final chatService = ChatService(storageService);
+  
+  // FCMサービスの初期化
+  final fcmService = FCMService();
+  await fcmService.initialize();
+  
+  // 招待サービスの初期化
+  final invitationService = InvitationService(storageService);
+  final startupInvitationService = StartupInvitationService(
+    storageService: storageService,
+    invitationService: invitationService,
+    fcmService: fcmService,
+  );
 
   logger.success('Services 初期化完了', name: 'Main');
 
@@ -82,11 +93,6 @@ Future<void> main() async {
   final blockRepository = BlockRepository();
 
   logger.success('Repositories 初期化完了', name: 'Main');
-  logger.info('  - UserRepository', name: 'Main');
-  logger.info('  - FriendshipRepository', name: 'Main');
-  logger.info('  - ChatRoomRepository', name: 'Main');
-  logger.info('  - BlockRepository', name: 'Main');
-
   logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
   runApp(
@@ -105,6 +111,9 @@ Future<void> main() async {
         Provider<StorageService>.value(value: storageService),
         Provider<AuthService>.value(value: authService),
         Provider<ChatService>.value(value: chatService),
+        Provider<FCMService>.value(value: fcmService),
+        Provider<InvitationService>.value(value: invitationService),
+        Provider<StartupInvitationService>.value(value: startupInvitationService),
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
@@ -115,24 +124,69 @@ Future<void> main() async {
       child: MyApp(
         authService: authService,
         storageService: storageService,
+        startupInvitationService: startupInvitationService,
       ),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final AuthService authService;
   final FirestoreStorageService storageService;
+  final StartupInvitationService startupInvitationService;
 
   const MyApp({
     super.key,
     required this.authService,
     required this.storageService,
+    required this.startupInvitationService,
   });
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    // アプリ起動後に招待をチェック
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInvitations();
+    });
+  }
+  
+  /// アプリ起動時に招待をチェック
+  Future<void> _checkInvitations() async {
+    logger.section('アプリ起動後の招待チェック', name: 'MyApp');
+    
+    // ログイン中のユーザーを取得
+    final currentUser = widget.authService.currentUser;
+    if (currentUser == null) {
+      logger.info('未ログイン - 招待チェックスキップ', name: 'MyApp');
+      return;
+    }
+    
+    final context = _navigatorKey.currentContext;
+    if (context == null) {
+      logger.warning('Contextが取得できません', name: 'MyApp');
+      return;
+    }
+    
+    // 招待チェック実行
+    await widget.startupInvitationService.checkAndHandleInvitations(
+      context,
+      currentUser.id,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Whispin',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -147,7 +201,9 @@ class MyApp extends StatelessWidget {
         NavigationLogger(),
       ],
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: authService.isLoggedIn() ? AppRoutes.home : AppRoutes.login,
+      initialRoute: widget.authService.isLoggedIn() 
+          ? AppRoutes.home 
+          : AppRoutes.login,
     );
   }
 }

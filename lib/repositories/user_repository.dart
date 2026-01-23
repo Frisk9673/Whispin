@@ -324,4 +324,63 @@ class UserRepository extends BaseRepository<User> {
       rethrow;
     }
   }
+
+  Future<void> updateFCMToken(String userId, String fcmToken) async {
+    logger.start('updateFCMToken($userId) 開始', name: _logName);
+
+    try {
+      // ユーザー検索して実際のドキュメントIDを取得
+      logger.start('ユーザー検索中...', name: _logName);
+
+      // メールアドレスで検索
+      final userSnapshot = await firestore
+          .collection(collectionName)
+          .where('id', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      // 旧形式のEmailAddressでも検索
+      if (userSnapshot.docs.isEmpty) {
+        final altSnapshot = await firestore
+            .collection(collectionName)
+            .where('EmailAddress', isEqualTo: userId)
+            .limit(1)
+            .get();
+
+        if (altSnapshot.docs.isEmpty) {
+          logger.error('ユーザーが見つかりません: $userId', name: _logName);
+          throw Exception('ユーザー情報が見つかりません');
+        }
+
+        final docId = altSnapshot.docs.first.id;
+        logger.success('ドキュメントID取得: $docId', name: _logName);
+
+        await _updateFCMTokenFields(docId, fcmToken);
+      } else {
+        final docId = userSnapshot.docs.first.id;
+        logger.success('ドキュメントID取得: $docId', name: _logName);
+
+        await _updateFCMTokenFields(docId, fcmToken);
+      }
+
+      logger.section('updateFCMToken() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('updateFCMToken() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// FCMトークンフィールドを更新する内部メソッド
+  Future<void> _updateFCMTokenFields(String docId, String fcmToken) async {
+    logger.start('Firestore更新中... (docId: $docId)', name: _logName);
+
+    await firestore.collection(collectionName).doc(docId).update({
+      'fcmToken': fcmToken,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    });
+
+    logger.success('FCMトークン更新完了', name: _logName);
+    logger.debug('Token: ${fcmToken.substring(0, 20)}...', name: _logName);
+  }
 }
