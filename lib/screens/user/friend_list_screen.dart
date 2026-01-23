@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
-import '../../repositories/friendship_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/block_repository.dart';
+import '../../services/friendship_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -18,7 +19,6 @@ class FriendListScreen extends StatefulWidget {
 }
 
 class _FriendListScreenState extends State<FriendListScreen> {
-  final FriendshipRepository _friendshipRepository = FriendshipRepository();
   final UserRepository _userRepository = UserRepository();
   final BlockRepository _blockRepository = BlockRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -27,9 +27,12 @@ class _FriendListScreenState extends State<FriendListScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _friends = [];
 
+  late FriendshipService _friendshipService;
+
   @override
   void initState() {
     super.initState();
+    _friendshipService = context.read<FriendshipService>();
     _loadFriends();
   }
 
@@ -48,9 +51,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       final currentUserEmail = currentUser.email!;
 
-      logger.start('Repository経由でフレンド一覧取得中...', name: _logName);
-
-      final friendships = await _friendshipRepository.findUserFriends(currentUserEmail);
+      logger.start('Service経由でフレンド一覧取得中...', name: _logName);
+      final friendships = await _friendshipService.getUserFriends(currentUserEmail);
 
       logger.success('フレンドシップ取得: ${friendships.length}件', name: _logName);
 
@@ -106,7 +108,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
-  /// ✅ フレンド削除 or ブロック選択ダイアログ
+  /// フレンド削除 or ブロック選択ダイアログ
   Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
 
@@ -181,7 +183,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
-  /// フレンド削除のみ
   Future<void> _removeFriend(int index) async {
     final friend = _friends[index];
     final currentUserEmail = _auth.currentUser!.email!;
@@ -192,11 +193,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
     context.showLoadingDialog(message: '削除中...');
 
     try {
-      logger.start('Repository経由でフレンドシップ削除中...', name: _logName);
-
-      await _friendshipRepository.removeFriendship(
-        currentUserEmail,
-        friend['id'],
+      logger.start('Service経由でフレンドシップ削除中...', name: _logName);
+      
+      await _friendshipService.removeFriend(
+        userId1: currentUserEmail,
+        userId2: friend['id'],
       );
 
       logger.success('フレンドシップ削除完了', name: _logName);
@@ -220,7 +221,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
-  /// ✅ ブロックしてフレンド削除
+  /// ブロックしてフレンド削除
   Future<void> _blockAndRemoveFriend(int index) async {
     final friend = _friends[index];
     final currentUserEmail = _auth.currentUser!.email!;
@@ -231,18 +232,15 @@ class _FriendListScreenState extends State<FriendListScreen> {
     context.showLoadingDialog(message: 'ブロック中...');
 
     try {
-      // 1. ブロック追加
-      logger.start('Repository経由でブロック追加中...', name: _logName);
-      await _blockRepository.blockUser(currentUserEmail, friend['id']);
-      logger.success('ブロック追加完了', name: _logName);
-
-      // 2. フレンドシップ削除
-      logger.start('フレンドシップ削除中...', name: _logName);
-      await _friendshipRepository.removeFriendship(
-        currentUserEmail,
-        friend['id'],
+      logger.start('Service経由でブロック&削除処理実行中...', name: _logName);
+      
+      await _friendshipService.blockAndRemoveFriend(
+        blockerId: currentUserEmail,
+        blockedId: friend['id'],
+        blockRepository: _blockRepository,
       );
-      logger.success('フレンドシップ削除完了', name: _logName);
+
+      logger.success('ブロック&削除処理完了', name: _logName);
 
       context.hideLoadingDialog();
 

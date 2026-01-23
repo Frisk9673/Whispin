@@ -17,6 +17,7 @@ import 'services/chat_service.dart';
 import 'services/fcm_service.dart';
 import 'services/invitation_service.dart';
 import 'services/startup_invitation_service.dart';
+import 'services/friendship_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/admin_provider.dart';
@@ -98,10 +99,19 @@ Future<void> main() async {
   logger.start('Repositories 初期化中...', name: 'Main');
   final userRepository = UserRepository();
   final friendshipRepository = FriendshipRepository();
+  final friendRequestRepository = FriendRequestRepository();
   final chatRoomRepository = ChatRoomRepository();
   final blockRepository = BlockRepository();
 
   logger.success('Repositories 初期化完了', name: 'Main');
+
+  logger.start('FriendshipService 初期化中...', name: 'Main');
+  final friendshipService = FriendshipService(
+    friendshipRepository: friendshipRepository,
+    friendRequestRepository: friendRequestRepository,
+  );
+  logger.success('FriendshipService 初期化完了', name: 'Main');
+
   logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
   runApp(
@@ -124,10 +134,12 @@ Future<void> main() async {
         Provider<InvitationService>.value(value: invitationService),
         Provider<StartupInvitationService>.value(
             value: startupInvitationService),
+        Provider<FriendshipService>.value(value: friendshipService), // ✅ 追加
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
         Provider<FriendshipRepository>.value(value: friendshipRepository),
+        Provider<FriendRequestRepository>.value(value: friendRequestRepository), // ✅ 追加
         Provider<ChatRoomRepository>.value(value: chatRoomRepository),
         Provider<BlockRepository>.value(value: blockRepository),
       ],
@@ -169,11 +181,9 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// アプリ起動時に招待をチェック
   Future<void> _checkInvitations() async {
     logger.section('アプリ起動後の招待チェック', name: 'MyApp');
 
-    // ログイン中のユーザーを取得
     final currentUser = widget.authService.currentUser;
     if (currentUser == null) {
       logger.info('未ログイン - 招待チェックスキップ', name: 'MyApp');
@@ -186,7 +196,6 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    // 招待チェック実行
     await widget.startupInvitationService.checkAndHandleInvitations(
       context,
       currentUser.id,

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user_evaluation.dart';
 import '../models/block.dart';
 import '../services/storage_service.dart';
-import '../repositories/friendship_repository.dart'; // ✅ 追加
-import '../repositories/block_repository.dart'; // ✅ 追加
+import '../services/friendship_service.dart';
+import '../repositories/block_repository.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../extensions/context_extensions.dart';
-import '../utils/app_logger.dart'; // ✅ 追加
+import '../utils/app_logger.dart';
 
 class EvaluationDialog extends StatefulWidget {
   final String partnerId;
@@ -30,16 +31,13 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   String? _selectedRating;
   bool _addFriend = false;
   bool _blockUser = false;
-  bool _isSubmitting = false; // ✅ 追加
+  bool _isSubmitting = false;
   static const String _logName = 'EvaluationDialog';
 
-  // ✅ 追加: Repositoryインスタンス
-  final FriendRequestRepository _friendRequestRepository =
-    FriendRequestRepository();
   final BlockRepository _blockRepository = BlockRepository();
 
   Future<void> _handleSubmit() async {
-    // ✅ 追加: 二重送信防止
+    // 二重送信防止
     if (_isSubmitting) return;
     
     setState(() {
@@ -72,15 +70,16 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       if (_addFriend) {
         logger.start('フレンドリクエスト送信', name: _logName);
 
-        final result =
-            await _friendRequestRepository.sendFriendRequest(
+        final friendshipService = context.read<FriendshipService>();
+        
+        final result = await friendshipService.sendFriendRequest(
           senderId: widget.currentUserId,
           receiverId: widget.partnerId,
         );
 
         logger.success(
-        result['message'] ?? 'フレンド処理完了',
-        name: _logName,
+          result['message'] ?? 'フレンド処理完了',
+          name: _logName,
         );
       }
 
@@ -88,7 +87,6 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       if (_blockUser) {
         logger.start('ブロック処理中...', name: _logName);
         
-        // ✅ 修正: Repository経由でブロック実行
         try {
           final blockId = await _blockRepository.blockUser(
             widget.currentUserId,
@@ -100,7 +98,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           // StorageServiceにも追加
           final block = Block(
             id: blockId,
-            blockerId: widget.currentUserId, // ✅ 確実にcurrentUserIdを設定
+            blockerId: widget.currentUserId,
             blockedId: widget.partnerId,
             active: true,
             createdAt: DateTime.now(),
@@ -134,7 +132,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
       logger.section('評価ダイアログ送信完了', name: _logName);
 
-      // ✅ ダイアログを閉じる
+      // ダイアログを閉じる
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -248,7 +246,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             setState(() {
               _addFriend = value ?? false;
 
-              // ✅ フレンドONならブロックは強制OFF
+              // フレンドONならブロックは強制OFF
               if (_addFriend) {
                 _blockUser = false;
               }
@@ -264,7 +262,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             setState(() {
               _blockUser = value ?? false;
 
-              // ✅ ブロックONならフレンドは強制OFF
+              // ブロックONならフレンドは強制OFF
               if (_blockUser) {
                 _addFriend = false;
               }

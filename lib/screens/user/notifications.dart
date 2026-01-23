@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
-import '../../repositories/friendship_repository.dart';
 import '../../repositories/user_repository.dart';
+import '../../services/friendship_service.dart';
 import '../../models/friend_request.dart';
-import '../../models/friendship.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -21,9 +21,6 @@ class FriendRequestsScreen extends StatefulWidget {
 }
 
 class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
-  final FriendRequestRepository _friendRequestRepository =
-      FriendRequestRepository();
-  final FriendshipRepository _friendshipRepository = FriendshipRepository();
   final UserRepository _userRepository = UserRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -32,9 +29,12 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   bool _isLoading = true;
   List<FriendRequest> _friendRequests = [];
 
+  late FriendshipService _friendshipService;
+
   @override
   void initState() {
     super.initState();
+    _friendshipService = context.read<FriendshipService>();
     _loadFriendRequests();
   }
 
@@ -54,10 +54,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       final currentUserEmail = currentUser.email!;
       logger.info('currentUserEmail: $currentUserEmail', name: _logName);
 
-      // フレンドリクエスト取得
-      logger.start('Repository経由でフレンドリクエスト取得中...', name: _logName);
-      _friendRequests =
-          await _friendRequestRepository.findReceivedRequests(currentUserEmail);
+      logger.start('Service経由でフレンドリクエスト取得中...', name: _logName);
+      _friendRequests = await _friendshipService.getReceivedRequests(currentUserEmail);
 
       logger.success('フレンドリクエスト取得: ${_friendRequests.length}件', name: _logName);
 
@@ -83,29 +81,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     context.showLoadingDialog(message: '承認中...');
 
     try {
-      // 1. リクエストを承認状態に更新
-      logger.start('リクエスト承認処理中...', name: _logName);
-      await _friendRequestRepository.acceptRequest(request.id);
-      logger.success('リクエスト承認完了', name: _logName);
-
-      // 2. フレンドシップを作成
-      logger.start('フレンドシップ作成中...', name: _logName);
-      final friendship = Friendship(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: request.senderId,
-        friendId: request.receiverId,
-        active: true,
-        createdAt: DateTime.now(),
-      );
-
-      logger.debug('Friendship作成:', name: _logName);
-      logger.debug('  id: ${friendship.id}', name: _logName);
-      logger.debug('  userId: ${friendship.userId}', name: _logName);
-      logger.debug('  friendId: ${friendship.friendId}', name: _logName);
-      logger.debug('  active: ${friendship.active}', name: _logName);
-
-      await _friendshipRepository.create(friendship, id: friendship.id);
-      logger.success('フレンドシップ作成完了', name: _logName);
+      logger.start('Service経由で承認処理実行中...', name: _logName);
+      await _friendshipService.acceptFriendRequest(request);
+      logger.success('承認処理完了', name: _logName);
 
       context.hideLoadingDialog();
 
@@ -113,7 +91,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       context.showSuccessSnackBar('フレンド申請を承認しました');
 
-      // リスト再読み込み
       await _loadFriendRequests();
 
       logger.section('フレンドリクエスト承認処理完了', name: _logName);
@@ -147,9 +124,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     context.showLoadingDialog(message: '拒否中...');
 
     try {
-      logger.start('リクエスト拒否処理中...', name: _logName);
-      await _friendRequestRepository.rejectRequest(request.id);
-      logger.success('リクエスト拒否完了', name: _logName);
+      logger.start('Service経由で拒否処理実行中...', name: _logName);
+      await _friendshipService.rejectFriendRequest(request.id);
+      logger.success('拒否処理完了', name: _logName);
 
       context.hideLoadingDialog();
 
@@ -157,7 +134,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       context.showInfoSnackBar('フレンドリクエストを拒否しました');
 
-      // リスト再読み込み
       await _loadFriendRequests();
 
       logger.section('フレンドリクエスト拒否処理完了', name: _logName);
@@ -252,8 +228,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
           shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
               color: AppColors.primary.withOpacity(0.2),
               width: 2,
@@ -264,7 +239,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ヘッダー（アバター + 名前）
                 Row(
                   children: [
                     Container(
@@ -312,7 +286,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
                 const SizedBox(height: 16),
 
-                // タイムスタンプ
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -343,7 +316,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
                 const SizedBox(height: 20),
 
-                // アクションボタン
                 Row(
                   children: [
                     Expanded(
