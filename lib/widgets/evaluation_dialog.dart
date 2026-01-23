@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/user_evaluation.dart';
-import '../models/friend_request.dart';
 import '../models/block.dart';
 import '../services/storage_service.dart';
 import '../repositories/friendship_repository.dart'; // ✅ 追加
@@ -71,42 +70,18 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
       // ===== 2. フレンドリクエストの送信 =====
       if (_addFriend) {
-        logger.start('フレンドリクエストを送信中...', name: _logName);
-        
-        // ✅ 修正: Repository経由で既存チェック
-        final hasExisting = await _friendRequestRepository.hasExistingRequest(
-          widget.currentUserId,
-          widget.partnerId,
+        logger.start('フレンドリクエスト送信', name: _logName);
+
+        final result =
+            await _friendRequestRepository.sendFriendRequest(
+          senderId: widget.currentUserId,
+          receiverId: widget.partnerId,
         );
 
-        if (!hasExisting) {
-          final friendRequest = FriendRequest(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            senderId: widget.currentUserId, // ✅ 確実にcurrentUserIdを設定
-            receiverId: widget.partnerId,
-            status: AppConstants.friendRequestStatusPending,
-            createdAt: DateTime.now(),
-          );
-          
-          logger.debug('FriendRequest作成:', name: _logName);
-          logger.debug('  id: ${friendRequest.id}', name: _logName);
-          logger.debug('  senderId: ${friendRequest.senderId}', name: _logName);
-          logger.debug('  receiverId: ${friendRequest.receiverId}', name: _logName);
-          
-          widget.storageService.friendRequests.add(friendRequest);
-          
-          // ✅ 追加: Repository経由でFirestoreにも保存
-          try {
-            await _friendRequestRepository.create(friendRequest, id: friendRequest.id);
-            logger.success('Firestore保存完了', name: _logName);
-          } catch (e) {
-            logger.warning('Firestore保存失敗（StorageServiceには保存済み）: $e', name: _logName);
-          }
-          
-          logger.success('フレンドリクエスト送信完了', name: _logName);
-        } else {
-          logger.info('既存のフレンドリクエストが存在するためスキップ', name: _logName);
-        }
+        logger.success(
+        result['message'] ?? 'フレンド処理完了',
+        name: _logName,
+        );
       }
 
       // ===== 3. ブロックの実行 =====

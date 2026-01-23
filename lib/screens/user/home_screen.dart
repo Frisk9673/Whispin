@@ -5,8 +5,10 @@ import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/chat_service.dart';
 import '../../providers/user_provider.dart';
+import '../../repositories/friendship_repository.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
+import '../../constants/routes.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _logName = 'HomeScreen';
 
   late ChatService _chatService;
+  final FriendRequestRepository _friendRequestRepository = FriendRequestRepository();
   int _pendingFriendRequestCount = 0;
 
   @override
@@ -37,9 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _chatService = ChatService(widget.storageService);
     _updatePendingFriendRequests();
-
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
+      _updatePendingFriendRequests();
     });
   }
 
@@ -103,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _pendingFriendRequestCount = count;
     });
-
+    
     logger.debug('フレンドリクエスト未読数: $count', name: _logName);
   }
 
@@ -126,7 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
     logger.section('ログアウト処理完了', name: _logName);
   }
 
-  // ✅ 修正: room_create_screen.dart を使用
   void _navigateToCreateRoom() {
     logger.info('ルーム作成画面へ遷移', name: _logName);
     NavigationHelper.toRoomCreate(context);
@@ -144,10 +147,18 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationHelper.toBlockList(context);
   }
 
-  // ✅ 修正: room_join_screen.dart を使用
   void _navigateToJoinRoom() {
     logger.info('ルーム参加画面へ遷移', name: _logName);
     NavigationHelper.toRoomJoin(context);
+  }
+
+  // ✅ 追加: フレンドリクエスト画面への遷移
+  void _navigateToFriendRequests() {
+    logger.info('フレンドリクエスト画面へ遷移', name: _logName);
+    Navigator.of(context).pushNamed(AppRoutes.friendRequests).then((_) {
+      // 戻ってきたら未読数を更新
+      _updatePendingFriendRequests();
+    });
   }
 
   @override
@@ -162,12 +173,13 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textWhite,
         actions: [
-          // 通知アイコン
+          // 通知アイコン（フレンドリクエスト）
           Stack(
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications),
-                onPressed: _updatePendingFriendRequests,
+                onPressed: _navigateToFriendRequests,
+                tooltip: 'フレンドリクエスト',
               ),
               if (_pendingFriendRequestCount > 0)
                 Positioned(
@@ -248,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMenuButton(
                 icon: Icons.meeting_room,
                 label: '部屋に参加',
-                onTap: _navigateToJoinRoom, // ✅ 修正
+                onTap: _navigateToJoinRoom,
               ),
               _buildMenuButton(
                 icon: Icons.block,
@@ -258,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMenuButton(
                 icon: Icons.add_circle,
                 label: '部屋を作成',
-                onTap: _navigateToCreateRoom, // ✅ 修正
+                onTap: _navigateToCreateRoom,
               ),
               _buildMenuButton(
                 icon: Icons.people,

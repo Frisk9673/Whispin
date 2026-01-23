@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/common/header.dart';
 import '../../repositories/friendship_repository.dart';
 import '../../repositories/user_repository.dart';
+import '../../repositories/block_repository.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -19,6 +20,7 @@ class FriendListScreen extends StatefulWidget {
 class _FriendListScreenState extends State<FriendListScreen> {
   final FriendshipRepository _friendshipRepository = FriendshipRepository();
   final UserRepository _userRepository = UserRepository();
+  final BlockRepository _blockRepository = BlockRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   static const String _logName = 'FriendListScreen';
 
@@ -38,32 +40,23 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
     try {
       final currentUser = _auth.currentUser;
-      if (currentUser == null) {
+      if (currentUser == null || currentUser.email == null) {
         logger.warning('未ログイン', name: _logName);
         setState(() => _isLoading = false);
         return;
       }
 
-      final currentUserEmail = currentUser.email;
-      if (currentUserEmail == null) {
-        logger.warning('メールアドレスなし', name: _logName);
-        setState(() => _isLoading = false);
-        return;
-      }
+      final currentUserEmail = currentUser.email!;
 
       logger.start('Repository経由でフレンド一覧取得中...', name: _logName);
 
-      // Repository経由でフレンド一覧を取得
-      final friendships =
-          await _friendshipRepository.findUserFriends(currentUserEmail);
+      final friendships = await _friendshipRepository.findUserFriends(currentUserEmail);
 
       logger.success('フレンドシップ取得: ${friendships.length}件', name: _logName);
 
-      // フレンドのユーザー情報を取得
       final List<Map<String, dynamic>> friendsList = [];
 
       for (var friendship in friendships) {
-        // 相手のIDを特定
         final friendId = friendship.userId == currentUserEmail
             ? friendship.friendId
             : friendship.userId;
@@ -71,7 +64,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
         logger.debug('フレンドID: $friendId を取得中...', name: _logName);
 
         try {
-          // Repository経由でユーザー情報を取得
           final friendUser = await _userRepository.findById(friendId);
 
           if (friendUser != null) {
@@ -114,54 +106,102 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
-  Future<void> _removeFriend(int index) async {
+  /// ✅ フレンド削除 or ブロック選択ダイアログ
+  Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
 
-    logger.section('_removeFriend() 開始', name: _logName);
+    logger.section('フレンド削除/ブロック選択', name: _logName);
     logger.info('対象フレンド: ${friend['name']}', name: _logName);
 
-    final result = await showDialog<bool>(
+    final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
-        title: Text('フレンド削除', style: AppTextStyles.titleLarge),
-        content: Text(
-          '${friend['name']} をフレンドから削除しますか?',
-          style: AppTextStyles.bodyMedium,
+        title: Row(
+          children: [
+            Icon(Icons.person_remove, color: AppColors.error),
+            const SizedBox(width: 8),
+            const Text('フレンド削除'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${friend['name']} との関係を解除します。',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'どのように削除しますか？',
+              style: AppTextStyles.titleSmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx, null),
             child: const Text('キャンセル'),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'remove'),
+            icon: const Icon(Icons.person_remove),
+            label: const Text('フレンド削除のみ'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.warning,
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'block'),
+            icon: const Icon(Icons.block),
+            label: const Text('ブロックして削除'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-            ),
-            child: const Text(
-              '削除',
-              style: TextStyle(color: Colors.white),
+              foregroundColor: AppColors.textWhite,
             ),
           ),
         ],
       ),
     );
 
-    if (result != true) {
-      logger.info('削除キャンセル', name: _logName);
+    if (action == null) {
+      logger.info('キャンセルされました', name: _logName);
       return;
     }
+
+    if (action == 'remove') {
+      await _removeFriend(index);
+    } else if (action == 'block') {
+      await _blockAndRemoveFriend(index);
+    }
+  }
+
+  /// フレンド削除のみ
+  Future<void> _removeFriend(int index) async {
+    final friend = _friends[index];
+    final currentUserEmail = _auth.currentUser!.email!;
+
+    logger.section('フレンド削除開始', name: _logName);
+    logger.info('対象: ${friend['name']}', name: _logName);
+
+    context.showLoadingDialog(message: '削除中...');
 
     try {
       logger.start('Repository経由でフレンドシップ削除中...', name: _logName);
 
-      // Repository経由で削除（ソフトデリート）
-      await _friendshipRepository.deactivateFriendship(friend['friendshipId']);
+      await _friendshipRepository.removeFriendship(
+        currentUserEmail,
+        friend['id'],
+      );
 
       logger.success('フレンドシップ削除完了', name: _logName);
+
+      context.hideLoadingDialog();
 
       setState(() {
         _friends.removeAt(index);
@@ -169,26 +209,68 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       if (!mounted) return;
 
-      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar('フレンドを削除しました');
 
-      logger.section('_removeFriend() 完了', name: _logName);
+      logger.section('フレンド削除完了', name: _logName);
     } catch (e, stack) {
       logger.error('削除エラー: $e', name: _logName, error: e, stackTrace: stack);
+      context.hideLoadingDialog();
+      if (!mounted) return;
       _showError('削除に失敗しました: $e');
+    }
+  }
+
+  /// ✅ ブロックしてフレンド削除
+  Future<void> _blockAndRemoveFriend(int index) async {
+    final friend = _friends[index];
+    final currentUserEmail = _auth.currentUser!.email!;
+
+    logger.section('ブロック&削除開始', name: _logName);
+    logger.info('対象: ${friend['name']}', name: _logName);
+
+    context.showLoadingDialog(message: 'ブロック中...');
+
+    try {
+      // 1. ブロック追加
+      logger.start('Repository経由でブロック追加中...', name: _logName);
+      await _blockRepository.blockUser(currentUserEmail, friend['id']);
+      logger.success('ブロック追加完了', name: _logName);
+
+      // 2. フレンドシップ削除
+      logger.start('フレンドシップ削除中...', name: _logName);
+      await _friendshipRepository.removeFriendship(
+        currentUserEmail,
+        friend['id'],
+      );
+      logger.success('フレンドシップ削除完了', name: _logName);
+
+      context.hideLoadingDialog();
+
+      setState(() {
+        _friends.removeAt(index);
+      });
+
+      if (!mounted) return;
+
+      context.showWarningSnackBar('ブロックしてフレンドを削除しました');
+
+      logger.section('ブロック&削除完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('ブロック&削除エラー: $e', name: _logName, error: e, stackTrace: stack);
+      context.hideLoadingDialog();
+      if (!mounted) return;
+      _showError('処理に失敗しました: $e');
     }
   }
 
   void _showError(String message) {
     if (!mounted) return;
-    // ✅ context拡張メソッド使用
     context.showErrorSnackBar(message);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ 統一ヘッダーを使用
       appBar: CommonHeader(
         title: 'フレンド一覧',
         showNotifications: true,
@@ -198,7 +280,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // サブヘッダー（アイコン付きタイトル）
+          // サブヘッダー
           Padding(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             child: Row(
@@ -247,62 +329,65 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppConstants.defaultPadding,
-                        ),
-                        itemCount: _friends.length,
-                        itemBuilder: (context, index) {
-                          final friend = _friends[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: AppConstants.cardElevation,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
+                    : RefreshIndicator(
+                        onRefresh: _loadFriends,
+                        child: ListView.builder(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppConstants.defaultPadding,
+                          ),
+                          itemCount: _friends.length,
+                          itemBuilder: (context, index) {
+                            final friend = _friends[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: AppConstants.cardElevation,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                side: BorderSide(
+                                  color: AppColors.border,
+                                  width: 2,
+                                ),
                               ),
-                              side: BorderSide(
-                                color: AppColors.border,
-                                width: 2,
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.primary,
-                                child: Text(
-                                  friend['name']![0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.primary,
+                                  child: Text(
+                                    friend['name']![0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                friend['name']!,
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.w600,
+                                title: Text(
+                                  friend['name']!,
+                                  style: AppTextStyles.bodyLarge.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  friend['id']!,
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  onPressed: () => _showRemoveOptions(index),
                                 ),
                               ),
-                              subtitle: Text(
-                                friend['id']!,
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  Icons.person_remove,
-                                  color: AppColors.error,
-                                ),
-                                onPressed: () => _removeFriend(index),
-                              ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
           ),
         ],
