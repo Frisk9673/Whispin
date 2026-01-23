@@ -291,40 +291,23 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
   /// 相互フレンドリクエストをチェック
   Future<FriendRequest?> findMutualRequest(
-    String userId1,
-    String userId2,
+    String senderId,
+    String receiverId,
   ) async {
-    logger.debug('findMutualRequest($userId1, $userId2)', name: _logName);
+    final snap = await collection
+        .where('senderId', isEqualTo: senderId)
+        .where('receiverId', isEqualTo: receiverId)
+        .where(
+          'status',
+          isEqualTo: AppConstants.friendRequestStatusPending,
+        )
+        .limit(1)
+        .get();
 
-    try {
-      final snapshot = await collection
-          .where('senderId', isEqualTo: userId1)
-          .where('receiverId', isEqualTo: userId2)
-          .where(
-            'status',
-            isEqualTo: AppConstants.friendRequestStatusPending,
-          )
-          .limit(1)
-          .get();
+    if (snap.docs.isEmpty) return null;
 
-      if (snapshot.docs.isNotEmpty) {
-        final doc = snapshot.docs.first;
-        return FriendRequest.fromMap({
-          ...doc.data(),
-          'id': doc.id, // 🔥 これが全て
-        });
-      }
-
-      return null;
-    } catch (e, stack) {
-      logger.error(
-        'findMutualRequest() エラー: $e',
-        name: _logName,
-        error: e,
-        stackTrace: stack,
-      );
-      return null;
-    }
+    final doc = snap.docs.first;
+    return fromMap({...doc.data(), 'id': doc.id});
   }
 
   /// フレンドリクエスト送信（相互リクエスト自動承認）
@@ -332,23 +315,42 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
     required String senderId,
     required String receiverId,
   }) async {
-    logger.section('sendFriendRequest() 開始', name: _logName);
+    logger.section('sendFriendRequest', name: _logName);
 
-    try {
-      if (senderId == receiverId) {
-        throw Exception('自分自身にフレンドリクエストは送信できません');
-      }
+    if (senderId == receiverId) {
+      throw Exception('自分自身には送れません');
+    }
 
-      if (await hasExistingRequest(senderId, receiverId)) {
-        throw Exception('既にフレンドリクエストを送信済みです');
-      }
+    final friendshipRepo = FriendshipRepository();
 
-      final mutualRequest = await findMutualRequest(receiverId, senderId);
+    // ✅ ① 既にフレンドなら何もしない
+    final alreadyFriend =
+        await friendshipRepo.isFriend(senderId, receiverId);
 
-      if (mutualRequest != null) {
-        await acceptRequest(mutualRequest.id);
+    if (alreadyFriend) {
+      return {
+        'success': false,
+        'message': '既にフレンドです',
+      };
+    }
 
-        final friendshipRepository = FriendshipRepository();
+    // ✅ ② 片方向リクエスト重複防止
+    if (await hasExistingRequest(senderId, receiverId)) {
+      throw Exception('既にリクエストを送信しています');
+    }
+
+    // ✅ ③ 相互リクエストチェック
+    final mutual =
+        await findMutualRequest(receiverId, senderId);
+
+    if (mutual != null) {
+      await acceptRequest(mutual.id);
+
+      // ★ friendship 作成前に再チェック（保険）
+      final stillNotFriend =
+          !(await friendshipRepo.isFriend(senderId, receiverId));
+
+      if (stillNotFriend) {
         final friendship = Friendship(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           userId: senderId,
@@ -357,39 +359,32 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
           createdAt: DateTime.now(),
         );
 
-        await friendshipRepository.create(friendship, id: friendship.id);
-
-        return {
-          'success': true,
-          'autoAccepted': true,
-          'message': '相互リクエストにより自動承認されました',
-        };
+        await friendshipRepo.create(friendship, id: friendship.id);
       }
-
-      final request = FriendRequest(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: senderId,
-        receiverId: receiverId,
-        status: AppConstants.friendRequestStatusPending,
-        createdAt: DateTime.now(),
-      );
-
-      await create(request, id: request.id);
 
       return {
         'success': true,
-        'autoAccepted': false,
-        'message': 'フレンドリクエストを送信しました',
+        'autoAccepted': true,
+        'message': '相互リクエストにより自動承認されました',
       };
-    } catch (e, stack) {
-      logger.error(
-        'sendFriendRequest() エラー: $e',
-        name: _logName,
-        error: e,
-        stackTrace: stack,
-      );
-      rethrow;
     }
+
+    // ✅ ④ 通常のリクエスト作成
+    final request = FriendRequest(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      senderId: senderId,
+      receiverId: receiverId,
+      status: AppConstants.friendRequestStatusPending,
+      createdAt: DateTime.now(),
+    );
+
+    await create(request, id: request.id);
+
+    return {
+      'success': true,
+      'autoAccepted': false,
+      'message': 'フレンドリクエストを送信しました',
+    };
   }
 
   /// 受信リクエストを監視

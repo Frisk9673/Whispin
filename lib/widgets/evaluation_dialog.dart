@@ -247,6 +247,11 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _addFriend = value ?? false;
+
+              // ✅ フレンドONならブロックは強制OFF
+              if (_addFriend) {
+                _blockUser = false;
+              }
             });
           },
           title: Text('フレンド申請を送る', style: AppTextStyles.bodyMedium),
@@ -258,6 +263,11 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _blockUser = value ?? false;
+
+              // ✅ ブロックONならフレンドは強制OFF
+              if (_blockUser) {
+                _addFriend = false;
+              }
             });
           },
           title: Text('ブロックする', style: AppTextStyles.bodyMedium),
