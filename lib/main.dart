@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -28,9 +29,13 @@ import 'utils/app_logger.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (kIsWeb) return;
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   logger.section('バックグラウンドメッセージ受信', name: 'FCM_BG');
-  logger.info('Message ID: ${message.messageId}', name: 'FCM_BG');
   logger.info('Data: ${message.data}', name: 'FCM_BG');
 }
 
@@ -47,10 +52,14 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // FCMバックグラウンドハンドラー登録
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(
+      firebaseMessagingBackgroundHandler,
+    );
+  }
+
   // 日付フォーマット初期化
   await initializeDateFormatting('ja_JP', null);
 
@@ -70,11 +79,11 @@ Future<void> main() async {
   await authService.initialize();
 
   final chatService = ChatService(storageService);
-  
+
   // FCMサービスの初期化
   final fcmService = FCMService();
   await fcmService.initialize();
-  
+
   // 招待サービスの初期化
   final invitationService = InvitationService(storageService);
   final startupInvitationService = StartupInvitationService(
@@ -113,7 +122,8 @@ Future<void> main() async {
         Provider<ChatService>.value(value: chatService),
         Provider<FCMService>.value(value: fcmService),
         Provider<InvitationService>.value(value: invitationService),
-        Provider<StartupInvitationService>.value(value: startupInvitationService),
+        Provider<StartupInvitationService>.value(
+            value: startupInvitationService),
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
@@ -148,34 +158,34 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // アプリ起動後に招待をチェック
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkInvitations();
     });
   }
-  
+
   /// アプリ起動時に招待をチェック
   Future<void> _checkInvitations() async {
     logger.section('アプリ起動後の招待チェック', name: 'MyApp');
-    
+
     // ログイン中のユーザーを取得
     final currentUser = widget.authService.currentUser;
     if (currentUser == null) {
       logger.info('未ログイン - 招待チェックスキップ', name: 'MyApp');
       return;
     }
-    
+
     final context = _navigatorKey.currentContext;
     if (context == null) {
       logger.warning('Contextが取得できません', name: 'MyApp');
       return;
     }
-    
+
     // 招待チェック実行
     await widget.startupInvitationService.checkAndHandleInvitations(
       context,
@@ -201,9 +211,8 @@ class _MyAppState extends State<MyApp> {
         NavigationLogger(),
       ],
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: widget.authService.isLoggedIn() 
-          ? AppRoutes.home 
-          : AppRoutes.login,
+      initialRoute:
+          widget.authService.isLoggedIn() ? AppRoutes.home : AppRoutes.login,
     );
   }
 }

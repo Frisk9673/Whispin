@@ -245,16 +245,3 @@ class FCMService {
     logger.info('Cloud Functionsが通知を送信します', name: _logName);
   }
 }
-
-/// バックグラウンドメッセージハンドラー（トップレベル関数）
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  logger.section('バックグラウンドメッセージ受信', name: 'FCM_BG');
-  logger.info('Message ID: ${message.messageId}', name: 'FCM_BG');
-  logger.info('Data: ${message.data}', name: 'FCM_BG');
-  
-  // バックグラウンドでの処理（必要最小限）
-  if (message.data['type'] == 'room_invitation') {
-    logger.info('招待通知（バックグラウンド）', name: 'FCM_BG');
-  }
-}
