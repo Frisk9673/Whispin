@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'services/block_service.dart';
 import 'config/environment.dart';
 import 'config/firebase_config.dart';
 import 'firebase_options.dart';
@@ -133,12 +134,19 @@ Future<void> main() async {
         Provider<InvitationService>.value(value: invitationService),
         Provider<StartupInvitationService>.value(
             value: startupInvitationService),
-        Provider<FriendshipService>.value(value: friendshipService), // ✅ 追加
+        Provider<FriendshipService>.value(value: friendshipService),
+        Provider<BlockService>(
+          create: (context) => BlockService(
+            blockRepository: context.read<BlockRepository>(),
+            userRepository: context.read<UserRepository>(),
+          ),
+        ),
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
         Provider<FriendshipRepository>.value(value: friendshipRepository),
-        Provider<FriendRequestRepository>.value(value: friendRequestRepository), // ✅ 追加
+        Provider<FriendRequestRepository>.value(
+            value: friendRequestRepository),
         Provider<ChatRoomRepository>.value(value: chatRoomRepository),
         Provider<BlockRepository>.value(value: blockRepository),
       ],
