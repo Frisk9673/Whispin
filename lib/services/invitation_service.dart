@@ -1,11 +1,17 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import '../models/invitation.dart';
 import '../models/chat_room.dart';
 import '../models/user.dart';
+import '../models/friendship.dart';
+import '../constants/app_constants.dart';
+import '../constants/colors.dart';
+import '../constants/text_styles.dart';
+import '../extensions/context_extensions.dart';
 import 'storage_service.dart';
 import '../utils/app_logger.dart';
 
-/// 招待機能を管理するサービス
+/// 招待機能を管理するサービス（UI拡張版）
 ///
 /// ユーザーがルームに他のユーザーを招待する機能を提供します。
 /// 招待の送信、承認、拒否、有効期限の管理を行います。
@@ -282,7 +288,7 @@ class InvitationService {
 
     final invitations = _storageService.invitations
         .where((inv) => inv.inviteeId == userId && inv.status == 'pending')
-        .where((inv) => !inv.isExpired) // 期限切れを除外
+        .where((inv) => !inv.isExpired)
         .toList();
 
     logger.debug('受信招待数: ${invitations.length}件', name: _logName);
@@ -395,5 +401,176 @@ class InvitationService {
 
     logger.success('招待キャンセル完了: $invitationId', name: _logName);
     logger.section('cancelInvitation() 完了', name: _logName);
+  }
+
+  // ===== UI関連メソッド（新規追加） =====
+
+  /// フレンド招待ダイアログを表示
+  ///
+  /// [context] ビルドコンテキスト
+  /// [roomId] ルームID
+  /// [currentUserId] 現在のユーザーID
+  Future<void> showInviteFriendDialog({
+    required BuildContext context,
+    required String roomId,
+    required String currentUserId,
+  }) async {
+    logger.section('フレンド招待ダイアログ表示', name: _logName);
+
+    if (currentUserId.isEmpty) {
+      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
+      return;
+    }
+
+    // フレンド一覧を取得
+    final friendships = _storageService.friendships.where((f) {
+      return f.active &&
+          (f.userId == currentUserId || f.friendId == currentUserId);
+    }).toList();
+
+    if (friendships.isEmpty) {
+      context.showInfoSnackBar('招待できるフレンドがいません');
+      return;
+    }
+
+    // フレンドのユーザー情報を取得
+    final friends = <Map<String, String>>[];
+    for (var friendship in friendships) {
+      final friendId = friendship.userId == currentUserId
+          ? friendship.friendId
+          : friendship.userId;
+
+      final friendUser = _storageService.users.firstWhere(
+        (u) => u.id == friendId,
+        orElse: () => throw Exception('フレンドが見つかりません'),
+      );
+
+      friends.add({
+        'id': friendId,
+        'name': friendUser.displayName,
+      });
+    }
+
+    logger.info('招待可能なフレンド数: ${friends.length}', name: _logName);
+
+    // ダイアログ表示
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person_add,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('フレンドを招待'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: friends.length,
+            itemBuilder: (context, index) {
+              final friend = friends[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primary,
+                    child: Text(
+                      friend['name']![0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(
+                    friend['name']!,
+                    style: AppTextStyles.bodyLarge,
+                  ),
+                  trailing: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(dialogContext);
+                      await _sendInvitationWithUI(
+                        context: context,
+                        roomId: roomId,
+                        currentUserId: currentUserId,
+                        friendId: friend['id']!,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      '招待',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 招待を送信（UI付き）
+  ///
+  /// [context] ビルドコンテキスト
+  /// [roomId] ルームID
+  /// [currentUserId] 現在のユーザーID
+  /// [friendId] 招待するフレンドのID
+  Future<void> _sendInvitationWithUI({
+    required BuildContext context,
+    required String roomId,
+    required String currentUserId,
+    required String friendId,
+  }) async {
+    logger.section('招待送信処理開始', name: _logName);
+    logger.info('招待先フレンド: $friendId', name: _logName);
+
+    try {
+      context.showLoadingDialog(message: '招待を送信中...');
+
+      await sendInvitation(
+        roomId: roomId,
+        inviterId: currentUserId,
+        inviteeId: friendId,
+      );
+
+      if (!context.mounted) return;
+      context.hideLoadingDialog();
+
+      context.showSuccessSnackBar('招待を送信しました！');
+      logger.success('招待送信完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('招待送信エラー: $e', name: _logName, error: e, stackTrace: stack);
+
+      if (!context.mounted) return;
+      context.hideLoadingDialog();
+
+      context.showErrorSnackBar('招待の送信に失敗しました: $e');
+    }
   }
 }

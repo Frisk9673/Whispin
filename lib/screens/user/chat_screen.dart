@@ -8,8 +8,6 @@ import '../../services/storage_service.dart';
 import '../../services/invitation_service.dart';
 import '../../providers/user_provider.dart';
 import '../../models/chat_room.dart';
-import '../../models/invitation.dart';
-import '../../models/friendship.dart';
 import '../../widgets/evaluation_dialog.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
@@ -95,159 +93,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // ===== 招待機能 =====
+  // ===== 招待機能（InvitationServiceに移譲） =====
 
   /// フレンド招待ダイアログを表示
   Future<void> _showInviteFriendDialog() async {
-    logger.section('フレンド招待ダイアログ表示', name: _logName);
-
     final currentUserId = _getCurrentUserId();
-    if (currentUserId.isEmpty) {
-      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
-      return;
-    }
-
-    // フレンド一覧を取得
-    final friendships = widget.storageService.friendships.where((f) {
-      return f.active &&
-          (f.userId == currentUserId || f.friendId == currentUserId);
-    }).toList();
-
-    if (friendships.isEmpty) {
-      context.showInfoSnackBar('招待できるフレンドがいません');
-      return;
-    }
-
-    // フレンドのユーザー情報を取得
-    final friends = <Map<String, String>>[];
-    for (var friendship in friendships) {
-      final friendId = friendship.userId == currentUserId
-          ? friendship.friendId
-          : friendship.userId;
-
-      final friendUser = widget.storageService.users.firstWhere(
-        (u) => u.id == friendId,
-        orElse: () => throw Exception('フレンドが見つかりません'),
-      );
-
-      friends.add({
-        'id': friendId,
-        'name': friendUser.displayName,
-      });
-    }
-
-    logger.info('招待可能なフレンド数: ${friends.length}', name: _logName);
-
-    // ダイアログ表示
-    await showDialog(
+    
+    await _invitationService.showInviteFriendDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_add,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('フレンドを招待'),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: friends.length,
-            itemBuilder: (context, index) {
-              final friend = friends[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      friend['name']![0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(
-                    friend['name']!,
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(dialogContext);
-                      await _sendInvitation(friend['id']!);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      '招待',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('キャンセル'),
-          ),
-        ],
-      ),
+      roomId: widget.roomId,
+      currentUserId: currentUserId,
     );
-  }
-
-  /// 招待を送信
-  Future<void> _sendInvitation(String friendId) async {
-    logger.section('招待送信処理開始', name: _logName);
-    logger.info('招待先フレンド: $friendId', name: _logName);
-
-    final currentUserId = _getCurrentUserId();
-    if (currentUserId.isEmpty) {
-      context.showErrorSnackBar('ユーザー情報の取得に失敗しました');
-      return;
-    }
-
-    try {
-      context.showLoadingDialog(message: '招待を送信中...');
-
-      await _invitationService.sendInvitation(
-        roomId: widget.roomId,
-        inviterId: currentUserId,
-        inviteeId: friendId,
-      );
-
-      if (!mounted) return;
-      context.hideLoadingDialog();
-
-      context.showSuccessSnackBar('招待を送信しました！');
-      logger.success('招待送信完了', name: _logName);
-    } catch (e, stack) {
-      logger.error('招待送信エラー: $e', name: _logName, error: e, stackTrace: stack);
-
-      if (!mounted) return;
-      context.hideLoadingDialog();
-
-      context.showErrorSnackBar('招待の送信に失敗しました: $e');
-    }
   }
 
   // ===== コメント取得ロジック =====
@@ -282,26 +138,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // ===== 延長リクエスト確認 =====
   
-  /// ✅ 追加: 自分宛の延長リクエストをチェック
   void _checkExtensionRequests() {
     if (_currentRoom == null) return;
     
     final currentUserId = _getCurrentUserId();
     if (currentUserId.isEmpty) return;
 
-    // 自分が受信者となっている未承認の延長リクエストを取得
     final newRequests = widget.storageService.extensionRequests
         .where((req) =>
             req.roomId == widget.roomId &&
             req.status == AppConstants.extensionStatusPending &&
-            req.requesterId != currentUserId) // 自分以外からのリクエスト
+            req.requesterId != currentUserId)
         .toList();
 
-    // 新しいリクエストがある場合のみダイアログ表示
     if (newRequests.isNotEmpty && newRequests.length != _pendingExtensionRequests.length) {
       _pendingExtensionRequests = newRequests;
       
-      // 最新のリクエストを表示
       final latestRequest = newRequests.last;
       _showExtensionRequestDialog(latestRequest);
     } else if (newRequests.isEmpty) {
@@ -309,7 +161,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// ✅ 追加: 延長リクエストダイアログを表示
   Future<void> _showExtensionRequestDialog(ExtensionRequest request) async {
     logger.section('延長リクエストダイアログ表示', name: _logName);
     logger.info('requestId: ${request.id}', name: _logName);
@@ -403,7 +254,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// ✅ 追加: 延長承認処理
   Future<void> _approveExtension(String requestId) async {
     logger.section('延長承認処理開始', name: _logName);
     logger.info('requestId: $requestId', name: _logName);
@@ -417,7 +267,6 @@ class _ChatScreenState extends State<ChatScreen> {
         'チャット時間が${AppConstants.extensionDurationMinutes}分延長されました'
       );
 
-      // ルーム情報を再読み込み
       _loadRoom();
       setState(() {});
 
@@ -430,7 +279,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// ✅ 追加: 延長拒否処理
   Future<void> _rejectExtension(String requestId) async {
     logger.section('延長拒否処理開始', name: _logName);
     logger.info('requestId: $requestId', name: _logName);
@@ -462,7 +310,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _loadRoom();
       
-      // ✅ 追加: 延長リクエストをチェック
       _checkExtensionRequests();
 
       if (_currentRoom == null) {
@@ -761,7 +608,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final isChatStarted = _currentRoom!.startedAt
         .isBefore(DateTime.now().add(const Duration(days: 300)));
 
-    // ✅ 相手がいるかどうかを判定
     final currentUserId = _getCurrentUserId();
     final partnerId = _currentRoom!.id1 == currentUserId
         ? _currentRoom!.id2
@@ -840,7 +686,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 padding: EdgeInsets.all(AppConstants.defaultPadding),
                 child: Column(
                   children: [
-                    // ✅ 相手のメッセージエリア（タップで招待）
                     Expanded(
                       child: GestureDetector(
                         onTap: !hasPartner && _currentRoom!.private
@@ -853,7 +698,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             borderRadius: BorderRadius.circular(
                               AppConstants.defaultBorderRadius,
                             ),
-                            // ✅ タップ可能な場合は枠線を表示
                             side: !hasPartner && _currentRoom!.private
                                 ? BorderSide(
                                     color: AppColors.primary,
@@ -876,7 +720,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                         color: AppColors.info,
                                       ),
                                     ),
-                                    // ✅ 招待可能アイコン
                                     if (!hasPartner &&
                                         _currentRoom!.private) ...[
                                       const Spacer(),
@@ -962,7 +805,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 自分のメッセージエリア
                     Expanded(
                       child: Card(
                         elevation: AppConstants.cardElevation,
@@ -1006,7 +848,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // 入力欄
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
