@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
-import '../../repositories/block_repository.dart';
-import '../../repositories/user_repository.dart';
+import '../../services/block_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -17,17 +17,18 @@ class BlockListScreen extends StatefulWidget {
 }
 
 class _BlockListScreenState extends State<BlockListScreen> {
-  final BlockRepository _blockRepository = BlockRepository();
-  final UserRepository _userRepository = UserRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   static const String _logName = 'BlockListScreen';
 
   bool _isLoading = true;
-  List<Map<String, dynamic>> _blockedUsers = [];
+  List<Map<String, String>> _blockedUsers = [];
+
+  late BlockService _blockService;
 
   @override
   void initState() {
     super.initState();
+    _blockService = context.read<BlockService>();
     _loadBlockedUsers();
   }
 
@@ -51,47 +52,12 @@ class _BlockListScreenState extends State<BlockListScreen> {
         return;
       }
 
-      logger.start('Repository経由でブロック一覧取得中...', name: _logName);
+      logger.start('Service経由でブロック一覧取得中...', name: _logName);
 
-      // Repository経由でブロック一覧を取得
-      final blocks = await _blockRepository.findBlockedUsers(currentUserEmail);
-
-      logger.success('ブロック取得: ${blocks.length}件', name: _logName);
-
-      // ブロックユーザーの情報を取得
-      final List<Map<String, dynamic>> blockedList = [];
-
-      for (var block in blocks) {
-        logger.debug('ブロックユーザーID: ${block.blockedId} を取得中...', name: _logName);
-
-        try {
-          // Repository経由でユーザー情報を取得
-          final blockedUser = await _userRepository.findById(block.blockedId);
-
-          if (blockedUser != null) {
-            blockedList.add({
-              'id': block.blockedId,
-              'name': blockedUser.displayName,
-              'blockId': block.id,
-            });
-            logger.debug('  → ${blockedUser.displayName}', name: _logName);
-          } else {
-            logger.warning('ユーザー情報なし: ${block.blockedId}', name: _logName);
-            blockedList.add({
-              'id': block.blockedId,
-              'name': block.blockedId,
-              'blockId': block.id,
-            });
-          }
-        } catch (e) {
-          logger.error('ブロックユーザー情報取得エラー: $e', name: _logName, error: e);
-          blockedList.add({
-            'id': block.blockedId,
-            'name': block.blockedId,
-            'blockId': block.id,
-          });
-        }
-      }
+      // BlockService経由でブロック一覧を取得（ユーザー情報付き）
+      final blockedList = await _blockService.getBlockedUsersWithInfo(
+        currentUserEmail,
+      );
 
       setState(() {
         _blockedUsers = blockedList;
@@ -150,10 +116,10 @@ class _BlockListScreenState extends State<BlockListScreen> {
     }
 
     try {
-      logger.start('Repository経由でブロック解除中...', name: _logName);
+      logger.start('Service経由でブロック解除中...', name: _logName);
 
-      // Repository経由で解除（ソフトデリート）
-      await _blockRepository.unblockById(user['blockId']);
+      // BlockService経由で解除
+      await _blockService.unblockById(user['blockId']!);
 
       logger.success('ブロック解除完了', name: _logName);
 
@@ -163,7 +129,6 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
       if (!mounted) return;
 
-      // ✅ context拡張メソッド使用
       context.showSuccessSnackBar('ブロックを解除しました');
 
       logger.section('_unblockUser() 完了', name: _logName);
@@ -176,14 +141,12 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    // ✅ context拡張メソッド使用
     context.showErrorSnackBar(message);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ 統一ヘッダーを使用
       appBar: CommonHeader(
         title: 'ブロック一覧',
         showNotifications: true,
@@ -242,68 +205,71 @@ class _BlockListScreenState extends State<BlockListScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppConstants.defaultPadding,
-                        ),
-                        itemCount: _blockedUsers.length,
-                        itemBuilder: (context, index) {
-                          final user = _blockedUsers[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: AppConstants.cardElevation,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                              side: BorderSide(
-                                color: AppColors.error,
-                                width: 2,
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.error,
-                                child: const Icon(
-                                  Icons.block,
-                                  color: Colors.white,
+                    : RefreshIndicator(
+                        onRefresh: _loadBlockedUsers,
+                        child: ListView.builder(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppConstants.defaultPadding,
+                          ),
+                          itemCount: _blockedUsers.length,
+                          itemBuilder: (context, index) {
+                            final user = _blockedUsers[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: AppConstants.cardElevation,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                side: BorderSide(
+                                  color: AppColors.error,
+                                  width: 2,
                                 ),
                               ),
-                              title: Text(
-                                user['name']!,
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.w600,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
                                 ),
-                              ),
-                              subtitle: Text(
-                                user['id']!,
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              trailing: ElevatedButton(
-                                onPressed: () => _unblockUser(index),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.info,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.error,
+                                  child: const Icon(
+                                    Icons.block,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                child: const Text(
-                                  '解除',
-                                  style: TextStyle(
-                                    color: Colors.white,
+                                title: Text(
+                                  user['name']!,
+                                  style: AppTextStyles.bodyLarge.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                subtitle: Text(
+                                  user['id']!,
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                trailing: ElevatedButton(
+                                  onPressed: () => _unblockUser(index),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.info,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '解除',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
           ),
         ],
