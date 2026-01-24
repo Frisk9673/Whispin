@@ -18,6 +18,235 @@ class ChatService {
 
   ChatService(this._storageService);
 
+  // ===== ルーム検索機能 =====
+
+  /// ルームを検索（topic名で検索 + ブロックフィルタ）
+  ///
+  /// [searchQuery] 検索クエリ（ルーム名）
+  /// [currentUserId] 現在のユーザーID
+  /// [blockRepository] BlockRepositoryインスタンス
+  ///
+  /// 戻り値: フィルタリング済みのルームリスト
+  ///
+  /// 処理内容:
+  /// 1. ブロック関係を取得
+  /// 2. 全ルームを取得
+  /// 3. 以下の条件でフィルタリング:
+  ///    - topic名が部分一致（大文字小文字区別なし）
+  ///    - 参加待ち状態（status = 0）
+  ///    - 期限切れでない
+  ///    - ブロック関係のないユーザー
+  /// 4. 作成日時でソート（新しい順）
+  Future<List<ChatRoom>> searchRooms({
+    required String searchQuery,
+    required String currentUserId,
+    required dynamic blockRepository, // BlockRepository型
+  }) async {
+    logger.section('searchRooms() 開始', name: _logName);
+    logger.info('検索キーワード: $searchQuery', name: _logName);
+    logger.info('検索ユーザー: $currentUserId', name: _logName);
+
+    try {
+      // ===== ステップ1: ブロック関係を取得 =====
+      logger.start('ブロック関係を取得中...', name: _logName);
+
+      final blockedByMe = await blockRepository.findBlockedUsers(currentUserId);
+      final blockedMe = await blockRepository.findBlockedBy(currentUserId);
+
+      final blockedUserIds = <String>{
+        ...blockedByMe.map((b) => b.blockedId),
+        ...blockedMe.map((b) => b.blockerId),
+      };
+
+      logger.success('ブロック関係取得: ${blockedUserIds.length}人', name: _logName);
+      if (blockedUserIds.isNotEmpty) {
+        logger.debug('ブロックユーザー: ${blockedUserIds.join(", ")}', name: _logName);
+      }
+
+      // ===== ステップ2: 全ルームを取得 =====
+      logger.start('全ルーム取得中...', name: _logName);
+      final allRooms = await _roomRepository.findAll();
+      logger.success('全ルーム数: ${allRooms.length}件', name: _logName);
+
+      // ===== ステップ3: フィルタリング =====
+      logger.start('フィルタリング中...', name: _logName);
+
+      final now = DateTime.now();
+      final filteredRooms = allRooms.where((room) {
+        // 3-1. topic名で部分一致検索（大文字小文字区別なし）
+        final topicLower = room.topic.toLowerCase();
+        final queryLower = searchQuery.toLowerCase();
+        if (!topicLower.contains(queryLower)) {
+          return false;
+        }
+
+        // 3-2. 参加待ち状態でないルームは除外
+        if (!room.isWaiting) {
+          logger.debug('除外: 参加待ちでない - ${room.topic}', name: _logName);
+          return false;
+        }
+
+        // 3-3. アクティブなルームで期限切れの場合は除外
+        if (room.isActive && now.isAfter(room.expiresAt)) {
+          logger.debug('除外: 期限切れ - ${room.topic}', name: _logName);
+          return false;
+        }
+
+        // 3-4. ブロック関係チェック
+        final creatorId = room.id1;
+        if (creatorId != null && blockedUserIds.contains(creatorId)) {
+          logger.debug('除外: ブロック関係 - ${room.topic} (作成者: $creatorId)',
+              name: _logName);
+          return false;
+        }
+
+        return true;
+      }).toList();
+
+      // ===== ステップ4: 作成日時でソート（新しい順） =====
+      filteredRooms.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+
+      logger.success('検索完了: ${filteredRooms.length}件', name: _logName);
+      logger.section('searchRooms() 終了', name: _logName);
+
+      return filteredRooms;
+    } catch (e, stack) {
+      logger.error('searchRooms() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// 参加可能なルーム一覧を取得（フィルタリング済み）
+  ///
+  /// [currentUserId] 現在のユーザーID
+  /// [blockRepository] BlockRepositoryインスタンス
+  ///
+  /// 戻り値: 参加可能なルームリスト
+  ///
+  /// 処理内容:
+  /// - 待機中のルームのみ
+  /// - 期限切れでない
+  /// - ブロック関係のないユーザー
+  /// - 自分が作成したルームを除外
+  Future<List<ChatRoom>> getJoinableRooms({
+    required String currentUserId,
+    required dynamic blockRepository,
+  }) async {
+    logger.section('getJoinableRooms() 開始', name: _logName);
+    logger.info('currentUserId: $currentUserId', name: _logName);
+
+    try {
+      // ブロック関係を取得
+      logger.start('ブロック関係を取得中...', name: _logName);
+
+      final blockedByMe = await blockRepository.findBlockedUsers(currentUserId);
+      final blockedMe = await blockRepository.findBlockedBy(currentUserId);
+
+      final blockedUserIds = <String>{
+        ...blockedByMe.map((b) => b.blockedId),
+        ...blockedMe.map((b) => b.blockerId),
+      };
+
+      logger.success('ブロック関係取得: ${blockedUserIds.length}人', name: _logName);
+
+      // Repository経由で参加可能なルームを取得
+      logger.start('参加可能なルーム取得中...', name: _logName);
+      final rooms = await _roomRepository.findJoinableRooms(
+        excludeUserId: currentUserId,
+      );
+
+      logger.success('初期取得: ${rooms.length}件', name: _logName);
+
+      // ブロック関係でフィルタリング
+      final filteredRooms = rooms.where((room) {
+        final creatorId = room.id1;
+        if (creatorId != null && blockedUserIds.contains(creatorId)) {
+          logger.debug('除外: ブロック関係 - ${room.topic}', name: _logName);
+          return false;
+        }
+        return true;
+      }).toList();
+
+      // 作成日時でソート（新しい順）
+      filteredRooms.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+
+      logger.success('参加可能なルーム: ${filteredRooms.length}件', name: _logName);
+      logger.section('getJoinableRooms() 終了', name: _logName);
+
+      return filteredRooms;
+    } catch (e, stack) {
+      logger.error('getJoinableRooms() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// ルーム参加処理（統合版）
+  ///
+  /// [roomId] 参加先ルームID
+  /// [currentUserId] 現在のユーザーID
+  /// [userRepository] UserRepositoryインスタンス
+  ///
+  /// 戻り値: 更新されたルーム
+  ///
+  /// 処理内容:
+  /// 1. Repository経由でルームに参加
+  /// 2. ユーザーのルーム参加回数を更新
+  /// 3. タイマーを開始
+  Future<ChatRoom> joinRoomWithUserUpdate({
+    required String roomId,
+    required String currentUserId,
+    required dynamic userRepository, // UserRepository型
+  }) async {
+    logger.section('joinRoomWithUserUpdate() 開始', name: _logName);
+    logger.info('roomId: $roomId', name: _logName);
+    logger.info('userId: $currentUserId', name: _logName);
+
+    try {
+      // ===== 1. ルームに参加 =====
+      logger.start('Repository経由でルーム参加中...', name: _logName);
+      await _roomRepository.joinRoom(roomId, currentUserId);
+      logger.success('ルーム参加成功', name: _logName);
+
+      // ===== 2. 更新されたルームを取得 =====
+      final updatedRoom = await _roomRepository.findById(roomId);
+      if (updatedRoom == null) {
+        throw Exception('ルームが見つかりません');
+      }
+
+      // StorageServiceも更新
+      final roomIndex = _storageService.rooms.indexWhere((r) => r.id == roomId);
+      if (roomIndex != -1) {
+        _storageService.rooms[roomIndex] = updatedRoom;
+        await _storageService.save();
+      }
+
+      // ===== 3. ユーザーのルーム参加回数を更新 =====
+      try {
+        logger.start('ルーム参加回数更新中...', name: _logName);
+        await userRepository.incrementRoomCount(currentUserId);
+        logger.success('ルーム参加回数更新完了', name: _logName);
+      } catch (e) {
+        logger.warning('ルーム参加回数更新失敗: $e', name: _logName);
+        // 参加回数更新失敗は致命的エラーではないため続行
+      }
+
+      // ===== 4. タイマーを開始 =====
+      logger.start('ルームタイマー開始中...', name: _logName);
+      startRoomTimer(roomId, updatedRoom.expiresAt);
+      logger.success('ルームタイマー開始完了', name: _logName);
+
+      logger.section('joinRoomWithUserUpdate() 完了', name: _logName);
+
+      return updatedRoom;
+    } catch (e, stack) {
+      logger.error('joinRoomWithUserUpdate() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
   // ===== ルーム作成 =====
 
   /// ルームを作成

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:whispin/repositories/user_repository.dart';
 import '../../widgets/common/header.dart';
-import '../../repositories/chat_room_repository.dart';
-import '../../repositories/user_repository.dart';
 import '../../repositories/block_repository.dart';
 import '../../providers/user_provider.dart';
 import '../../models/chat_room.dart';
@@ -16,6 +15,9 @@ import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// ルーム参加画面（リファクタリング版）
+///
+/// 検索・フィルタリングロジックはChatServiceに移譲
 class RoomJoinScreen extends StatefulWidget {
   const RoomJoinScreen({super.key});
 
@@ -25,8 +27,6 @@ class RoomJoinScreen extends StatefulWidget {
 
 class _RoomJoinScreenState extends State<RoomJoinScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final _roomRepository = ChatRoomRepository();
-  final _userRepository = UserRepository();
   final _blockRepository = BlockRepository();
 
   bool _isLoading = false;
@@ -34,13 +34,21 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   List<ChatRoom> _searchResults = [];
   static const String _logName = 'RoomJoinScreen';
 
+  late ChatService _chatService;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatService = context.read<ChatService>();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  /// ルームを検索（topic名で検索 + ブロックフィルタ）
+  /// ルームを検索（ChatServiceに移譲）
   Future<void> _searchRooms() async {
     final searchQuery = _searchController.text.trim();
 
@@ -56,7 +64,6 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
     try {
       logger.section('ルーム検索開始', name: _logName);
-      logger.info('検索キーワード: $searchQuery', name: _logName);
 
       final userProvider = context.read<UserProvider>();
       final currentUser = userProvider.currentUser;
@@ -68,70 +75,18 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       }
 
       final currentUserEmail = currentUser.id;
-      logger.info('検索ユーザー: $currentUserEmail', name: _logName);
 
-      // ステップ1: ブロック関係を取得
-      logger.start('ブロック関係を取得中...', name: _logName);
+      // ===== ChatServiceに検索処理を移譲 =====
+      logger.start('ChatService.searchRooms() 実行中...', name: _logName);
 
-      final blockedByMe =
-          await _blockRepository.findBlockedUsers(currentUserEmail);
-      final blockedMe = await _blockRepository.findBlockedBy(currentUserEmail);
-
-      final blockedUserIds = <String>{
-        ...blockedByMe.map((b) => b.blockedId),
-        ...blockedMe.map((b) => b.blockerId),
-      };
-
-      logger.success('ブロック関係取得: ${blockedUserIds.length}人', name: _logName);
-      if (blockedUserIds.isNotEmpty) {
-        logger.debug('ブロックユーザー: ${blockedUserIds.join(", ")}', name: _logName);
-      }
-
-      // ステップ2: 全ルームを取得
-      logger.start('全ルーム取得中...', name: _logName);
-      final allRooms = await _roomRepository.findAll();
-      logger.success('全ルーム数: ${allRooms.length}件', name: _logName);
-
-      // ステップ3: フィルタリング
-      logger.start('フィルタリング中...', name: _logName);
-
-      final now = DateTime.now();
-      final filteredRooms = allRooms.where((room) {
-        // 3-1. topic名で部分一致検索（大文字小文字区別なし）
-        final topicLower = room.topic.toLowerCase();
-        final queryLower = searchQuery.toLowerCase();
-        if (!topicLower.contains(queryLower)) {
-          return false;
-        }
-
-        // 3-2. 参加待ち状態でないルームは除外 ★追加
-        if (!room.isWaiting) {
-          logger.debug('除外: 参加待ちでない - ${room.topic}', name: _logName);
-          return false;
-        }
-
-        // 3-3. アクティブなルームで期限切れの場合は除外
-        if (room.isActive && now.isAfter(room.expiresAt)) {
-          logger.debug('除外: 期限切れ - ${room.topic}', name: _logName);
-          return false;
-        }
-
-        // 3-4. ブロック関係チェック
-        final creatorId = room.id1;
-        if (creatorId != null && blockedUserIds.contains(creatorId)) {
-          logger.debug('除外: ブロック関係 - ${room.topic} (作成者: $creatorId)',
-              name: _logName);
-          return false;
-        }
-
-        return true;
-      }).toList();
-
-      // ステップ4: 作成日時でソート（新しい順）
-      filteredRooms.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+      final results = await _chatService.searchRooms(
+        searchQuery: searchQuery,
+        currentUserId: currentUserEmail,
+        blockRepository: _blockRepository,
+      );
 
       setState(() {
-        _searchResults = filteredRooms;
+        _searchResults = results;
         _isSearching = false;
       });
 
@@ -149,7 +104,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     }
   }
 
-  /// ルームに参加
+  /// ルームに参加（ChatServiceに移譲）
   Future<void> _joinRoom(ChatRoom room) async {
     logger.section('ルーム参加処理開始', name: _logName);
     logger.info('参加先: ${room.topic} (${room.id})', name: _logName);
@@ -168,18 +123,17 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
       final currentUserEmail = currentUser.id;
 
-      // Repository経由でルームに参加
-      logger.start('Repository経由でルーム参加中...', name: _logName);
-      await _roomRepository.joinRoom(room.id, currentUserEmail);
-      logger.success('ルーム参加成功', name: _logName);
+      // ===== ChatServiceに参加処理を移譲 =====
+      logger.start('ChatService.joinRoomWithUserUpdate() 実行中...',
+          name: _logName);
 
-      // ユーザーのルーム参加回数を更新
-      try {
-        await _userRepository.incrementRoomCount(currentUserEmail);
-        logger.success('ルーム参加回数更新完了', name: _logName);
-      } catch (e) {
-        logger.warning('ルーム参加回数更新失敗: $e', name: _logName);
-      }
+      await _chatService.joinRoomWithUserUpdate(
+        roomId: room.id,
+        currentUserId: currentUserEmail,
+        userRepository: context.read<UserRepository>(),
+      );
+
+      logger.success('ルーム参加成功', name: _logName);
 
       setState(() => _isLoading = false);
 
@@ -194,7 +148,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         context,
         roomId: room.id,
         authService: context.read<AuthService>(),
-        chatService: context.read<ChatService>(),
+        chatService: _chatService,
         storageService: context.read<StorageService>(),
       );
 

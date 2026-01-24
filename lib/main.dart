@@ -117,7 +117,6 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        // Providers
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(
           create: (_) => UserProvider(userRepository: userRepository),
