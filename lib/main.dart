@@ -106,6 +106,7 @@ Future<void> main() async {
 
   logger.success('Repositories 初期化完了', name: 'Main');
 
+  // Service層の初期化
   logger.start('FriendshipService 初期化中...', name: 'Main');
   final friendshipService = FriendshipService(
     friendshipRepository: friendshipRepository,
@@ -113,11 +114,19 @@ Future<void> main() async {
   );
   logger.success('FriendshipService 初期化完了', name: 'Main');
 
+  logger.start('BlockService 初期化中...', name: 'Main');
+  final blockService = BlockService(
+    blockRepository: blockRepository,
+    userRepository: userRepository,
+  );
+  logger.success('BlockService 初期化完了', name: 'Main');
+
   logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
   runApp(
     MultiProvider(
       providers: [
+        // Providers
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(
           create: (_) => UserProvider(userRepository: userRepository),
@@ -135,12 +144,7 @@ Future<void> main() async {
         Provider<StartupInvitationService>.value(
             value: startupInvitationService),
         Provider<FriendshipService>.value(value: friendshipService),
-        Provider<BlockService>(
-          create: (context) => BlockService(
-            blockRepository: context.read<BlockRepository>(),
-            userRepository: context.read<UserRepository>(),
-          ),
-        ),
+        Provider<BlockService>.value(value: blockService), // ✅ 追加
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
