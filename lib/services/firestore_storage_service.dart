@@ -10,7 +10,6 @@ import '../models/user_evaluation.dart';
 import '../models/extension_request.dart';
 import '../models/block.dart';
 import '../models/invitation.dart';
-import '../models/local_auth_user.dart';
 
 /// Firestore を使用したデータ永続化サービス
 ///
@@ -22,7 +21,6 @@ class FirestoreStorageService implements StorageService {
   // データストア
   List<User> _users = [];
   List<ChatRoom> _rooms = [];
-  List<LocalAuthUser> _authUsers = [];
   List<Friendship> _friendships = [];
   List<FriendRequest> _friendRequests = [];
   List<UserEvaluation> _evaluations = [];
@@ -56,12 +54,6 @@ class FirestoreStorageService implements StorageService {
 
   @override
   set rooms(List<ChatRoom> value) => _rooms = value;
-
-  @override
-  List<LocalAuthUser> get authUsers => _authUsers;
-
-  @override
-  set authUsers(List<LocalAuthUser> value) => _authUsers = value;
 
   @override
   List<Friendship> get friendships => _friendships;

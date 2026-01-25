@@ -7,11 +7,10 @@ import '../models/user_evaluation.dart';
 import '../models/extension_request.dart';
 import '../models/block.dart';
 import '../models/invitation.dart';
-import '../models/local_auth_user.dart';
 
 /// データ永続化のための抽象インターフェース
 ///
-/// localStorage（Web）とFirestore（Flutter）の両方の実装をサポートします。
+/// Firestore実装をサポートします。
 abstract class StorageService {
   /// サービスの初期化
   Future<void> initialize();
@@ -29,10 +28,6 @@ abstract class StorageService {
   /// チャットルーム一覧
   List<ChatRoom> get rooms;
   set rooms(List<ChatRoom> value);
-
-  /// ローカル認証ユーザー一覧（localStorage mode only）
-  List<LocalAuthUser> get authUsers;
-  set authUsers(List<LocalAuthUser> value);
 
   /// フレンドシップ一覧
   List<Friendship> get friendships;

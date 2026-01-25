@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:whispin/services/auth_service.dart';
 import '../../widgets/common/header.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
@@ -124,15 +123,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.showLoadingDialog(message: 'アカウントを削除しています...');
 
     try {
-      // 🔥 ここで「処理を呼び出す」
-      await context.read<AuthService>().deleteAccount(email);
+      // ✅ 修正: UserProvider経由でアカウント削除
+      logger.start('UserProvider.deleteAccount() 実行中...', name: _logName);
+      await userProvider.deleteAccount();
+      logger.success('UserProvider.deleteAccount() 完了', name: _logName);
 
-      userProvider.clearUser();
+      // Firebase Authからもログアウト
+      logger.start('Firebase Auth ログアウト中...', name: _logName);
       await FirebaseAuth.instance.signOut();
+      logger.success('Firebase Auth ログアウト完了', name: _logName);
 
       context.hideLoadingDialog();
 
       if (!mounted) return;
+
+      logger.success('アカウント削除処理完了', name: _logName);
+      logger.section('アカウント削除完了', name: _logName);
+
       NavigationHelper.toLogin(context);
     } catch (e, stack) {
       logger.error(
@@ -143,6 +150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       context.hideLoadingDialog();
+      
+      if (!mounted) return;
+      
       context.showErrorSnackBar(e.toString());
     }
   }
