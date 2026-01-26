@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
+import '../../widgets/common/unified_widgets.dart';
 import '../../models/chat_room.dart';
 import '../../repositories/chat_room_repository.dart';
 import '../../services/auth_service.dart';
@@ -14,7 +15,7 @@ import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
-/// ルーム作成画面（Private対応版）
+/// ルーム作成画面（統一ウィジェット適用版）
 class RoomCreateScreen extends StatefulWidget {
   const RoomCreateScreen({super.key});
 
@@ -28,7 +29,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isLoading = false;
-  bool _isPrivate = false; // ✅ 追加: Privateフラグ
+  bool _isPrivate = false;
   static const String _logName = 'RoomCreateScreen';
 
   @override
@@ -37,11 +38,9 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
     super.dispose();
   }
 
-  /// ルーム作成処理
   Future<void> _createRoom() async {
     final roomName = _roomNameController.text.trim();
 
-    // バリデーション
     if (roomName.isEmpty) {
       context.showErrorSnackBar('ルーム名を入力してください');
       return;
@@ -74,12 +73,11 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
       logger.info('作成者: $currentUserEmail', name: _logName);
       logger.info('ルーム名: $roomName', name: _logName);
-      logger.info('プライベート: $_isPrivate', name: _logName); // ✅ ログ追加
+      logger.info('プライベート: $_isPrivate', name: _logName);
 
       final roomId = DateTime.now().millisecondsSinceEpoch.toString();
       final farFuture = DateTime.now().add(const Duration(days: 365));
 
-      // ✅ Private設定を含むChatRoomオブジェクトを作成
       final newRoom = ChatRoom(
         id: roomId,
         topic: roomName,
@@ -92,22 +90,17 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         extension: AppConstants.defaultExtensionLimit,
         comment1: '',
         comment2: '',
-        private: _isPrivate, // ✅ Private設定を反映
+        private: _isPrivate,
       );
 
-      // Repository経由でFirestoreに保存
       await _roomRepository.create(newRoom, id: roomId);
 
       logger.success('ルーム作成完了: $roomId', name: _logName);
-      logger.info('ルーム情報: $newRoom', name: _logName);
 
       if (!mounted) return;
 
-      logger.start('チャット画面へ自動遷移します', name: _logName);
-
       setState(() => _isLoading = false);
 
-      // NavigationHelperを使用してチャット画面へ遷移
       await NavigationHelper.toChat(
         context,
         roomId: roomId,
@@ -116,7 +109,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         storageService: context.read<StorageService>(),
       );
 
-      logger.success('チャット画面遷移完了', name: _logName);
       logger.section('ルーム作成処理完了', name: _logName);
     } catch (e, stack) {
       logger.error('ルーム作成エラー: $e', name: _logName, error: e, stackTrace: stack);
@@ -164,7 +156,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
               const SizedBox(height: 24),
 
-              // タイトル
               Text(
                 '部屋を作成',
                 style: AppTextStyles.headlineLarge,
@@ -213,7 +204,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
                         const SizedBox(height: 24),
 
-                        // ✅ Private/Public切り替え
+                        // Private/Public切り替え
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -277,47 +268,11 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
                         const SizedBox(height: 24),
 
-                        // 作成ボタン
-                        SizedBox(
-                          height: AppConstants.buttonHeight,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _createRoom,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius),
-                              ),
-                            ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: _isLoading
-                                    ? null
-                                    : AppColors.primaryGradient,
-                                color: _isLoading ? AppColors.divider : null,
-                                borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius),
-                              ),
-                              child: Container(
-                                alignment: Alignment.center,
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.textWhite,
-                                        ),
-                                      )
-                                    : Text(
-                                        'ルームを作成',
-                                        style: AppTextStyles.buttonMedium,
-                                      ),
-                              ),
-                            ),
-                          ),
+                        // 作成ボタン（統一ウィジェット使用）
+                        GradientButton(
+                          label: 'ルームを作成',
+                          onPressed: _createRoom,
+                          isLoading: _isLoading,
                         ),
                       ],
                     ),
@@ -327,85 +282,48 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
 
               const SizedBox(height: 24),
 
-              // 情報カード
+              // 情報カード（統一ウィジェット使用）
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
-                child: Card(
-                  elevation: 2,
-                  color: AppColors.info.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.defaultBorderRadius),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(AppConstants.defaultPadding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: AppColors.info,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'ルーム情報',
-                              style: AppTextStyles.titleSmall.copyWith(
-                                color: AppColors.info,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoItem(
-                          _isPrivate
-                              ? '作成後、フレンドを招待できます'
-                              : '作成後、チャット画面で相手の参加を待ちます',
-                        ),
-                        _buildInfoItem(
-                          _isPrivate ? 'ルーム検索には表示されません' : 'ルーム名で検索して参加してもらえます',
-                        ),
-                        _buildInfoItem('最大2人まで参加可能'),
-                        _buildInfoItem(
-                            '2人目が参加すると${AppConstants.defaultChatDurationMinutes}分間のチャット開始'),
-                        _buildInfoItem(
-                            '残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能'),
-                        _buildInfoItem('両者退出で自動削除'),
-                      ],
+                child: InfoCard(
+                  icon: Icons.info_outline,
+                  title: 'ルーム情報',
+                  iconColor: AppColors.info,
+                  children: [
+                    InfoItem(
+                      text: _isPrivate
+                          ? '作成後、フレンドを招待できます'
+                          : '作成後、チャット画面で相手の参加を待ちます',
+                      color: AppColors.info,
                     ),
-                  ),
+                    InfoItem(
+                      text: _isPrivate
+                          ? 'ルーム検索には表示されません'
+                          : 'ルーム名で検索して参加してもらえます',
+                      color: AppColors.info,
+                    ),
+                    InfoItem(
+                      text: '最大2人まで参加可能',
+                      color: AppColors.info,
+                    ),
+                    InfoItem(
+                      text: '2人目が参加すると${AppConstants.defaultChatDurationMinutes}分間のチャット開始',
+                      color: AppColors.info,
+                    ),
+                    InfoItem(
+                      text: '残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能',
+                      color: AppColors.info,
+                    ),
+                    InfoItem(
+                      text: '両者退出で自動削除',
+                      color: AppColors.info,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// 情報アイテムを構築
-  Widget _buildInfoItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: AppColors.info,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.info,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

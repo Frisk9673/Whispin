@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
+import '../../widgets/common/unified_widgets.dart';
 import '../../services/block_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
-import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
@@ -54,7 +54,6 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
       logger.start('Service経由でブロック一覧取得中...', name: _logName);
 
-      // BlockService経由でブロック一覧を取得（ユーザー情報付き）
       final blockedList = await _blockService.getBlockedUsersWithInfo(
         currentUserEmail,
       );
@@ -70,7 +69,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
       logger.error('ブロック一覧取得エラー: $e',
           name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
-      _showError('ブロック一覧の取得に失敗しました: $e');
+      context.showErrorSnackBar('ブロック一覧の取得に失敗しました: $e');
     }
   }
 
@@ -80,37 +79,14 @@ class _BlockListScreenState extends State<BlockListScreen> {
     logger.section('_unblockUser() 開始', name: _logName);
     logger.info('対象ユーザー: ${user['name']}', name: _logName);
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        ),
-        title: Text('ブロック解除', style: AppTextStyles.titleLarge),
-        content: Text(
-          '${user['name']} のブロックを解除しますか？',
-          style: AppTextStyles.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('キャンセル'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.info,
-            ),
-            child: const Text(
-              '解除',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+    final result = await context.showConfirmDialog(
+      title: 'ブロック解除',
+      message: '${user['name']} のブロックを解除しますか？',
+      confirmText: '解除',
+      cancelText: 'キャンセル',
     );
 
-    if (result != true) {
+    if (!result) {
       logger.info('解除キャンセル', name: _logName);
       return;
     }
@@ -118,7 +94,6 @@ class _BlockListScreenState extends State<BlockListScreen> {
     try {
       logger.start('Service経由でブロック解除中...', name: _logName);
 
-      // BlockService経由で解除
       await _blockService.unblockById(user['blockId']!);
 
       logger.success('ブロック解除完了', name: _logName);
@@ -135,13 +110,8 @@ class _BlockListScreenState extends State<BlockListScreen> {
     } catch (e, stack) {
       logger.error('ブロック解除エラー: $e',
           name: _logName, error: e, stackTrace: stack);
-      _showError('ブロック解除に失敗しました: $e');
+      context.showErrorSnackBar('ブロック解除に失敗しました: $e');
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    context.showErrorSnackBar(message);
   }
 
   @override
@@ -156,54 +126,24 @@ class _BlockListScreenState extends State<BlockListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // サブヘッダー（アイコン付きタイトル）
-          Padding(
-            padding: EdgeInsets.all(AppConstants.defaultPadding),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.block,
-                  size: 32,
-                  color: AppColors.error,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'ブロック一覧',
-                  style: AppTextStyles.headlineMedium.copyWith(
-                    color: AppColors.error,
-                  ),
-                ),
-              ],
-            ),
+          // セクションヘッダー（統一ウィジェット使用）
+          SectionHeader(
+            icon: Icons.block,
+            title: 'ブロック一覧',
+            color: AppColors.error,
           ),
 
           // ブロックリスト
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.error,
-                    ),
+                ? LoadingWidget( // 統一ウィジェット使用
+                    color: AppColors.error,
                   )
                 : _blockedUsers.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 80,
-                              color: AppColors.success,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'ブロック中のユーザーはいません',
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                    ? EmptyStateWidget( // 統一ウィジェット使用
+                        icon: Icons.check_circle_outline,
+                        title: 'ブロック中のユーザーはいません',
+                        iconColor: AppColors.success,
                       )
                     : RefreshIndicator(
                         onRefresh: _loadBlockedUsers,
@@ -214,59 +154,33 @@ class _BlockListScreenState extends State<BlockListScreen> {
                           itemCount: _blockedUsers.length,
                           itemBuilder: (context, index) {
                             final user = _blockedUsers[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: AppConstants.cardElevation,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.defaultBorderRadius,
-                                ),
-                                side: BorderSide(
-                                  color: AppColors.error,
-                                  width: 2,
+                            return ListItemCard( // 統一ウィジェット使用
+                              leading: CircleAvatar(
+                                backgroundColor: AppColors.error,
+                                child: const Icon(
+                                  Icons.block,
+                                  color: Colors.white,
                                 ),
                               ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                leading: CircleAvatar(
-                                  backgroundColor: AppColors.error,
-                                  child: const Icon(
-                                    Icons.block,
-                                    color: Colors.white,
+                              title: user['name']!,
+                              subtitle: user['id']!,
+                              trailing: ElevatedButton(
+                                onPressed: () => _unblockUser(index),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.info,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                title: Text(
-                                  user['name']!,
-                                  style: AppTextStyles.bodyLarge.copyWith(
+                                child: const Text(
+                                  '解除',
+                                  style: TextStyle(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                subtitle: Text(
-                                  user['id']!,
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                trailing: ElevatedButton(
-                                  onPressed: () => _unblockUser(index),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.info,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    '解除',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
                               ),
+                              borderColor: AppColors.error,
                             );
                           },
                         ),

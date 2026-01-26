@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
+import '../../widgets/common/unified_widgets.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
@@ -43,8 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     UserProvider userProvider,
   ) async {
     logger.section('プレミアムボタン押下', name: _logName);
-    logger.info('現在のユーザー: ${userProvider.currentUser?.id}', name: _logName);
-    logger.info('現在のプレミアム状態: ${userProvider.isPremium}', name: _logName);
 
     if (userProvider.currentUser == null) {
       logger.error('currentUserがnull', name: _logName);
@@ -123,12 +122,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.showLoadingDialog(message: 'アカウントを削除しています...');
 
     try {
-      // ✅ 修正: UserProvider経由でアカウント削除
       logger.start('UserProvider.deleteAccount() 実行中...', name: _logName);
       await userProvider.deleteAccount();
       logger.success('UserProvider.deleteAccount() 完了', name: _logName);
 
-      // Firebase Authからもログアウト
       logger.start('Firebase Auth ログアウト中...', name: _logName);
       await FirebaseAuth.instance.signOut();
       logger.success('Firebase Auth ログアウト完了', name: _logName);
@@ -138,7 +135,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       logger.success('アカウント削除処理完了', name: _logName);
-      logger.section('アカウント削除完了', name: _logName);
 
       NavigationHelper.toLogin(context);
     } catch (e, stack) {
@@ -157,6 +153,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTextStyles.labelMedium),
+              const SizedBox(height: 4),
+              Text(value, style: AppTextStyles.bodyLarge),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
@@ -170,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         showPremiumBadge: true,
       ),
       body: userProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingWidget() // 統一ウィジェット使用
           : SingleChildScrollView(
               padding: EdgeInsets.all(AppConstants.defaultPadding),
               child: Column(
@@ -302,18 +324,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 24),
 
-                  _buildActionButton(
+                  // アクションボタン（統一ウィジェット使用）
+                  GradientButton(
                     icon: userProvider.isPremium
                         ? Icons.diamond_outlined
                         : Icons.diamond,
                     label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
-                    gradient: AppColors.primaryGradient,
-                    onTap: () => _handlePremiumButton(context, userProvider),
+                    onPressed: () => _handlePremiumButton(context, userProvider),
                   ),
 
                   const SizedBox(height: 12),
 
-                  _buildActionButton(
+                  GradientButton(
                     icon: Icons.support_agent,
                     label: 'お問い合わせ',
                     gradient: LinearGradient(
@@ -322,12 +344,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         AppColors.info.darken(0.15),
                       ],
                     ),
-                    onTap: () => NavigationHelper.toUserChat(context),
+                    onPressed: () => NavigationHelper.toUserChat(context),
                   ),
 
                   const SizedBox(height: 12),
 
-                  _buildActionButton(
+                  GradientButton(
                     icon: Icons.logout,
                     label: 'ログアウト',
                     gradient: LinearGradient(
@@ -336,11 +358,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         AppColors.error.darken(0.15),
                       ],
                     ),
-                    onTap: _logout,
+                    onPressed: _logout,
                   ),
+
                   const SizedBox(height: 12),
 
-                  _buildActionButton(
+                  GradientButton(
                     icon: Icons.delete_forever,
                     label: 'アカウント削除',
                     gradient: LinearGradient(
@@ -349,75 +372,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Colors.grey.shade800,
                       ],
                     ),
-                    onTap: () {
-                      logger.info('アカウント削除ボタン押下', name: _logName);
-                      _deleteAccount(context);
-                    },
+                    onPressed: () => _deleteAccount(context),
                   ),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: AppColors.primary),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.labelMedium),
-              const SizedBox(height: 4),
-              Text(value, style: AppTextStyles.bodyLarge),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Gradient gradient,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: AppConstants.cardElevation,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius:
-                BorderRadius.circular(AppConstants.defaultBorderRadius),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  color: AppColors.textWhite, size: AppConstants.iconSize),
-              const SizedBox(width: 12),
-              Text(label, style: AppTextStyles.buttonMedium),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

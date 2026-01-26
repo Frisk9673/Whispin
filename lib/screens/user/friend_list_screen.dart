@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
+import '../../widgets/common/unified_widgets.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/block_repository.dart';
 import '../../services/friendship_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
-import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
@@ -104,11 +104,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
       logger.error('フレンド一覧取得エラー: $e',
           name: _logName, error: e, stackTrace: stack);
       setState(() => _isLoading = false);
-      _showError('フレンド一覧の取得に失敗しました: $e');
+      context.showErrorSnackBar('フレンド一覧の取得に失敗しました: $e');
     }
   }
 
-  /// フレンド削除 or ブロック選択ダイアログ
   Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
 
@@ -132,15 +131,13 @@ class _FriendListScreenState extends State<FriendListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${friend['name']} との関係を解除します。',
-              style: AppTextStyles.bodyMedium,
-            ),
+            Text('${friend['name']} との関係を解除します。'),
             const SizedBox(height: 16),
             Text(
               'どのように削除しますか？',
-              style: AppTextStyles.titleSmall.copyWith(
+              style: TextStyle(
                 color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -217,11 +214,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
       logger.error('削除エラー: $e', name: _logName, error: e, stackTrace: stack);
       context.hideLoadingDialog();
       if (!mounted) return;
-      _showError('削除に失敗しました: $e');
+      context.showErrorSnackBar('削除に失敗しました: $e');
     }
   }
 
-  /// ブロックしてフレンド削除
   Future<void> _blockAndRemoveFriend(int index) async {
     final friend = _friends[index];
     final currentUserEmail = _auth.currentUser!.email!;
@@ -257,13 +253,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
       logger.error('ブロック&削除エラー: $e', name: _logName, error: e, stackTrace: stack);
       context.hideLoadingDialog();
       if (!mounted) return;
-      _showError('処理に失敗しました: $e');
+      context.showErrorSnackBar('処理に失敗しました: $e');
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    context.showErrorSnackBar(message);
   }
 
   @override
@@ -278,54 +269,21 @@ class _FriendListScreenState extends State<FriendListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // サブヘッダー
-          Padding(
-            padding: EdgeInsets.all(AppConstants.defaultPadding),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.people,
-                  size: 32,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'フレンド一覧',
-                  style: AppTextStyles.headlineMedium.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
+          // セクションヘッダー（統一ウィジェット使用）
+          SectionHeader(
+            icon: Icons.people,
+            title: 'フレンド一覧',
           ),
 
           // フレンドリスト
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                  )
+                ? const LoadingWidget() // 統一ウィジェット使用
                 : _friends.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.person_off,
-                              size: 80,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'フレンドがいません',
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                    ? EmptyStateWidget( // 統一ウィジェット使用
+                        icon: Icons.person_off,
+                        title: 'フレンドがいません',
+                        subtitle: '新しいフレンドを追加しましょう',
                       )
                     : RefreshIndicator(
                         onRefresh: _loadFriends,
@@ -336,53 +294,20 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           itemCount: _friends.length,
                           itemBuilder: (context, index) {
                             final friend = _friends[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: AppConstants.cardElevation,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.defaultBorderRadius,
-                                ),
-                                side: BorderSide(
-                                  color: AppColors.border,
-                                  width: 2,
-                                ),
+                            return ListItemCard( // 統一ウィジェット使用
+                              leading: UserAvatar( // 統一ウィジェット使用
+                                name: friend['name']!,
                               ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                              title: friend['name']!,
+                              subtitle: friend['id']!,
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: AppColors.textSecondary,
                                 ),
-                                leading: CircleAvatar(
-                                  backgroundColor: AppColors.primary,
-                                  child: Text(
-                                    friend['name']![0].toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  friend['name']!,
-                                  style: AppTextStyles.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  friend['id']!,
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(
-                                    Icons.more_vert,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  onPressed: () => _showRemoveOptions(index),
-                                ),
+                                onPressed: () => _showRemoveOptions(index),
                               ),
+                              borderColor: AppColors.border,
                             );
                           },
                         ),
