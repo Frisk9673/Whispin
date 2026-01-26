@@ -80,19 +80,25 @@ class ChatService {
           return false;
         }
 
-        // 3-2. 参加待ち状態でないルームは除外
+        // 3-2. プライベートルームは検索結果から除外 ✅ 追加
+        if (room.private) {
+          logger.debug('除外: プライベートルーム - ${room.topic}', name: _logName);
+          return false;
+        }
+
+        // 3-3. 参加待ち状態でないルームは除外
         if (!room.isWaiting) {
           logger.debug('除外: 参加待ちでない - ${room.topic}', name: _logName);
           return false;
         }
 
-        // 3-3. アクティブなルームで期限切れの場合は除外
+        // 3-4. アクティブなルームで期限切れの場合は除外
         if (room.isActive && now.isAfter(room.expiresAt)) {
           logger.debug('除外: 期限切れ - ${room.topic}', name: _logName);
           return false;
         }
 
-        // 3-4. ブロック関係チェック
+        // 3-5. ブロック関係チェック
         final creatorId = room.id1;
         if (creatorId != null && blockedUserIds.contains(creatorId)) {
           logger.debug('除外: ブロック関係 - ${room.topic} (作成者: $creatorId)',
@@ -158,8 +164,14 @@ class ChatService {
 
       logger.success('初期取得: ${rooms.length}件', name: _logName);
 
-      // ブロック関係でフィルタリング
+      // ブロック関係 + プライベートルームでフィルタリング ✅ 修正
       final filteredRooms = rooms.where((room) {
+        // プライベートルームは検索結果から除外
+        if (room.private) {
+          logger.debug('除外: プライベートルーム - ${room.topic}', name: _logName);
+          return false;
+        }
+
         final creatorId = room.id1;
         if (creatorId != null && blockedUserIds.contains(creatorId)) {
           logger.debug('除外: ブロック関係 - ${room.topic}', name: _logName);

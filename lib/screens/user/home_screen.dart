@@ -1,14 +1,14 @@
+// lib/screens/user/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../widgets/common/header.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/chat_service.dart';
 import '../../providers/user_provider.dart';
-import '../../repositories/friendship_repository.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
-import '../../constants/routes.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
@@ -32,18 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _logName = 'HomeScreen';
 
   late ChatService _chatService;
-  final FriendRequestRepository _friendRequestRepository = FriendRequestRepository();
-  int _pendingFriendRequestCount = 0;
 
   @override
   void initState() {
     super.initState();
     _chatService = ChatService(widget.storageService);
-    _updatePendingFriendRequests();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
-      _updatePendingFriendRequests();
     });
   }
 
@@ -75,22 +71,17 @@ class _HomeScreenState extends State<HomeScreen> {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
 
         if (mounted) {
-          context
-              .showErrorSnackBar('ユーザー情報の読み込みに失敗しました: ${userProvider.error}');
+          context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました: ${userProvider.error}');
         }
       } else {
         logger.success('ユーザー情報読み込み完了', name: _logName);
-        logger.info('  名前: ${userProvider.currentUser?.fullName}',
-            name: _logName);
-        logger.info('  プレミアム: ${userProvider.currentUser?.premium}',
-            name: _logName);
+        logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
+        logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
       }
     } else if (userProvider.currentUser != null) {
       logger.success('ユーザー情報は既に読み込み済み', name: _logName);
-      logger.info('  名前: ${userProvider.currentUser?.fullName}',
-          name: _logName);
-      logger.info('  プレミアム: ${userProvider.currentUser?.premium}',
-          name: _logName);
+      logger.info('  名前: ${userProvider.currentUser?.fullName}', name: _logName);
+      logger.info('  プレミアム: ${userProvider.currentUser?.premium}', name: _logName);
     } else {
       logger.info('ユーザー情報読み込み中...', name: _logName);
     }
@@ -98,45 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
     logger.section('状態確認完了', name: _logName);
   }
 
-  void _updatePendingFriendRequests() {
-    final currentUserId = widget.authService.currentUser?.id ?? '';
-    final count = widget.storageService.friendRequests
-        .where((r) => r.receiverId == currentUserId && r.isPending)
-        .length;
-
-    setState(() {
-      _pendingFriendRequestCount = count;
-    });
-    
-    logger.debug('フレンドリクエスト未読数: $count', name: _logName);
-  }
-
-  Future<void> _handleLogout() async {
-    logger.section('ログアウト処理開始', name: _logName);
-
-    logger.start('UserProviderクリア中...', name: _logName);
-    context.read<UserProvider>().clearUser();
-    logger.success('UserProviderクリア完了', name: _logName);
-
-    logger.start('AuthServiceログアウト中...', name: _logName);
-    await widget.authService.logout();
-    logger.success('AuthServiceログアウト完了', name: _logName);
-
-    if (mounted) {
-      logger.start('Login画面へ遷移', name: _logName);
-      await NavigationHelper.toLogin(context);
-    }
-
-    logger.section('ログアウト処理完了', name: _logName);
-  }
-
   void _navigateToCreateRoom() {
     logger.info('ルーム作成画面へ遷移', name: _logName);
     NavigationHelper.toRoomCreate(context);
-  }
-
-  void _navigateToProfile() {
-    NavigationHelper.toProfile(context);
   }
 
   void _navigateToFriendList() {
@@ -152,92 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationHelper.toRoomJoin(context);
   }
 
-  // ✅ 追加: フレンドリクエスト画面への遷移
-  void _navigateToFriendRequests() {
-    logger.info('フレンドリクエスト画面へ遷移', name: _logName);
-    Navigator.of(context).pushNamed(AppRoutes.friendRequests).then((_) {
-      // 戻ってきたら未読数を更新
-      _updatePendingFriendRequests();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppConstants.appName,
-            style:
-                AppTextStyles.titleLarge.copyWith(color: AppColors.textWhite)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
-        actions: [
-          // 通知アイコン（フレンドリクエスト）
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                onPressed: _navigateToFriendRequests,
-                tooltip: 'フレンドリクエスト',
-              ),
-              if (_pendingFriendRequestCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$_pendingFriendRequestCount',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.textWhite,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          // プロフィールアイコン
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: _navigateToProfile,
-          ),
-          // プレミアムバッジ
-          if (userProvider.isPremium)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.premiumGold,
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.defaultBorderRadius),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.diamond, size: 16, color: AppColors.textWhite),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Premium',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textWhite,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
+      appBar: CommonHeader(
+        title: AppConstants.appName,
+        showNotifications: true,
+        showProfile: true,
+        showPremiumBadge: true,
       ),
       body: Container(
         decoration: BoxDecoration(

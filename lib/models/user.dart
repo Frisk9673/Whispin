@@ -36,7 +36,7 @@ class User {
 
   String get displayName =>
       nickname.isNotEmpty ? nickname : '$firstName $lastName';
-  String get fullName => '$firstName $lastName';
+  String get fullName => '$lastName $firstName';
   bool get isDeleted => deletedAt != null;
 
   // ===== Firestore + JSON 両対応の fromMap =====

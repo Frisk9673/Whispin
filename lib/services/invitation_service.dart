@@ -199,13 +199,24 @@ class InvitationService {
 
     // 4. ルームに空きがあるか
     ChatRoom updatedRoom;
+    final now = DateTime.now();
 
     if (room.id1?.isEmpty ?? true) {
       logger.info('id1 スロットに参加します', name: _logName);
-      updatedRoom = room.copyWith(id1: invitation.inviteeId);
+      updatedRoom = room.copyWith(
+        id1: invitation.inviteeId,
+        status: 1, // ← ★ここを追加
+        startedAt: now,
+        expiresAt: now.add(const Duration(minutes: 10)), // ★これ
+      );
     } else if (room.id2?.isEmpty ?? true) {
       logger.info('id2 スロットに参加します', name: _logName);
-      updatedRoom = room.copyWith(id2: invitation.inviteeId);
+      updatedRoom = room.copyWith(
+        id2: invitation.inviteeId,
+        status: 1, // ← ★ここを追加
+        startedAt: now,
+        expiresAt: now.add(const Duration(minutes: 10)), // ★これ
+      );
     } else {
       logger.error('ルームは満員です', name: _logName);
       logger.info('  id1: ${room.id1}', name: _logName);
@@ -501,7 +512,13 @@ class InvitationService {
                   ),
                   trailing: ElevatedButton(
                     onPressed: () async {
+                      // ① 先にローディングを表示（contextがまだ生きている）
+                      context.showLoadingDialog(message: '招待を送信中...');
+
+                      // ② フレンド選択ダイアログを閉じる
                       Navigator.pop(dialogContext);
+
+                      // ③ 招待処理（※ dialog は一切触らない）
                       await _sendInvitationWithUI(
                         context: context,
                         roomId: roomId,
@@ -551,8 +568,6 @@ class InvitationService {
     logger.info('招待先フレンド: $friendId', name: _logName);
 
     try {
-      context.showLoadingDialog(message: '招待を送信中...');
-
       await sendInvitation(
         roomId: roomId,
         inviterId: currentUserId,
@@ -560,17 +575,17 @@ class InvitationService {
       );
 
       if (!context.mounted) return;
-      context.hideLoadingDialog();
-
       context.showSuccessSnackBar('招待を送信しました！');
       logger.success('招待送信完了', name: _logName);
     } catch (e, stack) {
       logger.error('招待送信エラー: $e', name: _logName, error: e, stackTrace: stack);
 
       if (!context.mounted) return;
-      context.hideLoadingDialog();
-
       context.showErrorSnackBar('招待の送信に失敗しました: $e');
+    } finally {
+      if (context.mounted) {
+        context.hideLoadingDialog(); // ← 必ず閉じる
+      }
     }
   }
 }

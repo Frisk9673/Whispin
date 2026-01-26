@@ -96,7 +96,7 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
                   IconButton(
                     icon: const Icon(Icons.notifications),
                     onPressed: () => _handleNotificationPressed(context),
-                    tooltip: 'フレンドリクエスト',
+                    tooltip: '通知',
                   ),
                   if (count > 0)
                     Positioned(

@@ -91,6 +91,7 @@ extension ContextExtensions on BuildContext {
     showDialog(
       context: this,
       barrierDismissible: false,
+      useRootNavigator: true, // ✅ 追加
       builder: (_) => PopScope(
         canPop: false,
         child: AlertDialog(
@@ -110,7 +111,7 @@ extension ContextExtensions on BuildContext {
   /// 
   /// 使用箇所: showLoadingDialogとペアで使用
   void hideLoadingDialog() {
-    if (canPop) pop();
+    Navigator.of(this, rootNavigator: true).pop(); // ← 対になる指定
   }
 
   // ===== 確認ダイアログ =====
