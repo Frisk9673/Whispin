@@ -1,8 +1,8 @@
-// lib/screens/user/notifications.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
+import '../../widgets/common/unified_widgets.dart';
 import '../../repositories/user_repository.dart';
 import '../../services/friendship_service.dart';
 import '../../services/invitation_service.dart';
@@ -187,10 +187,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       context.showSuccessSnackBar('ルームに参加しました');
 
-      // 👇 これを追加
+      // 通知リストを更新
       await _loadNotifications();
 
-      // 👇 そのあと遷移
       if (!mounted) return;
 
       // チャット画面へ遷移
@@ -267,9 +266,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       ),
       backgroundColor: Colors.white,
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
+          ? const LoadingWidget()
           : _friendRequests.isEmpty && _invitations.isEmpty
               ? _buildEmptyState()
               : _buildNotificationList(),
@@ -277,38 +274,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.backgroundLight,
-            ),
-            child: Icon(
-              Icons.inbox,
-              size: 80,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '通知はありません',
-            style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '新しい通知が届くとここに表示されます',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
+    return EmptyStateWidget(
+      icon: Icons.inbox,
+      title: '通知はありません',
+      subtitle: '新しい通知が届くとここに表示されます',
     );
   }
 
@@ -411,21 +380,15 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                 // 招待者情報
                 Row(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.info,
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.mail,
-                        color: AppColors.info,
-                        size: 28,
+                    // 統一ウィジェット使用
+                    UserAvatar(
+                      name: details['inviterName']!,
+                      size: 56,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.info.lighten(0.1),
+                          AppColors.info.darken(0.1),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -600,25 +563,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        color: AppColors.textWhite,
-                        size: 32,
-                      ),
+                    // 統一ウィジェット使用
+                    UserAvatar(
+                      name: senderName,
+                      size: 56,
                     ),
                     const SizedBox(width: 16),
                     Expanded(

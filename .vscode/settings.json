@@ -1,5 +1,6 @@
 {
 	"cSpell.words": [
 		"whispin"
-	]
+	],
+	"cmake.ignoreCMakeListsMissing": true
 }
