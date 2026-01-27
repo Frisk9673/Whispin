@@ -98,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
   /// フレンド招待ダイアログを表示
   Future<void> _showInviteFriendDialog() async {
     final currentUserId = _getCurrentUserId();
-    
+
     await _invitationService.showInviteFriendDialog(
       context: context,
       roomId: widget.roomId,
@@ -137,10 +137,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ===== 延長リクエスト確認 =====
-  
+
   void _checkExtensionRequests() {
     if (_currentRoom == null) return;
-    
+
     final currentUserId = _getCurrentUserId();
     if (currentUserId.isEmpty) return;
 
@@ -151,9 +151,10 @@ class _ChatScreenState extends State<ChatScreen> {
             req.requesterId != currentUserId)
         .toList();
 
-    if (newRequests.isNotEmpty && newRequests.length != _pendingExtensionRequests.length) {
+    if (newRequests.isNotEmpty &&
+        newRequests.length != _pendingExtensionRequests.length) {
       _pendingExtensionRequests = newRequests;
-      
+
       final latestRequest = newRequests.last;
       _showExtensionRequestDialog(latestRequest);
     } else if (newRequests.isEmpty) {
@@ -205,7 +206,8 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.info.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(AppConstants.defaultBorderRadius),
                 border: Border.all(
                   color: AppColors.info.withOpacity(0.3),
                 ),
@@ -260,12 +262,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       await widget.chatService.approveExtension(requestId);
-      
+
       if (!mounted) return;
-      
+
       context.showSuccessSnackBar(
-        'チャット時間が${AppConstants.extensionDurationMinutes}分延長されました'
-      );
+          'チャット時間が${AppConstants.extensionDurationMinutes}分延長されました');
 
       _loadRoom();
       setState(() {});
@@ -273,7 +274,7 @@ class _ChatScreenState extends State<ChatScreen> {
       logger.success('延長承認完了', name: _logName);
     } catch (e, stack) {
       logger.error('延長承認エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       if (!mounted) return;
       context.showErrorSnackBar('延長の承認に失敗しました: $e');
     }
@@ -285,15 +286,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       await widget.chatService.rejectExtension(requestId);
-      
+
       if (!mounted) return;
-      
+
       context.showInfoSnackBar('延長リクエストを拒否しました');
 
       logger.success('延長拒否完了', name: _logName);
     } catch (e, stack) {
       logger.error('延長拒否エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       if (!mounted) return;
       context.showErrorSnackBar('延長の拒否に失敗しました: $e');
     }
@@ -309,7 +310,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _loadRoom();
-      
+
       _checkExtensionRequests();
 
       if (_currentRoom == null) {
@@ -375,38 +376,78 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _handleRoomExpired() {
+  Future<void> _handleRoomExpired() async {
     if (!mounted) return;
 
-    context.showCustomDialog(
+    logger.section('チャット時間終了処理開始', name: _logName);
+
+    final isPrivateRoom = _currentRoom?.private ?? false;
+
+    // ===== 1. まず時間切れダイアログを表示 =====
+    await context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        title: const Text('チャット時間終了'),
-        content:
-            Text('${AppConstants.defaultChatDurationMinutes}分間のチャット時間が終了しました。'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.warning,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.access_time,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('チャット時間終了'),
+          ],
+        ),
+        content: Text(
+          '時間切れです。',
+          style: AppTextStyles.bodyMedium,
+        ),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
-              context.pop();
+              context.pop(); // ダイアログを閉じる
 
-              final isPrivateRoom = _currentRoom?.private ?? false;
+              if (!mounted) return;
+
+              // ===== 2. 評価（Publicルームのみ） =====
               if (!isPrivateRoom) {
+                logger.info('評価ダイアログを表示します', name: _logName);
                 await _showEvaluationDialog();
-              } else {
-                logger.info('Privateルームのため評価ダイアログをスキップ', name: _logName);
               }
 
-              NavigationHelper.toHome(
+              if (!mounted) return;
+
+              // ===== 3. ホームへ =====
+              logger.info('ホーム画面へ遷移', name: _logName);
+              await NavigationHelper.toHome(
                 context,
                 authService: widget.authService,
                 storageService: widget.storageService,
               );
             },
-            child: const Text('OK'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: const Text(
+              '退出する',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
+
+    logger.section('チャット時間終了処理完了', name: _logName);
   }
 
   void _showPartnerLeftDialog() {
@@ -669,7 +710,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -804,7 +844,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     Expanded(
                       child: Card(
                         elevation: AppConstants.cardElevation,
@@ -847,7 +886,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
