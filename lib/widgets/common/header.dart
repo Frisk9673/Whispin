@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../repositories/friendship_repository.dart';
+import '../../services/invitation_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../constants/routes.dart';
+import '../../utils/app_logger.dart';
 
 /// 統一されたヘッダーコンポーネント（AppBar形式）
 ///
-/// フレンドリクエスト数をリアルタイムで表示
+/// フレンドリクエスト数と招待数をリアルタイムで表示
 class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showNotifications;
@@ -18,6 +20,8 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onNotificationPressed;
   final VoidCallback? onProfilePressed;
   final List<Widget>? additionalActions;
+
+  static const String _logName = 'CommonHeader';
 
   const CommonHeader({
     super.key,
@@ -33,20 +37,35 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  /// フレンドリクエスト数を取得
-  Future<int> _getFriendRequestCount(BuildContext context) async {
+  /// フレンドリクエスト数 + 招待数を取得
+  Future<int> _getNotificationCount(BuildContext context) async {
     try {
       final userProvider = context.read<UserProvider>();
       final currentUserId = userProvider.currentUser?.id;
 
       if (currentUserId == null) return 0;
 
+      // フレンドリクエスト数を取得
       final friendRequestRepository = FriendRequestRepository();
-      final requests =
+      final friendRequests =
           await friendRequestRepository.findReceivedRequests(currentUserId);
 
-      return requests.length;
-    } catch (e) {
+      logger.debug('フレンドリクエスト数: ${friendRequests.length}', name: _logName);
+
+      // 招待数を取得
+      final invitationService = context.read<InvitationService>();
+      final invitations =
+          invitationService.getReceivedInvitations(currentUserId);
+
+      logger.debug('招待数: ${invitations.length}', name: _logName);
+
+      final totalCount = friendRequests.length + invitations.length;
+      logger.debug('合計通知数: $totalCount', name: _logName);
+
+      return totalCount;
+    } catch (e, stack) {
+      logger.error('通知数取得エラー: $e', 
+          name: _logName, error: e, stackTrace: stack);
       return 0;
     }
   }
@@ -84,10 +103,10 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
       foregroundColor: AppColors.textWhite,
       elevation: 4,
       actions: [
-        // 通知アイコン（フレンドリクエスト）
+        // 通知アイコン（フレンドリクエスト + 招待）
         if (showNotifications)
           FutureBuilder<int>(
-            future: _getFriendRequestCount(context),
+            future: _getNotificationCount(context),
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
 
