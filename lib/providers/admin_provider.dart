@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../repositories/user_repository.dart';
+import '../repositories/premium_counter_repository.dart'; // ✅ 追加
+import '../models/premium_counter.dart'; // ✅ 追加
 import '../utils/app_logger.dart';
 import '../models/question_message.dart';
 import '../services/admin_question_chat_service.dart';
 
 class AdminProvider extends ChangeNotifier {
   final UserRepository _userRepository;
+  final PremiumCounterRepository _counterRepository =
+      PremiumCounterRepository(); // ✅ 追加
   static const String _logName = 'AdminProvider';
 
   int paidMemberCount = 0;
@@ -18,40 +22,55 @@ class AdminProvider extends ChangeNotifier {
   StreamSubscription<List<Message>>? _messageSubscription;
   List<Message> messages = [];
 
-  // ✅ 追加: プレミアム会員監視用
-  StreamSubscription? _premiumUsersSubscription;
+  // ✅ 修正: カウンター監視用
+  StreamSubscription<PremiumCounter>? _counterSubscription;
 
   AdminProvider({required UserRepository userRepository})
       : _userRepository = userRepository {
-    loadPaidMemberCount();
-    _startPremiumUsersWatch(); // ✅ 追加
+    _initializeProvider();
   }
 
-  /// ✅ 追加: プレミアム会員数のリアルタイム監視を開始
-  void _startPremiumUsersWatch() {
-    logger.section('プレミアム会員監視開始', name: _logName);
+  /// ✅ 追加: Provider初期化処理
+  Future<void> _initializeProvider() async {
+    logger.section('AdminProvider初期化開始', name: _logName);
 
-    _premiumUsersSubscription = _userRepository.watchPremiumUsers().listen(
-      (users) {
-        final newCount = users.length;
+    // 有料会員数ロード
+    await loadPaidMemberCount();
+
+    // リアルタイム監視開始
+    _startCounterWatch();
+
+    logger.section('AdminProvider初期化完了', name: _logName);
+  }
+
+  /// ✅ 修正: カウンターのリアルタイム監視を開始
+  void _startCounterWatch() {
+    logger.section('カウンター監視開始', name: _logName);
+
+    _counterSubscription = _counterRepository.watchCounter().listen(
+      (counter) {
+        final newCount = counter.count;
 
         if (paidMemberCount != newCount) {
           logger.info('プレミアム会員数変更: $paidMemberCount → $newCount',
               name: _logName);
           paidMemberCount = newCount;
+          isLoading = false; // ✅ ロード完了
           notifyListeners();
         }
       },
       onError: (e, stack) {
-        logger.error('プレミアム会員監視エラー: $e',
+        logger.error('カウンター監視エラー: $e',
             name: _logName, error: e, stackTrace: stack);
+        isLoading = false;
+        notifyListeners();
       },
     );
 
-    logger.success('プレミアム会員監視開始完了', name: _logName);
+    logger.success('カウンター監視開始完了', name: _logName);
   }
 
-  /// 有料会員数を取得して状態を更新
+  /// ✅ 修正: カウンターから有料会員数を取得
   Future<void> loadPaidMemberCount() async {
     logger.section('loadPaidMemberCount() 開始', name: _logName);
 
@@ -59,9 +78,9 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final count = await _userRepository.countPremiumUsers();
-      paidMemberCount = count;
-      logger.success('有料会員数取得完了: $count 人', name: _logName);
+      final counter = await _counterRepository.getCounter();
+      paidMemberCount = counter.count;
+      logger.success('有料会員数取得完了: ${counter.count} 人', name: _logName);
     } catch (e, stack) {
       logger.error('loadPaidMemberCount エラー: $e',
           name: _logName, error: e, stackTrace: stack);
@@ -72,6 +91,28 @@ class AdminProvider extends ChangeNotifier {
     }
 
     logger.section('loadPaidMemberCount() 完了', name: _logName);
+  }
+
+  /// ✅ 追加: カウンターを再計算（管理者が手動で修正する場合）
+  Future<void> recalculateCounter() async {
+    logger.section('カウンター再計算開始', name: _logName);
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final counter = await _counterRepository.recalculate();
+      paidMemberCount = counter.count;
+      logger.success('カウンター再計算完了: ${counter.count} 人', name: _logName);
+    } catch (e, stack) {
+      logger.error('カウンター再計算エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+
+    logger.section('カウンター再計算完了', name: _logName);
   }
 
   /// ===== チャット機能 =====
@@ -162,7 +203,7 @@ class AdminProvider extends ChangeNotifier {
   @override
   void dispose() {
     disposeMessageStream();
-    _premiumUsersSubscription?.cancel(); // ✅ 追加
+    _counterSubscription?.cancel(); // ✅ 修正
     super.dispose();
   }
 }

@@ -26,6 +26,17 @@ class AdminHomeScreen extends StatelessWidget {
         foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false, // 戻るボタンを非表示
         actions: [
+          // リフレッシュボタン
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              logger.info('手動リフレッシュ', name: _logName);
+              admin.refresh();
+            },
+            tooltip: '更新',
+          ),
+
+          // ログアウトボタン
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: GestureDetector(
@@ -100,9 +111,25 @@ class AdminHomeScreen extends StatelessWidget {
               padding:
                   const EdgeInsets.only(top: 24.0, left: 16.0, right: 16.0),
               child: admin.isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 120,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '読み込み中...',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     )
                   : Column(
                       mainAxisSize: MainAxisSize.min,
@@ -117,11 +144,9 @@ class AdminHomeScreen extends StatelessWidget {
                           ),
                           child: InkWell(
                             onTap: () {
-                              logger.info('有料会員数カードタップ → PremiumLogListScreen',
+                              logger.info(
+                                  '有料会員数カードタップ → PremiumLogListScreen',
                                   name: _logName);
-
-                              // ✅ タップ時に最新データを取得
-                              admin.refresh();
                               AppRouter.navigateTo(
                                 context,
                                 AppRoutes.premiumLogs,
@@ -184,7 +209,8 @@ class AdminHomeScreen extends StatelessWidget {
                               label: 'お問い合わせ',
                               icon: Icons.support_agent,
                               onPressed: () {
-                                logger.info('お問い合わせボタン押下', name: _logName);
+                                logger.info('お問い合わせボタン押下',
+                                    name: _logName);
                                 Navigator.of(context)
                                     .pushNamed(AppRoutes.questionChat);
                               },
@@ -197,7 +223,8 @@ class AdminHomeScreen extends StatelessWidget {
                               icon: Icons.receipt_long,
                               backgroundColor: Colors.blue,
                               onPressed: () {
-                                logger.info('有料会員ログボタン押下', name: _logName);
+                                logger.info('有料会員ログボタン押下',
+                                    name: _logName);
                                 AppRouter.navigateTo(
                                   context,
                                   AppRoutes.premiumLogs,

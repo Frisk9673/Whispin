@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
+import 'premium_counter_repository.dart';
 import '../utils/app_logger.dart';
 
 /// ユーザーデータのリポジトリ
@@ -347,22 +348,57 @@ class UserRepository extends BaseRepository<User> {
     required String id,
     required bool isPremium,
   }) async {
+    logger.section('createPremiumLog() 開始', name: _logName);
+    logger.info('email: $id, isPremium: $isPremium', name: _logName);
+
     try {
       final detail = isPremium ? '契約' : '解約';
+      final now = DateTime.now();
 
-      await firestore.collection('Log_Premium').add({
+      // ✅ 修正: トランザクションではなくバッチ処理を使用
+      final batch = firestore.batch();
+
+      // 1. ログを作成
+      final logRef = firestore.collection('Log_Premium').doc();
+      batch.set(logRef, {
         'ID': id,
-        'Timestamp': FieldValue.serverTimestamp(),
+        'Timestamp': Timestamp.fromDate(now),
         'Detail': detail,
       });
 
-      logger.success(
-        'Log_Premium 作成完了: $id / $detail',
-        name: _logName,
-      );
+      logger.info('Log_Premium 作成予約: ${logRef.id}', name: _logName);
+
+      // 2. カウンターを更新
+      final counterRef = firestore.collection('PremiumCounter').doc('counter');
+
+      // カウンターが存在するか確認（事前チェック）
+      final counterDoc = await counterRef.get();
+
+      if (!counterDoc.exists) {
+        // カウンターが存在しない場合は初期化
+        logger.warning('カウンターが存在しません → 初期化', name: _logName);
+        batch.set(counterRef, {
+          'count': isPremium ? 1 : 0,
+          'lastUpdated': Timestamp.fromDate(now),
+        });
+      } else {
+        // カウンターを増減
+        batch.update(counterRef, {
+          'count': FieldValue.increment(isPremium ? 1 : -1),
+          'lastUpdated': Timestamp.fromDate(now),
+        });
+      }
+
+      logger.info('カウンター更新予約: ${isPremium ? "+1" : "-1"}', name: _logName);
+
+      // バッチをコミット
+      await batch.commit();
+
+      logger.success('プレミアムログ + カウンター更新完了', name: _logName);
+      logger.section('createPremiumLog() 完了', name: _logName);
     } catch (e, stack) {
       logger.error(
-        'Log_Premium 作成失敗: $e',
+        'createPremiumLog() エラー: $e',
         name: _logName,
         error: e,
         stackTrace: stack,
