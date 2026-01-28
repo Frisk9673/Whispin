@@ -9,11 +9,13 @@ import '../../constants/routes.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
+import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 import '../../services/auth_service.dart';
 
+/// レスポンシブ対応のユーザー登録画面
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
 
@@ -57,7 +59,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     final confirmPassword = confirmPasswordController.text.trim();
     final telId = telIdController.text.trim();
 
-    // ✅ String拡張メソッド使用 - バリデーション
     if (email.isBlank ||
         password.isBlank ||
         confirmPassword.isBlank ||
@@ -84,10 +85,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     setState(() => loading = true);
 
     try {
-      // ✅ StorageServiceを取得
       final storageService = context.read<StorageService>();
 
-      // ユーザーオブジェクト作成
       final user = User(
         phoneNumber: telId,
         id: email,
@@ -104,18 +103,16 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       logger.start('registerService.register() 実行中...', name: _logName);
 
-      // ✅ StorageServiceを渡す
       await registerService.register(
         user: user,
         password: password,
-        storageService: storageService, // ← これを追加
+        storageService: storageService,
       );
 
       logger.success('ユーザー登録完了', name: _logName);
 
       if (!mounted) return;
 
-      // UserProviderにユーザー情報を読み込み
       logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
       await userProvider.loadUserData(email);
@@ -138,7 +135,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       final authService = context.read<AuthService>();
 
-      // ホーム画面へ遷移
       logger.start('HomeScreen へ遷移', name: _logName);
 
       await Navigator.of(context).pushNamedAndRemoveUntil(
@@ -164,6 +160,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    final padding = context.responsivePadding;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -179,225 +178,20 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
+              padding: padding,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
-                  Container(
-                    padding: EdgeInsets.all(AppConstants.defaultPadding),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                    ),
-                    child: const Icon(
-                      Icons.person_add_outlined,
-                      size: 64,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    AppConstants.appName,
-                    style: AppTextStyles.displayMedium.copyWith(
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '新規登録',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.textWhite.withOpacity(0.9),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
+                  _buildHeader(context, isMobile),
+                  SizedBox(height: isMobile ? 32 : 48),
 
                   // フォームカード
-                  Card(
-                    elevation: AppConstants.cardElevation * 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(AppConstants.defaultPadding),
-                      child: Column(
-                        children: [
-                          _buildTextField(
-                            controller: emailController,
-                            label: 'メールアドレス',
-                            icon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: telIdController,
-                            label: '電話番号',
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  controller: lastNameController,
-                                  label: '姓',
-                                  icon: Icons.person_outline,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTextField(
-                                  controller: firstNameController,
-                                  label: '名',
-                                  icon: Icons.person_outline,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: nicknameController,
-                            label: 'ニックネーム（オプション）',
-                            icon: Icons.badge_outlined,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: passwordController,
-                            label:
-                                'パスワード（${AppConstants.passwordMinLength}文字以上）',
-                            icon: Icons.lock_outlined,
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: confirmPasswordController,
-                            label: 'パスワード確認',
-                            icon: Icons.lock_outlined,
-                            obscureText: _obscureConfirmPassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 登録ボタン
-                          SizedBox(
-                            width: double.infinity,
-                            height: AppConstants.buttonHeight,
-                            child: ElevatedButton(
-                              onPressed: loading ? null : registerUser,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius,
-                                  ),
-                                ),
-                              ),
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  gradient: loading
-                                      ? null
-                                      : AppColors.primaryGradient,
-                                  color: loading ? AppColors.divider : null,
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius,
-                                  ),
-                                ),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  child: loading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : Text(
-                                          '登録',
-                                          style: AppTextStyles.buttonLarge,
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
+                  _buildFormCard(context, isMobile),
+                  SizedBox(height: isMobile ? 16 : 24),
 
                   // ログインリンク
-                  Container(
-                    padding: EdgeInsets.all(AppConstants.defaultPadding - 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: InkWell(
-                      onTap: loading
-                          ? null
-                          : () => NavigationHelper.toLogin(context),
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.defaultBorderRadius,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.defaultBorderRadius,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.login,
-                                color: Colors.white, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'すでにアカウントをお持ちの方はこちら',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildLoginLink(context, isMobile),
                 ],
               ),
             ),
@@ -407,10 +201,203 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     );
   }
 
+  /// ヘッダーを構築
+  Widget _buildHeader(BuildContext context, bool isMobile) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(isMobile ? 20 : AppConstants.defaultPadding),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+          ),
+          child: Icon(
+            Icons.person_add_outlined,
+            size: isMobile ? 48 : 64,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: isMobile ? 16 : 24),
+        Text(
+          AppConstants.appName,
+          style: AppTextStyles.displayMedium.copyWith(
+            color: AppColors.textWhite,
+            fontSize: context.responsiveFontSize(32),
+          ),
+        ),
+        SizedBox(height: isMobile ? 4 : 8),
+        Text(
+          '新規登録',
+          style: AppTextStyles.titleLarge.copyWith(
+            color: AppColors.textWhite.withOpacity(0.9),
+            fontSize: context.responsiveFontSize(18),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// フォームカードを構築
+  Widget _buildFormCard(BuildContext context, bool isMobile) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: context.maxFormWidth,
+      ),
+      child: Card(
+        elevation: AppConstants.cardElevation * 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isMobile ? 16 : AppConstants.defaultPadding),
+          child: Column(
+            children: [
+              _buildTextField(
+                controller: emailController,
+                label: 'メールアドレス',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                isMobile: isMobile,
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              _buildTextField(
+                controller: telIdController,
+                label: '電話番号',
+                icon: Icons.phone_outlined,
+                keyboardType: TextInputType.phone,
+                isMobile: isMobile,
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: lastNameController,
+                      label: '姓',
+                      icon: Icons.person_outline,
+                      isMobile: isMobile,
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 8 : 12),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: firstNameController,
+                      label: '名',
+                      icon: Icons.person_outline,
+                      isMobile: isMobile,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              _buildTextField(
+                controller: nicknameController,
+                label: 'ニックネーム（オプション）',
+                icon: Icons.badge_outlined,
+                isMobile: isMobile,
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              _buildTextField(
+                controller: passwordController,
+                label: 'パスワード（${AppConstants.passwordMinLength}文字以上）',
+                icon: Icons.lock_outlined,
+                obscureText: _obscurePassword,
+                isMobile: isMobile,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              _buildTextField(
+                controller: confirmPasswordController,
+                label: 'パスワード確認',
+                icon: Icons.lock_outlined,
+                obscureText: _obscureConfirmPassword,
+                isMobile: isMobile,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
+              ),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // 登録ボタン
+              SizedBox(
+                width: double.infinity,
+                height: isMobile ? 48 : AppConstants.buttonHeight,
+                child: ElevatedButton(
+                  onPressed: loading ? null : registerUser,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                    ),
+                  ),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: loading
+                          ? null
+                          : AppColors.primaryGradient,
+                      color: loading ? AppColors.divider : null,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                    ),
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: loading
+                          ? SizedBox(
+                              width: isMobile ? 20 : 24,
+                              height: isMobile ? 20 : 24,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              '登録',
+                              style: AppTextStyles.buttonLarge.copyWith(
+                                fontSize: context.responsiveFontSize(18),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// テキストフィールドを構築
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    required bool isMobile,
     bool obscureText = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
@@ -422,13 +409,74 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: TextStyle(
+          fontSize: context.responsiveFontSize(14),
+        ),
+        prefixIcon: Icon(icon, size: isMobile ? 20 : 24),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 16,
+          vertical: isMobile ? 12 : 16,
+        ),
       ),
-      style: AppTextStyles.bodyLarge,
+      style: AppTextStyles.bodyLarge.copyWith(
+        fontSize: context.responsiveFontSize(16),
+      ),
+    );
+  }
+
+  /// ログインリンクを構築
+  Widget _buildLoginLink(BuildContext context, bool isMobile) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: context.maxFormWidth,
+      ),
+      padding: EdgeInsets.all(isMobile ? 12 : AppConstants.defaultPadding - 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: loading
+            ? null
+            : () => NavigationHelper.toLogin(context),
+        borderRadius: BorderRadius.circular(
+          AppConstants.defaultBorderRadius,
+        ),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: isMobile ? 10 : 12,
+            horizontal: isMobile ? 12 : 16,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.login, color: Colors.white, size: isMobile ? 18 : 20),
+              SizedBox(width: isMobile ? 6 : 8),
+              Flexible(
+                child: Text(
+                  'すでにアカウントをお持ちの方はこちら',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: context.responsiveFontSize(14),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

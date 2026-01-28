@@ -19,15 +19,6 @@ extension ContextExtensions on BuildContext {
   /// パディング（セーフエリア）を取得
   EdgeInsets get padding => mediaQuery.padding;
 
-  // ===== レスポンシブデザイン =====
-
-  /// モバイルデバイスか（幅 < 768px）
-  /// 
-  /// 使用箇所:
-  /// - lib/widgets/evaluation_dialog.dart
-  /// - レスポンシブUI判定
-  bool get isMobile => screenWidth < 768;
-
   // ===== スナックバー =====
 
   /// スナックバーを表示
@@ -91,7 +82,7 @@ extension ContextExtensions on BuildContext {
     showDialog(
       context: this,
       barrierDismissible: false,
-      useRootNavigator: true, // ✅ 追加
+      useRootNavigator: true,
       builder: (_) => PopScope(
         canPop: false,
         child: AlertDialog(
@@ -111,7 +102,7 @@ extension ContextExtensions on BuildContext {
   /// 
   /// 使用箇所: showLoadingDialogとペアで使用
   void hideLoadingDialog() {
-    Navigator.of(this, rootNavigator: true).pop(); // ← 対になる指定
+    Navigator.of(this, rootNavigator: true).pop();
   }
 
   // ===== 確認ダイアログ =====
