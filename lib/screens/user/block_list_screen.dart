@@ -6,6 +6,7 @@ import '../../widgets/common/unified_widgets.dart';
 import '../../services/block_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
+import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
@@ -116,6 +117,9 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    final padding = context.responsiveHorizontalPadding;
+
     return Scaffold(
       appBar: CommonHeader(
         title: 'ブロック一覧',
@@ -126,7 +130,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // セクションヘッダー（統一ウィジェット使用）
+          // セクションヘッダー
           SectionHeader(
             icon: Icons.block,
             title: 'ブロック一覧',
@@ -136,11 +140,11 @@ class _BlockListScreenState extends State<BlockListScreen> {
           // ブロックリスト
           Expanded(
             child: _isLoading
-                ? LoadingWidget( // 統一ウィジェット使用
+                ? LoadingWidget(
                     color: AppColors.error,
                   )
                 : _blockedUsers.isEmpty
-                    ? EmptyStateWidget( // 統一ウィジェット使用
+                    ? EmptyStateWidget(
                         icon: Icons.check_circle_outline,
                         title: 'ブロック中のユーザーはいません',
                         iconColor: AppColors.success,
@@ -149,17 +153,20 @@ class _BlockListScreenState extends State<BlockListScreen> {
                         onRefresh: _loadBlockedUsers,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
-                            horizontal: AppConstants.defaultPadding,
+                            horizontal: padding.left,
+                            vertical: isMobile ? 12 : AppConstants.defaultPadding,
                           ),
                           itemCount: _blockedUsers.length,
                           itemBuilder: (context, index) {
                             final user = _blockedUsers[index];
-                            return ListItemCard( // 統一ウィジェット使用
+                            return ListItemCard(
                               leading: CircleAvatar(
+                                radius: isMobile ? 20 : 24,
                                 backgroundColor: AppColors.error,
-                                child: const Icon(
+                                child: Icon(
                                   Icons.block,
                                   color: Colors.white,
+                                  size: isMobile ? 20 : 24,
                                 ),
                               ),
                               title: user['name']!,
@@ -171,12 +178,17 @@ class _BlockListScreenState extends State<BlockListScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isMobile ? 12 : 16,
+                                    vertical: isMobile ? 8 : 10,
+                                  ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '解除',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
+                                    fontSize: context.responsiveFontSize(14),
                                   ),
                                 ),
                               ),

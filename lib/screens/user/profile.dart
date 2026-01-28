@@ -8,6 +8,7 @@ import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
+import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
@@ -153,25 +154,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, bool isMobile) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(isMobile ? 6 : 8),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: AppColors.primary),
+          child: Icon(
+            icon,
+            color: AppColors.primary,
+            size: isMobile ? 20 : 24,
+          ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: isMobile ? 12 : 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppTextStyles.labelMedium),
+              Text(
+                label,
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontSize: context.responsiveFontSize(12),
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(value, style: AppTextStyles.bodyLarge),
+              Text(
+                value,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontSize: context.responsiveFontSize(16),
+                ),
+              ),
             ],
           ),
         ),
@@ -183,6 +198,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final currentUser = userProvider.currentUser;
+    final isMobile = context.isMobile;
+    final padding = context.responsivePadding;
 
     return Scaffold(
       appBar: const CommonHeader(
@@ -192,189 +209,212 @@ class _ProfileScreenState extends State<ProfileScreen> {
         showPremiumBadge: true,
       ),
       body: userProvider.isLoading
-          ? const LoadingWidget() // 統一ウィジェット使用
+          ? const LoadingWidget()
           : SingleChildScrollView(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
-              child: Column(
-                children: [
-                  // プロフィール画像カード
-                  Card(
-                    elevation: AppConstants.cardElevation,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(AppConstants.defaultPadding),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: AppConstants.avatarSize,
-                            height: AppConstants.avatarSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppColors.primaryGradient,
-                              border: Border.all(
-                                color: AppColors.cardBackground,
-                                width: 4,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.account_circle,
-                              size: AppConstants.avatarSize,
-                              color: AppColors.textWhite,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            currentUser?.displayName ??
-                                AppConstants.defaultNickname,
-                            style: AppTextStyles.headlineMedium,
-                          ),
-                        ],
-                      ),
-                    ),
+              padding: padding,
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: context.maxContainerWidth,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // ユーザー情報カード
-                  Card(
-                    elevation: AppConstants.cardElevation,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _buildInfoRow(
-                            Icons.badge,
-                            'ニックネーム',
-                            currentUser?.nickname ??
-                                AppConstants.defaultNickname,
-                          ),
-                          const Divider(height: 24),
-                          _buildInfoRow(
-                            Icons.person,
-                            '本名',
-                            currentUser?.fullName ??
-                                AppConstants.defaultNickname,
-                          ),
-                          const Divider(height: 24),
-                          _buildInfoRow(
-                            Icons.phone,
-                            '電話番号',
-                            currentUser?.phoneNumber ??
-                                AppConstants.defaultNickname,
-                          ),
-                          const Divider(height: 24),
-                          Row(
+                  child: Column(
+                    children: [
+                      // プロフィール画像カード
+                      Card(
+                        elevation: AppConstants.cardElevation,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: padding,
+                          child: Column(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                width: isMobile ? 100 : AppConstants.avatarSize,
+                                height: isMobile ? 100 : AppConstants.avatarSize,
                                 decoration: BoxDecoration(
-                                  color: userProvider.isPremium
-                                      ? AppColors.primary.withOpacity(0.1)
-                                      : AppColors.inputBackground,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  userProvider.isPremium
-                                      ? Icons.diamond
-                                      : Icons.person,
-                                  color: userProvider.isPremium
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('会員ステータス',
-                                        style: AppTextStyles.labelMedium),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      userProvider.isPremium
-                                          ? 'プレミアム会員'
-                                          : '通常会員',
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        color: userProvider.isPremium
-                                            ? AppColors.primary
-                                            : AppColors.textSecondary,
-                                      ),
+                                  shape: BoxShape.circle,
+                                  gradient: AppColors.primaryGradient,
+                                  border: Border.all(
+                                    color: AppColors.cardBackground,
+                                    width: 4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
+                                child: Icon(
+                                  Icons.account_circle,
+                                  size: isMobile ? 100 : AppConstants.avatarSize,
+                                  color: AppColors.textWhite,
+                                ),
+                              ),
+                              SizedBox(height: isMobile ? 16 : 24),
+                              Text(
+                                currentUser?.displayName ??
+                                    AppConstants.defaultNickname,
+                                style: AppTextStyles.headlineMedium.copyWith(
+                                  fontSize: context.responsiveFontSize(24),
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+
+                      SizedBox(height: isMobile ? 16 : 24),
+
+                      // ユーザー情報カード
+                      Card(
+                        elevation: AppConstants.cardElevation,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(isMobile ? 16 : 20),
+                          child: Column(
+                            children: [
+                              _buildInfoRow(
+                                Icons.badge,
+                                'ニックネーム',
+                                currentUser?.nickname ??
+                                    AppConstants.defaultNickname,
+                                isMobile,
+                              ),
+                              Divider(height: isMobile ? 20 : 24),
+                              _buildInfoRow(
+                                Icons.person,
+                                '本名',
+                                currentUser?.fullName ??
+                                    AppConstants.defaultNickname,
+                                isMobile,
+                              ),
+                              Divider(height: isMobile ? 20 : 24),
+                              _buildInfoRow(
+                                Icons.phone,
+                                '電話番号',
+                                currentUser?.phoneNumber ??
+                                    AppConstants.defaultNickname,
+                                isMobile,
+                              ),
+                              Divider(height: isMobile ? 20 : 24),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(isMobile ? 6 : 8),
+                                    decoration: BoxDecoration(
+                                      color: userProvider.isPremium
+                                          ? AppColors.primary.withOpacity(0.1)
+                                          : AppColors.inputBackground,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      userProvider.isPremium
+                                          ? Icons.diamond
+                                          : Icons.person,
+                                      color: userProvider.isPremium
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
+                                      size: isMobile ? 20 : 24,
+                                    ),
+                                  ),
+                                  SizedBox(width: isMobile ? 12 : 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '会員ステータス',
+                                          style: AppTextStyles.labelMedium.copyWith(
+                                            fontSize: context.responsiveFontSize(12),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          userProvider.isPremium
+                                              ? 'プレミアム会員'
+                                              : '通常会員',
+                                          style: AppTextStyles.titleMedium.copyWith(
+                                            color: userProvider.isPremium
+                                                ? AppColors.primary
+                                                : AppColors.textSecondary,
+                                            fontSize: context.responsiveFontSize(16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: isMobile ? 16 : 24),
+
+                      // アクションボタン
+                      GradientButton(
+                        icon: userProvider.isPremium
+                            ? Icons.diamond_outlined
+                            : Icons.diamond,
+                        label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
+                        onPressed: () => _handlePremiumButton(context, userProvider),
+                        height: isMobile ? 48 : AppConstants.buttonHeight,
+                      ),
+
+                      SizedBox(height: isMobile ? 10 : 12),
+
+                      GradientButton(
+                        icon: Icons.support_agent,
+                        label: 'お問い合わせ',
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.info.lighten(0.15),
+                            AppColors.info.darken(0.15),
+                          ],
+                        ),
+                        onPressed: () => NavigationHelper.toUserChat(context),
+                        height: isMobile ? 48 : AppConstants.buttonHeight,
+                      ),
+
+                      SizedBox(height: isMobile ? 10 : 12),
+
+                      GradientButton(
+                        icon: Icons.logout,
+                        label: 'ログアウト',
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.error.lighten(0.15),
+                            AppColors.error.darken(0.15),
+                          ],
+                        ),
+                        onPressed: _logout,
+                        height: isMobile ? 48 : AppConstants.buttonHeight,
+                      ),
+
+                      SizedBox(height: isMobile ? 10 : 12),
+
+                      GradientButton(
+                        icon: Icons.delete_forever,
+                        label: 'アカウント削除',
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.grey.shade600,
+                            Colors.grey.shade800,
+                          ],
+                        ),
+                        onPressed: () => _deleteAccount(context),
+                        height: isMobile ? 48 : AppConstants.buttonHeight,
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // アクションボタン（統一ウィジェット使用）
-                  GradientButton(
-                    icon: userProvider.isPremium
-                        ? Icons.diamond_outlined
-                        : Icons.diamond,
-                    label: userProvider.isPremium ? 'プレミアム解約' : 'プレミアム加入',
-                    onPressed: () => _handlePremiumButton(context, userProvider),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  GradientButton(
-                    icon: Icons.support_agent,
-                    label: 'お問い合わせ',
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.info.lighten(0.15),
-                        AppColors.info.darken(0.15),
-                      ],
-                    ),
-                    onPressed: () => NavigationHelper.toUserChat(context),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  GradientButton(
-                    icon: Icons.logout,
-                    label: 'ログアウト',
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.error.lighten(0.15),
-                        AppColors.error.darken(0.15),
-                      ],
-                    ),
-                    onPressed: _logout,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  GradientButton(
-                    icon: Icons.delete_forever,
-                    label: 'アカウント削除',
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.grey.shade600,
-                        Colors.grey.shade800,
-                      ],
-                    ),
-                    onPressed: () => _deleteAccount(context),
-                  ),
-                ],
+                ),
               ),
             ),
     );

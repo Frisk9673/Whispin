@@ -8,6 +8,7 @@ import '../../repositories/block_repository.dart';
 import '../../services/friendship_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
+import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
@@ -110,6 +111,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
+    final isMobile = context.isMobile;
 
     logger.section('フレンド削除/ブロック選択', name: _logName);
     logger.info('対象フレンド: ${friend['name']}', name: _logName);
@@ -124,20 +126,33 @@ class _FriendListScreenState extends State<FriendListScreen> {
           children: [
             Icon(Icons.person_remove, color: AppColors.error),
             const SizedBox(width: 8),
-            const Text('フレンド削除'),
+            Flexible(
+              child: Text(
+                'フレンド削除',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(18),
+                ),
+              ),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${friend['name']} との関係を解除します。'),
-            const SizedBox(height: 16),
+            Text(
+              '${friend['name']} との関係を解除します。',
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(15),
+              ),
+            ),
+            SizedBox(height: isMobile ? 12 : 16),
             Text(
               'どのように削除しますか？',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
+                fontSize: context.responsiveFontSize(14),
               ),
             ),
           ],
@@ -145,25 +160,56 @@ class _FriendListScreenState extends State<FriendListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('キャンセル'),
-          ),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pop(ctx, 'remove'),
-            icon: const Icon(Icons.person_remove),
-            label: const Text('フレンド削除のみ'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.warning,
+            child: Text(
+              'キャンセル',
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(14),
+              ),
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, 'block'),
-            icon: const Icon(Icons.block),
-            label: const Text('ブロックして削除'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.textWhite,
+          if (!isMobile) ...[
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'remove'),
+              icon: const Icon(Icons.person_remove, size: 18),
+              label: const Text('フレンド削除のみ'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.warning,
+              ),
             ),
-          ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'block'),
+              icon: const Icon(Icons.block, size: 18),
+              label: const Text('ブロックして削除'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.textWhite,
+              ),
+            ),
+          ] else ...[
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(ctx, 'remove'),
+                  icon: const Icon(Icons.person_remove, size: 18),
+                  label: const Text('フレンド削除のみ'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(ctx, 'block'),
+                  icon: const Icon(Icons.block, size: 18),
+                  label: const Text('ブロックして削除'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.textWhite,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -259,6 +305,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    final padding = context.responsiveHorizontalPadding;
+
     return Scaffold(
       appBar: CommonHeader(
         title: 'フレンド一覧',
@@ -269,7 +318,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // セクションヘッダー（統一ウィジェット使用）
+          // セクションヘッダー
           SectionHeader(
             icon: Icons.people,
             title: 'フレンド一覧',
@@ -278,9 +327,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
           // フレンドリスト
           Expanded(
             child: _isLoading
-                ? const LoadingWidget() // 統一ウィジェット使用
+                ? const LoadingWidget()
                 : _friends.isEmpty
-                    ? EmptyStateWidget( // 統一ウィジェット使用
+                    ? EmptyStateWidget(
                         icon: Icons.person_off,
                         title: 'フレンドがいません',
                         subtitle: '新しいフレンドを追加しましょう',
@@ -289,14 +338,16 @@ class _FriendListScreenState extends State<FriendListScreen> {
                         onRefresh: _loadFriends,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
-                            horizontal: AppConstants.defaultPadding,
+                            horizontal: padding.left,
+                            vertical: isMobile ? 12 : AppConstants.defaultPadding,
                           ),
                           itemCount: _friends.length,
                           itemBuilder: (context, index) {
                             final friend = _friends[index];
-                            return ListItemCard( // 統一ウィジェット使用
-                              leading: UserAvatar( // 統一ウィジェット使用
+                            return ListItemCard(
+                              leading: UserAvatar(
                                 name: friend['name']!,
+                                size: isMobile ? 40 : 48,
                               ),
                               title: friend['name']!,
                               subtitle: friend['id']!,
@@ -304,6 +355,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                                 icon: Icon(
                                   Icons.more_vert,
                                   color: AppColors.textSecondary,
+                                  size: isMobile ? 20 : 24,
                                 ),
                                 onPressed: () => _showRemoveOptions(index),
                               ),
