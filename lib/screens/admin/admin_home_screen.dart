@@ -119,6 +119,9 @@ class AdminHomeScreen extends StatelessWidget {
                             onTap: () {
                               logger.info('有料会員数カードタップ → PremiumLogListScreen',
                                   name: _logName);
+
+                              // ✅ タップ時に最新データを取得
+                              admin.refresh();
                               AppRouter.navigateTo(
                                 context,
                                 AppRoutes.premiumLogs,

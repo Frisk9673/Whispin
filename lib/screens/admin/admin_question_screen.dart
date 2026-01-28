@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../models/question_message.dart';
 import '../../constants/colors.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
+import '../../utils/app_logger.dart';
 
 class AdminQuestionChatScreen extends StatefulWidget {
   final String chatId;
@@ -21,6 +25,7 @@ class AdminQuestionChatScreen extends StatefulWidget {
 class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  static const String _logName = 'AdminQuestionChatScreen';
 
   @override
   void initState() {
@@ -67,6 +72,152 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
     _scrollToBottom();
   }
 
+  /// ✅ 新規追加: ステータス変更ダイアログを表示
+  Future<void> _showStatusChangeDialog() async {
+    logger.section('ステータス変更ダイアログ表示', name: _logName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.edit_note,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('ステータス変更'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildStatusOption(
+              context: ctx,
+              status: 'pending',
+              label: '未対応',
+              icon: Icons.inbox,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 12),
+            _buildStatusOption(
+              context: ctx,
+              status: 'in_progress',
+              label: '対応中',
+              icon: Icons.schedule,
+              color: AppColors.warning,
+            ),
+            const SizedBox(height: 12),
+            _buildStatusOption(
+              context: ctx,
+              status: 'resolved',
+              label: '対応済',
+              icon: Icons.check_circle,
+              color: AppColors.success,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      await _changeStatus(result);
+    }
+  }
+
+  Widget _buildStatusOption({
+    required BuildContext context,
+    required String status,
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () => Navigator.of(context).pop(status),
+      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ✅ 新規追加: ステータスを変更
+  Future<void> _changeStatus(String newStatus) async {
+    logger.section('ステータス変更処理開始', name: _logName);
+    logger.info('新しいステータス: $newStatus', name: _logName);
+
+    try {
+      context.showLoadingDialog(message: 'ステータス変更中...');
+
+      final provider = Provider.of<AdminProvider>(context, listen: false);
+
+      switch (newStatus) {
+        case 'pending':
+          await provider.markAsPending(widget.chatId);
+          break;
+        case 'in_progress':
+          await provider.markAsInProgress(widget.chatId);
+          break;
+        case 'resolved':
+          await provider.markAsResolved(widget.chatId);
+          break;
+      }
+
+      if (!mounted) return;
+
+      context.hideLoadingDialog();
+      context.showSuccessSnackBar('ステータスを変更しました');
+
+      logger.success('ステータス変更完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('ステータス変更エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+
+      if (!mounted) return;
+
+      context.hideLoadingDialog();
+      context.showErrorSnackBar('ステータスの変更に失敗しました: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AdminProvider>(context);
@@ -76,6 +227,14 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
         title: const Text('お問い合わせ対応'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        actions: [
+          // ✅ ステータス変更ボタンを追加
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            onPressed: _showStatusChangeDialog,
+            tooltip: 'ステータス変更',
+          ),
+        ],
       ),
       body: Column(
         children: [

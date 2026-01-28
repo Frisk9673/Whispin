@@ -38,6 +38,7 @@ class AdminQuestionChatService {
     await _db.collection("QuestionChat").doc(chatId).update({
       "LastMessage": text,
       "UpdatedAt": FieldValue.serverTimestamp(),
+      "Status": "in_progress", // ✅ 管理者がメッセージ送信時に自動的に「対応中」へ
     });
   }
 
@@ -65,5 +66,29 @@ class AdminQuestionChatService {
     }
 
     await batch.commit();
+  }
+  
+  /// ✅ 新規追加: チャットステータスを「対応済」に変更
+  Future<void> markAsResolved(String chatId) async {
+    await _db.collection("QuestionChat").doc(chatId).update({
+      "Status": "resolved",
+      "UpdatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// ✅ 新規追加: チャットステータスを「対応中」に変更
+  Future<void> markAsInProgress(String chatId) async {
+    await _db.collection("QuestionChat").doc(chatId).update({
+      "Status": "in_progress",
+      "UpdatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// ✅ 新規追加: チャットステータスを「未対応」に戻す
+  Future<void> markAsPending(String chatId) async {
+    await _db.collection("QuestionChat").doc(chatId).update({
+      "Status": "pending",
+      "UpdatedAt": FieldValue.serverTimestamp(),
+    });
   }
 }

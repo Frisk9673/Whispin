@@ -18,9 +18,37 @@ class AdminProvider extends ChangeNotifier {
   StreamSubscription<List<Message>>? _messageSubscription;
   List<Message> messages = [];
 
+  // ✅ 追加: プレミアム会員監視用
+  StreamSubscription? _premiumUsersSubscription;
+
   AdminProvider({required UserRepository userRepository})
       : _userRepository = userRepository {
     loadPaidMemberCount();
+    _startPremiumUsersWatch(); // ✅ 追加
+  }
+
+  /// ✅ 追加: プレミアム会員数のリアルタイム監視を開始
+  void _startPremiumUsersWatch() {
+    logger.section('プレミアム会員監視開始', name: _logName);
+
+    _premiumUsersSubscription = _userRepository.watchPremiumUsers().listen(
+      (users) {
+        final newCount = users.length;
+
+        if (paidMemberCount != newCount) {
+          logger.info('プレミアム会員数変更: $paidMemberCount → $newCount',
+              name: _logName);
+          paidMemberCount = newCount;
+          notifyListeners();
+        }
+      },
+      onError: (e, stack) {
+        logger.error('プレミアム会員監視エラー: $e',
+            name: _logName, error: e, stackTrace: stack);
+      },
+    );
+
+    logger.success('プレミアム会員監視開始完了', name: _logName);
   }
 
   /// 有料会員数を取得して状態を更新
@@ -74,6 +102,51 @@ class AdminProvider extends ChangeNotifier {
     await _chatService.markMessagesAsRead(chatId);
   }
 
+  /// ✅ 新規追加: チャットを「対応済」にする
+  Future<void> markAsResolved(String chatId) async {
+    logger.section('markAsResolved() 開始', name: _logName);
+    logger.info('chatId: $chatId', name: _logName);
+
+    try {
+      await _chatService.markAsResolved(chatId);
+      logger.success('チャットを「対応済」に変更しました', name: _logName);
+    } catch (e, stack) {
+      logger.error('markAsResolved() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// ✅ 新規追加: チャットを「対応中」にする
+  Future<void> markAsInProgress(String chatId) async {
+    logger.section('markAsInProgress() 開始', name: _logName);
+    logger.info('chatId: $chatId', name: _logName);
+
+    try {
+      await _chatService.markAsInProgress(chatId);
+      logger.success('チャットを「対応中」に変更しました', name: _logName);
+    } catch (e, stack) {
+      logger.error('markAsInProgress() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// ✅ 新規追加: チャットを「未対応」に戻す
+  Future<void> markAsPending(String chatId) async {
+    logger.section('markAsPending() 開始', name: _logName);
+    logger.info('chatId: $chatId', name: _logName);
+
+    try {
+      await _chatService.markAsPending(chatId);
+      logger.success('チャットを「未対応」に変更しました', name: _logName);
+    } catch (e, stack) {
+      logger.error('markAsPending() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
   /// 購読解除（画面破棄時に呼ぶ）
   void disposeMessageStream() {
     _messageSubscription?.cancel();
@@ -89,6 +162,7 @@ class AdminProvider extends ChangeNotifier {
   @override
   void dispose() {
     disposeMessageStream();
+    _premiumUsersSubscription?.cancel(); // ✅ 追加
     super.dispose();
   }
 }

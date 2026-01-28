@@ -43,7 +43,6 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
     );
   }
 
-  // Part 2: StreamBuilderとリスト表示
   Widget _buildChatList() {
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore
@@ -130,7 +129,6 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
     );
   }
 
-  // Part 3: チャットカードの表示
   Widget _buildChatCard(BuildContext context, QuestionChat chat) {
     return Card(
       elevation: AppConstants.cardElevation,
@@ -196,6 +194,28 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
   }
 
   Widget _buildChatInfo(QuestionChat chat) {
+    // ✅ ステータスに応じた色とアイコンを決定
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (chat.status) {
+      case 'pending':
+        statusColor = AppColors.error;
+        statusIcon = Icons.inbox;
+        break;
+      case 'in_progress':
+        statusColor = AppColors.warning;
+        statusIcon = Icons.schedule;
+        break;
+      case 'resolved':
+        statusColor = AppColors.success;
+        statusIcon = Icons.check_circle;
+        break;
+      default:
+        statusColor = AppColors.textSecondary;
+        statusIcon = Icons.help_outline;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,24 +228,42 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (chat.adminId == null)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '未対応',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textWhite,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            // ✅ ステータスバッジを改善
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
               ),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: statusColor.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    statusIcon,
+                    size: 14,
+                    color: AppColors.textWhite,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    chat.statusText,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textWhite,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -264,4 +302,4 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
       return '';
     }
   }
-}  // クラスの終わり
+}

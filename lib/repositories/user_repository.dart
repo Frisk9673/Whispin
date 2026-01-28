@@ -84,12 +84,24 @@ class UserRepository extends BaseRepository<User> {
     logger.start('findPremiumUsers() 開始', name: _logName);
 
     try {
-      final snapshot = await collection
+      // まず premium フィールドで検索
+      var snapshot = await collection
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();
 
-      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+      var results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+
+      // 見つからない場合は Premium フィールドで検索
+      if (results.isEmpty) {
+        logger.info('premium で見つからず → Premium で再検索', name: _logName);
+        snapshot = await collection
+            .where('Premium', isEqualTo: true)
+            .where('deletedAt', isNull: true)
+            .get();
+
+        results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+      }
 
       logger.success('プレミアム会員数: ${results.length}人', name: _logName);
       return results;
@@ -105,13 +117,40 @@ class UserRepository extends BaseRepository<User> {
     logger.debug('countPremiumUsers()', name: _logName);
 
     try {
-      final snapshot = await collection
+      // 両方のフィールド名で検索を試行
+      logger.start('premium フィールドで検索中...', name: _logName);
+      var snapshot = await collection
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();
 
-      final count = snapshot.docs.length;
+      var count = snapshot.docs.length;
+
+      // premium フィールドで見つからない場合、Premium フィールドで再検索
+      if (count == 0) {
+        logger.info('premium=0 → Premium フィールドで再検索', name: _logName);
+        snapshot = await collection
+            .where('Premium', isEqualTo: true)
+            .where('deletedAt', isNull: true)
+            .get();
+        count = snapshot.docs.length;
+      }
+
       logger.success('プレミアム会員数: $count人', name: _logName);
+
+      // デバッグ: 実際のデータ構造を確認
+      if (count == 0) {
+        logger.warning('プレミアム会員が0人です。データ構造を確認します...', name: _logName);
+        final allUsers = await collection.limit(5).get();
+        for (var doc in allUsers.docs) {
+          final data = doc.data();
+          logger.debug('サンプルユーザーデータ:', name: _logName);
+          logger.debug('  premium: ${data['premium']}', name: _logName);
+          logger.debug('  Premium: ${data['Premium']}', name: _logName);
+          logger.debug('  deletedAt: ${data['deletedAt']}', name: _logName);
+        }
+      }
+
       return count;
     } catch (e, stack) {
       logger.error('countPremiumUsers() エラー: $e',
@@ -290,12 +329,16 @@ class UserRepository extends BaseRepository<User> {
   Stream<List<User>> watchPremiumUsers() {
     logger.debug('watchPremiumUsers() - Stream開始', name: _logName);
 
+    // ✅ 両方のフィールドに対応
     return collection
-        .where('premium', isEqualTo: true)
         .where('deletedAt', isNull: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+      // premium または Premium が true のユーザーをフィルタ
+      return snapshot.docs
+          .map((doc) => fromMap(doc.data()))
+          .where((user) => user.premium) // User.fromMap で既に正規化済み
+          .toList();
     });
   }
 
