@@ -12,6 +12,7 @@ import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
+import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
@@ -52,6 +53,34 @@ class _UserLoginPageState extends State<UserLoginPage> {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
 
+      // バリデーション
+      if (email.isBlank || password.isBlank) {
+        context.showWarningSnackBar("メールアドレスとパスワードを入力してください");
+        setState(() {
+          message = "メールアドレスとパスワードを入力してください";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (!email.isValidEmail) {
+        context.showErrorSnackBar(AppConstants.validationEmailInvalid);
+        setState(() {
+          message = AppConstants.validationEmailInvalid;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (password.length < AppConstants.passwordMinLength) {
+        context.showWarningSnackBar(AppConstants.validationPasswordShort);
+        setState(() {
+          message = AppConstants.validationPasswordShort;
+          _isLoading = false;
+        });
+        return;
+      }
+
       logger.info('ログイン試行: $email', name: _logName);
 
       final loginResult = await userAuthService.loginUser(
@@ -79,6 +108,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
           if (isDeleted) {
             logger.warning('削除済みアカウント: $email', name: _logName);
             await FirebaseAuth.instance.signOut();
+            
+            if (!mounted) return;
+            
+            context.showErrorSnackBar("このアカウントは削除済みです");
             setState(() {
               message = "このアカウントは削除済みです";
               _isLoading = false;
@@ -94,6 +127,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
       if (userProvider.error != null) {
         logger.error('ユーザー情報読み込みエラー: ${userProvider.error}', name: _logName);
+        
+        if (!mounted) return;
+        
+        context.showErrorSnackBar('ユーザー情報の読み込みに失敗しました');
         setState(() {
           message = userProvider.error!;
           _isLoading = false;
@@ -103,7 +140,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
       logger.success('UserProvider.loadUserData() 完了', name: _logName);
 
-      // ✅ 追加: FCMトークンを取得して保存
+      // FCMトークンを取得して保存
       try {
         logger.section('FCMトークン保存処理開始', name: _logName);
         
@@ -144,6 +181,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
       logger.section('_login() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('ログインエラー: $e', name: _logName, error: e, stackTrace: stack);
+      
+      if (!mounted) return;
+      
+      context.showErrorSnackBar('ログインに失敗しました');
       setState(() {
         message = "ログインに失敗しました";
         _isLoading = false;
@@ -153,6 +194,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    final padding = context.responsivePadding;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -161,208 +205,20 @@ class _UserLoginPageState extends State<UserLoginPage> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(AppConstants.defaultPadding),
+              padding: padding,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
-                  Container(
-                    padding: EdgeInsets.all(AppConstants.defaultPadding),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                    ),
-                    child: const Icon(
-                      Icons.lock_outline,
-                      size: 64,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    AppConstants.appName,
-                    style: AppTextStyles.displayMedium.copyWith(
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ログイン',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.textWhite.withOpacity(0.9),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
+                  _buildHeader(context, isMobile),
+                  SizedBox(height: isMobile ? 32 : 48),
 
                   // フォームカード
-                  Card(
-                    elevation: AppConstants.cardElevation * 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(AppConstants.defaultPadding),
-                      child: Column(
-                        children: [
-                          // メールアドレス
-                          TextField(
-                            controller: emailController,
-                            enabled: !_isLoading,
-                            decoration: InputDecoration(
-                              labelText: 'メールアドレス',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.defaultBorderRadius,
-                                ),
-                              ),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            style: AppTextStyles.bodyLarge,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // パスワード
-                          TextField(
-                            controller: passwordController,
-                            enabled: !_isLoading,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'パスワード',
-                              prefixIcon: const Icon(Icons.lock_outlined),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.defaultBorderRadius,
-                                ),
-                              ),
-                            ),
-                            style: AppTextStyles.bodyLarge,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // エラーメッセージ
-                          if (message.isNotBlank)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: AppColors.error.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.defaultBorderRadius,
-                                ),
-                                border: Border.all(
-                                  color: AppColors.error.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.error_outline,
-                                          color: AppColors.error),
-                                      const SizedBox(width: 8),
-                                      Text('エラー', style: AppTextStyles.error),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(message, style: AppTextStyles.error),
-                                ],
-                              ),
-                            ),
-
-                          // ログインボタン
-                          SizedBox(
-                            width: double.infinity,
-                            height: AppConstants.buttonHeight,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius,
-                                  ),
-                                ),
-                              ),
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  gradient: _isLoading
-                                      ? null
-                                      : AppColors.primaryGradient,
-                                  color: _isLoading ? AppColors.divider : null,
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.defaultBorderRadius,
-                                  ),
-                                ),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : Text(
-                                          'ログイン',
-                                          style: AppTextStyles.buttonLarge,
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
+                  _buildFormCard(context, isMobile),
+                  SizedBox(height: isMobile ? 16 : 24),
 
                   // リンクボタン群
-                  Container(
-                    padding: EdgeInsets.all(AppConstants.defaultPadding - 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildLinkButton(
-                          icon: Icons.person_add_outlined,
-                          text: '新規登録はこちら',
-                          onTap: _isLoading
-                              ? null
-                              : () => NavigationHelper.toRegister(context),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildLinkButton(
-                          icon: Icons.admin_panel_settings_outlined,
-                          text: '管理者ログインはこちら',
-                          onTap: _isLoading
-                              ? null
-                              : () => NavigationHelper.toAdminLogin(context),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildLinks(context, isMobile),
                 ],
               ),
             ),
@@ -372,16 +228,279 @@ class _UserLoginPageState extends State<UserLoginPage> {
     );
   }
 
+  /// ヘッダーを構築
+  Widget _buildHeader(BuildContext context, bool isMobile) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(isMobile ? 20 : AppConstants.defaultPadding),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+          ),
+          child: Icon(
+            Icons.lock_outline,
+            size: isMobile ? 48 : 64,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: isMobile ? 16 : 24),
+        Text(
+          AppConstants.appName,
+          style: AppTextStyles.displayMedium.copyWith(
+            color: AppColors.textWhite,
+            fontSize: context.responsiveFontSize(32),
+          ),
+        ),
+        SizedBox(height: isMobile ? 4 : 8),
+        Text(
+          'ログイン',
+          style: AppTextStyles.titleLarge.copyWith(
+            color: AppColors.textWhite.withOpacity(0.9),
+            fontSize: context.responsiveFontSize(18),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// フォームカードを構築
+  Widget _buildFormCard(BuildContext context, bool isMobile) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: context.maxFormWidth,
+      ),
+      child: Card(
+        elevation: AppConstants.cardElevation * 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isMobile ? 16 : AppConstants.defaultPadding),
+          child: Column(
+            children: [
+              // メールアドレス
+              TextField(
+                controller: emailController,
+                enabled: !_isLoading,
+                decoration: InputDecoration(
+                  labelText: 'メールアドレス',
+                  labelStyle: TextStyle(
+                    fontSize: context.responsiveFontSize(14),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    size: isMobile ? 20 : 24,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 16,
+                    vertical: isMobile ? 12 : 16,
+                  ),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontSize: context.responsiveFontSize(16),
+                ),
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+
+              // パスワード
+              TextField(
+                controller: passwordController,
+                enabled: !_isLoading,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'パスワード',
+                  labelStyle: TextStyle(
+                    fontSize: context.responsiveFontSize(14),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.lock_outlined,
+                    size: isMobile ? 20 : 24,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: isMobile ? 20 : 24,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 16,
+                    vertical: isMobile ? 12 : 16,
+                  ),
+                ),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontSize: context.responsiveFontSize(16),
+                ),
+              ),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // エラーメッセージ
+              if (message.isNotBlank)
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(isMobile ? 10 : 12),
+                  margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    border: Border.all(
+                      color: AppColors.error.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: isMobile ? 18 : 20,
+                          ),
+                          SizedBox(width: isMobile ? 6 : 8),
+                          Text(
+                            'エラー',
+                            style: AppTextStyles.error.copyWith(
+                              fontSize: context.responsiveFontSize(14),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: isMobile ? 2 : 4),
+                      Text(
+                        message,
+                        style: AppTextStyles.error.copyWith(
+                          fontSize: context.responsiveFontSize(13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ログインボタン
+              SizedBox(
+                width: double.infinity,
+                height: isMobile ? 48 : AppConstants.buttonHeight,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                    ),
+                  ),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: _isLoading
+                          ? null
+                          : AppColors.primaryGradient,
+                      color: _isLoading ? AppColors.divider : null,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                    ),
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: _isLoading
+                          ? SizedBox(
+                              width: isMobile ? 20 : 24,
+                              height: isMobile ? 20 : 24,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'ログイン',
+                              style: AppTextStyles.buttonLarge.copyWith(
+                                fontSize: context.responsiveFontSize(18),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// リンクボタン群を構築
+  Widget _buildLinks(BuildContext context, bool isMobile) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: context.maxFormWidth,
+      ),
+      padding: EdgeInsets.all(isMobile ? 12 : AppConstants.defaultPadding - 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _buildLinkButton(
+            icon: Icons.person_add_outlined,
+            text: '新規登録はこちら',
+            onTap: _isLoading
+                ? null
+                : () => NavigationHelper.toRegister(context),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 12),
+          _buildLinkButton(
+            icon: Icons.admin_panel_settings_outlined,
+            text: '管理者ログインはこちら',
+            onTap: _isLoading
+                ? null
+                : () => NavigationHelper.toAdminLogin(context),
+            isMobile: isMobile,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// リンクボタンを構築
   Widget _buildLinkButton({
     required IconData icon,
     required String text,
     required VoidCallback? onTap,
+    required bool isMobile,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          vertical: isMobile ? 10 : 12,
+          horizontal: isMobile ? 12 : 16,
+        ),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
@@ -389,13 +508,17 @@ class _UserLoginPageState extends State<UserLoginPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.textWhite, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textWhite,
-                fontWeight: FontWeight.w500,
+            Icon(icon, color: AppColors.textWhite, size: isMobile ? 18 : 20),
+            SizedBox(width: isMobile ? 6 : 8),
+            Flexible(
+              child: Text(
+                text,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textWhite,
+                  fontWeight: FontWeight.w500,
+                  fontSize: context.responsiveFontSize(14),
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
