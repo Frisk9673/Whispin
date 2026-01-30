@@ -168,8 +168,10 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       ),
       child: Container(
         padding: EdgeInsets.all(AppConstants.defaultPadding),
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: _buildContent(),
+        constraints: const BoxConstraints(maxWidth: 450),
+        child: SingleChildScrollView(
+          child: _buildContent(isMobile: false),
+        ),
       ),
     );
   }
@@ -181,121 +183,156 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(
-        AppConstants.defaultPadding,
+        16,
         12,
-        AppConstants.defaultPadding,
-        AppConstants.defaultPadding + context.padding.bottom,
+        16,
+        16 + context.padding.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(2),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _buildContent(),
-        ],
+            const SizedBox(height: 16),
+            Flexible(
+              child: SingleChildScrollView(
+                child: _buildContent(isMobile: true),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent({required bool isMobile}) {
+    final fontSize = context.responsiveFontSize(16);
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'チャットの評価',
-          style: AppTextStyles.headlineSmall,
+          style: AppTextStyles.headlineSmall.copyWith(
+            fontSize: context.responsiveFontSize(20),
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isMobile ? 6 : 8),
         Text(
           '相手とのチャットはいかがでしたか？',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: context.responsiveFontSize(13),
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: isMobile ? 16 : 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildRatingButton(
-              icon: Icons.thumb_up,
-              label: 'Good',
-              value: AppConstants.ratingThumbsUp,
-              color: AppColors.success,
+            Expanded(
+              child: _buildRatingButton(
+                icon: Icons.thumb_up,
+                label: 'Good',
+                value: AppConstants.ratingThumbsUp,
+                color: AppColors.success,
+                isMobile: isMobile,
+              ),
             ),
-            _buildRatingButton(
-              icon: Icons.thumb_down,
-              label: 'Bad',
-              value: AppConstants.ratingThumbsDown,
-              color: AppColors.error,
+            SizedBox(width: isMobile ? 12 : 16),
+            Expanded(
+              child: _buildRatingButton(
+                icon: Icons.thumb_down,
+                label: 'Bad',
+                value: AppConstants.ratingThumbsDown,
+                color: AppColors.error,
+                isMobile: isMobile,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: isMobile ? 16 : 24),
         Divider(color: AppColors.divider),
-        const SizedBox(height: 16),
+        SizedBox(height: isMobile ? 12 : 16),
         CheckboxListTile(
           value: _addFriend,
           onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _addFriend = value ?? false;
-
-              // フレンドONならブロックは強制OFF
               if (_addFriend) {
                 _blockUser = false;
               }
             });
           },
-          title: Text('フレンド申請を送る', style: AppTextStyles.bodyMedium),
-          secondary: Icon(Icons.person_add, color: AppColors.primary),
+          title: Text(
+            'フレンド申請を送る',
+            style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
+          ),
+          secondary: Icon(
+            Icons.person_add,
+            color: AppColors.primary,
+            size: isMobile ? 20 : 24,
+          ),
           controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 8),
         ),
+        SizedBox(height: isMobile ? 4 : 8),
         CheckboxListTile(
           value: _blockUser,
           onChanged: _isSubmitting ? null : (value) {
             setState(() {
               _blockUser = value ?? false;
-
-              // ブロックONならフレンドは強制OFF
               if (_blockUser) {
                 _addFriend = false;
               }
             });
           },
-          title: Text('ブロックする', style: AppTextStyles.bodyMedium),
-          secondary: Icon(Icons.block, color: AppColors.error),
+          title: Text(
+            'ブロックする',
+            style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
+          ),
+          secondary: Icon(
+            Icons.block,
+            color: AppColors.error,
+            size: isMobile ? 20 : 24,
+          ),
           controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 8),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: isMobile ? 16 : 24),
         ElevatedButton(
           onPressed: _isSubmitting ? null : _handleSubmit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.textWhite,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
             ),
           ),
           child: _isSubmitting
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
+              ? SizedBox(
+                  height: isMobile ? 18 : 20,
+                  width: isMobile ? 18 : 20,
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
                   ),
                 )
               : Text(
                   '送信',
-                  style: AppTextStyles.buttonMedium,
+                  style: AppTextStyles.buttonMedium.copyWith(
+                    fontSize: context.responsiveFontSize(16),
+                  ),
                 ),
         ),
       ],
@@ -307,8 +344,11 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     required String label,
     required String value,
     required Color color,
+    required bool isMobile,
   }) {
     final isSelected = _selectedRating == value;
+    final iconSize = isMobile ? 32.0 : 40.0;
+    final fontSize = context.responsiveFontSize(14);
 
     return InkWell(
       onTap: _isSubmitting ? null : () {
@@ -318,7 +358,10 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       },
       borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.symmetric(
+          vertical: isMobile ? 12 : 20,
+          horizontal: isMobile ? 8 : 12,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? color.withOpacity(0.1) : AppColors.inputBackground,
           border: Border.all(
@@ -328,18 +371,20 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 40,
+              size: iconSize,
               color: isSelected ? color : AppColors.textDisabled,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isMobile ? 6 : 8),
             Text(
               label,
               style: AppTextStyles.labelLarge.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isSelected ? color : AppColors.textSecondary,
+                fontSize: fontSize,
               ),
             ),
           ],
