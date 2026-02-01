@@ -237,7 +237,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         ),
         SizedBox(height: isMobile ? 16 : 24),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
               child: _buildRatingButton(
@@ -248,7 +248,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 isMobile: isMobile,
               ),
             ),
-            SizedBox(width: isMobile ? 12 : 16),
+            SizedBox(width: isMobile ? 10 : 16),
             Expanded(
               child: _buildRatingButton(
                 icon: Icons.thumb_down,
@@ -347,47 +347,86 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     required bool isMobile,
   }) {
     final isSelected = _selectedRating == value;
-    final iconSize = isMobile ? 32.0 : 40.0;
-    final fontSize = context.responsiveFontSize(14);
+    final iconSize = isMobile ? 36.0 : 44.0;
+    final btnRadius = isMobile ? 16.0 : AppConstants.defaultBorderRadius;
 
-    return InkWell(
-      onTap: _isSubmitting ? null : () {
-        setState(() {
-          _selectedRating = value;
-        });
-      },
-      borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: isMobile ? 12 : 20,
-          horizontal: isMobile ? 8 : 12,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.inputBackground,
-          border: Border.all(
-            color: isSelected ? color : AppColors.divider,
-            width: 2,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _isSubmitting ? null : () {
+          setState(() {
+            _selectedRating = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(btnRadius),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            vertical: isMobile ? 18 : 24,
+            horizontal: 8,
           ),
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: iconSize,
-              color: isSelected ? color : AppColors.textDisabled,
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.12) : AppColors.inputBackground,
+            border: Border.all(
+              color: isSelected ? color : AppColors.divider,
+              width: isSelected ? 2.5 : 1.5,
             ),
-            SizedBox(height: isMobile ? 6 : 8),
-            Text(
-              label,
-              style: AppTextStyles.labelLarge.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? color : AppColors.textSecondary,
-                fontSize: fontSize,
+            borderRadius: BorderRadius.circular(btnRadius),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: color.withOpacity(0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                width: iconSize + (isSelected ? 12 : 0),
+                height: iconSize + (isSelected ? 12 : 0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: iconSize,
+                    color: isSelected ? color : AppColors.textDisabled,
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: isMobile ? 8 : 10),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: isMobile ? 15 : 16,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected ? color : AppColors.textSecondary,
+                ),
+              ),
+              if (isSelected) ...[
+                SizedBox(height: isMobile ? 4 : 6),
+                Container(
+                  width: 24,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

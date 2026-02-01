@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
-import '../../repositories/friendship_repository.dart';
-import '../../services/invitation_service.dart';
+import '../../services/notification_cache_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
@@ -11,7 +10,10 @@ import '../../constants/responsive.dart';
 import '../../utils/app_logger.dart';
 
 /// レスポンシブ対応の統一ヘッダーコンポーネント
-class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
+///
+/// 通知数は NotificationCacheService のキャッシュを経由し、
+/// 画面遷移時に再取得・5分ごとに自動リフレッシュする。
+class CommonHeader extends StatefulWidget implements PreferredSizeWidget {
   final String title;
   final bool showNotifications;
   final bool showProfile;
@@ -36,54 +38,90 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  /// フレンドリクエスト数 + 招待数を取得
-  Future<int> _getNotificationCount(BuildContext context) async {
+  @override
+  State<CommonHeader> createState() => _CommonHeaderState();
+}
+
+class _CommonHeaderState extends State<CommonHeader> {
+  static const String _logName = 'CommonHeader';
+
+  int _notificationCount = 0;
+  bool _isFirstLoad = true;
+
+  late NotificationCacheService _cacheService;
+  late UserProvider _userProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _cacheService = context.read<NotificationCacheService>();
+    _userProvider = context.read<UserProvider>();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // ユーザー情報が読み込まれた後に初回ロード＋自動リフレッシュ開始
+    final userId = _userProvider.currentUser?.id;
+    if (userId != null && _isFirstLoad) {
+      _isFirstLoad = false;
+      _loadNotificationCount(userId);
+      _cacheService.startAutoRefresh(userId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cacheService.stopAutoRefresh();
+    super.dispose();
+  }
+
+  // ===== 通知数取得 =====
+
+  /// キャッシュから通知数を取得し、必要に応じて再取得する。
+  /// 画面遷移時に呼ばれる。
+  Future<void> _loadNotificationCount(String userId) async {
     try {
-      final userProvider = context.read<UserProvider>();
-      final currentUserId = userProvider.currentUser?.id;
+      final count = await _cacheService.getCount(userId: userId);
 
-      if (currentUserId == null) return 0;
-
-      // フレンドリクエスト数を取得
-      final friendRequestRepository = FriendRequestRepository();
-      final friendRequests =
-          await friendRequestRepository.findReceivedRequests(currentUserId);
-
-      logger.debug('フレンドリクエスト数: ${friendRequests.length}', name: _logName);
-
-      // 招待数を取得
-      final invitationService = context.read<InvitationService>();
-      final invitations =
-          invitationService.getReceivedInvitations(currentUserId);
-
-      logger.debug('招待数: ${invitations.length}', name: _logName);
-
-      final totalCount = friendRequests.length + invitations.length;
-      logger.debug('合計通知数: $totalCount', name: _logName);
-
-      return totalCount;
-    } catch (e, stack) {
-      logger.error('通知数取得エラー: $e', 
-          name: _logName, error: e, stackTrace: stack);
-      return 0;
+      if (!mounted) return;
+      if (count != _notificationCount) {
+        setState(() => _notificationCount = count);
+      }
+    } catch (e) {
+      logger.error('通知数取得エラー: $e', name: _logName, error: e);
     }
   }
 
-  void _handleNotificationPressed(BuildContext context) {
-    if (onNotificationPressed != null) {
-      onNotificationPressed!();
-    } else {
-      Navigator.of(context).pushNamed(AppRoutes.friendRequests);
+  // ===== イベントハンドラー =====
+
+  Future<void> _handleNotificationPressed() async {
+    if (widget.onNotificationPressed != null) {
+      widget.onNotificationPressed!();
+      return;
+    }
+
+    // 通知画面へ遷移
+    await Navigator.of(context).pushNamed(AppRoutes.friendRequests);
+
+    // 戻ってきたら強制リフレッシュ
+    final userId = _userProvider.currentUser?.id;
+    if (userId != null && mounted) {
+      _cacheService.invalidateCache();
+      await _loadNotificationCount(userId);
     }
   }
 
-  void _handleProfilePressed(BuildContext context) {
-    if (onProfilePressed != null) {
-      onProfilePressed!();
+  void _handleProfilePressed() {
+    if (widget.onProfilePressed != null) {
+      widget.onProfilePressed!();
     } else {
       Navigator.of(context).pushNamed(AppRoutes.profile);
     }
   }
+
+  // ===== ビルド =====
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +133,6 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.primary,
       foregroundColor: AppColors.textWhite,
       elevation: 4,
-      // モバイルではタイトルを中央に配置
       centerTitle: isMobile,
       actions: _buildActions(context, userProvider, isMobile),
     );
@@ -103,10 +140,11 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
 
   /// タイトル部分を構築（レスポンシブ対応）
   Widget _buildTitle(BuildContext context) {
-    // モバイルでは短縮タイトル
-    if (context.isMobile && title.length > 15) {
+    if (context.isMobile && widget.title.length > 15) {
       return Text(
-        title.length > 12 ? '${title.substring(0, 12)}...' : title,
+        widget.title.length > 12
+            ? '${widget.title.substring(0, 12)}...'
+            : widget.title,
         style: AppTextStyles.titleMedium.copyWith(
           color: AppColors.textWhite,
           fontSize: context.responsiveFontSize(18),
@@ -116,7 +154,7 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return Text(
-      title,
+      widget.title,
       style: AppTextStyles.titleLarge.copyWith(
         color: AppColors.textWhite,
         fontSize: context.responsiveFontSize(20),
@@ -132,53 +170,43 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   ) {
     final actions = <Widget>[];
 
-    // 通知アイコン
-    if (showNotifications) {
-      actions.add(_buildNotificationButton(context, isMobile));
+    if (widget.showNotifications) {
+      actions.add(_buildNotificationButton(isMobile));
     }
 
-    // プロフィールアイコン
-    if (showProfile) {
-      actions.add(_buildProfileButton(context, isMobile));
+    if (widget.showProfile) {
+      actions.add(_buildProfileButton(isMobile));
     }
 
-    // プレミアムバッジ
-    if (showPremiumBadge && userProvider.isPremium) {
+    if (widget.showPremiumBadge && userProvider.isPremium) {
       actions.add(_buildPremiumBadge(context, isMobile));
     }
 
-    // 追加アクション
-    if (additionalActions != null) {
-      actions.addAll(additionalActions!);
+    if (widget.additionalActions != null) {
+      actions.addAll(widget.additionalActions!);
     }
 
     return actions;
   }
 
   /// 通知ボタンを構築
-  Widget _buildNotificationButton(BuildContext context, bool isMobile) {
-    return FutureBuilder<int>(
-      future: _getNotificationCount(context),
-      builder: (context, snapshot) {
-        final count = snapshot.data ?? 0;
-
-        return Stack(
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.notifications,
-                size: isMobile ? 22 : 24,
-              ),
-              onPressed: () => _handleNotificationPressed(context),
-              tooltip: '通知',
-              padding: isMobile 
-                  ? const EdgeInsets.all(8)
-                  : const EdgeInsets.all(12),
-            ),
-            if (count > 0) _buildNotificationBadge(count, isMobile),
-          ],
-        );
-      },
+  /// キャッシュから保持中の _notificationCount を直接使用
+  Widget _buildNotificationButton(bool isMobile) {
+    return Stack(
+      children: [
+        IconButton(
+          icon: Icon(
+            Icons.notifications,
+            size: isMobile ? 22 : 24,
+          ),
+          onPressed: _handleNotificationPressed,
+          tooltip: '通知',
+          padding:
+              isMobile ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
+        ),
+        if (_notificationCount > 0)
+          _buildNotificationBadge(_notificationCount, isMobile),
+      ],
     );
   }
 
@@ -219,17 +247,15 @@ class CommonHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   /// プロフィールボタンを構築
-  Widget _buildProfileButton(BuildContext context, bool isMobile) {
+  Widget _buildProfileButton(bool isMobile) {
     return IconButton(
       icon: Icon(
         Icons.person,
         size: isMobile ? 22 : 24,
       ),
-      onPressed: () => _handleProfilePressed(context),
+      onPressed: _handleProfilePressed,
       tooltip: 'プロフィール',
-      padding: isMobile 
-          ? const EdgeInsets.all(8)
-          : const EdgeInsets.all(12),
+      padding: isMobile ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
     );
   }
 

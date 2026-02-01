@@ -19,6 +19,7 @@ import 'services/fcm_service.dart';
 import 'services/invitation_service.dart';
 import 'services/startup_invitation_service.dart';
 import 'services/friendship_service.dart';
+import 'services/notification_cache_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/admin_provider.dart';
@@ -121,6 +122,13 @@ Future<void> main() async {
   );
   logger.success('BlockService 初期化完了', name: 'Main');
 
+    logger.start('NotificationCacheService 初期化中...', name: 'Main');
+  final notificationCacheService = NotificationCacheService(
+    friendRequestRepository: friendRequestRepository,
+    invitationService: invitationService,
+  );
+  logger.success('NotificationCacheService 初期化完了', name: 'Main');
+
   logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
   runApp(
@@ -134,6 +142,8 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => AdminProvider(userRepository: userRepository),
         ),
+        Provider<NotificationCacheService>.value(
+            value: notificationCacheService),
 
         // Services
         Provider<StorageService>.value(value: storageService),
