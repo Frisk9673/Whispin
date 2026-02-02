@@ -6,6 +6,7 @@ import '../models/block.dart';
 import '../services/storage_service.dart';
 import '../services/friendship_service.dart';
 import '../repositories/block_repository.dart';
+import '../repositories/user_repository.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
@@ -40,7 +41,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   Future<void> _handleSubmit() async {
     // 二重送信防止
     if (_isSubmitting) return;
-    
+
     setState(() {
       _isSubmitting = true;
     });
@@ -65,6 +66,11 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         );
         widget.storageService.evaluations.add(evaluation);
         logger.success('評価保存完了', name: _logName);
+
+        // ===== 1.5. 被評価者（相手）のrateを更新 =====
+        logger.start('相手のrateを更新中...', name: _logName);
+        await _updatePartnerRate();
+        logger.success('相手のrate更新完了', name: _logName);
       }
 
       // ===== 2. フレンドリクエストの送信 =====
@@ -72,7 +78,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         logger.start('フレンドリクエスト送信', name: _logName);
 
         final friendshipService = context.read<FriendshipService>();
-        
+
         final result = await friendshipService.sendFriendRequest(
           senderId: widget.currentUserId,
           receiverId: widget.partnerId,
@@ -87,15 +93,15 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       // ===== 3. ブロックの実行 =====
       if (_blockUser) {
         logger.start('ブロック処理中...', name: _logName);
-        
+
         try {
           final blockId = await _blockRepository.blockUser(
             widget.currentUserId,
             widget.partnerId,
           );
-          
+
           logger.success('ブロック完了: $blockId', name: _logName);
-          
+
           // StorageServiceにも追加
           final block = Block(
             id: blockId,
@@ -104,25 +110,24 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             active: true,
             createdAt: DateTime.now(),
           );
-          
+
           logger.debug('Block作成:', name: _logName);
           logger.debug('  id: ${block.id}', name: _logName);
           logger.debug('  blockerId: ${block.blockerId}', name: _logName);
           logger.debug('  blockedId: ${block.blockedId}', name: _logName);
-          
+
           // 既存のブロックを検索
-          final existingIndex = widget.storageService.blocks.indexWhere(
-            (b) => b.id == blockId
-          );
-          
+          final existingIndex =
+              widget.storageService.blocks.indexWhere((b) => b.id == blockId);
+
           if (existingIndex == -1) {
             widget.storageService.blocks.add(block);
           } else {
             widget.storageService.blocks[existingIndex] = block;
           }
-          
         } catch (e, stack) {
-          logger.error('ブロック処理エラー: $e', name: _logName, error: e, stackTrace: stack);
+          logger.error('ブロック処理エラー: $e',
+              name: _logName, error: e, stackTrace: stack);
         }
       }
 
@@ -137,16 +142,60 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       if (mounted) {
         Navigator.of(context).pop();
       }
-      
     } catch (e, stack) {
       logger.error('送信エラー: $e', name: _logName, error: e, stackTrace: stack);
-      
+
       if (mounted) {
         context.showErrorSnackBar('送信に失敗しました: $e');
         setState(() {
           _isSubmitting = false;
         });
       }
+    }
+  }
+
+  /// ★ 追加: 被評価者（相手）のrateを更新するメソッド
+  Future<void> _updatePartnerRate() async {
+    logger.section('_updatePartnerRate() 開始', name: _logName);
+    logger.info('partnerId: ${widget.partnerId}', name: _logName);
+    logger.info('selectedRating: $_selectedRating', name: _logName);
+
+    try {
+      // UserRepositoryを取得
+      final userRepository = context.read<UserRepository>();
+
+      // 相手のユーザー情報を取得
+      logger.start('相手のユーザー情報を取得中...', name: _logName);
+      final partnerUser = await userRepository.findById(widget.partnerId);
+
+      if (partnerUser == null) {
+        logger.error('相手のユーザーが見つかりません: ${widget.partnerId}', name: _logName);
+        throw Exception('相手のユーザーが見つかりません');
+      }
+
+      logger.success('相手のユーザー情報取得完了', name: _logName);
+      logger.info('  現在のrate: ${partnerUser.rate}', name: _logName);
+
+      // 新しいrateを計算
+      // 高評価(thumbs_up): +1, 低評価(thumbs_down): -1
+      final rateAdjustment =
+          _selectedRating == AppConstants.ratingThumbsUp ? 1.0 : -1.0;
+
+      final newRate = (partnerUser.rate + rateAdjustment).clamp(-100.0, 100.0);
+
+      logger.info('rate調整: $_selectedRating → $rateAdjustment', name: _logName);
+      logger.info('新しいrate: $newRate', name: _logName);
+
+      // Repository経由でrateを更新
+      logger.start('Repository経由でrateを更新中...', name: _logName);
+      await userRepository.updateRate(widget.partnerId, newRate);
+      logger.success('Repository更新完了', name: _logName);
+
+      logger.section('_updatePartnerRate() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('rate更新エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
     }
   }
 
@@ -177,36 +226,39 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   }
 
   Widget _buildBottomSheet(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        16 + context.padding.bottom,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
+    return Material(
+      color: Colors.transparent, // ← 重要
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          12,
+          16,
+          16 + context.padding.bottom,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: SingleChildScrollView(
-                child: _buildContent(isMobile: true),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: _buildContent(isMobile: true),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -214,7 +266,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
   Widget _buildContent({required bool isMobile}) {
     final fontSize = context.responsiveFontSize(16);
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -265,14 +317,16 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         SizedBox(height: isMobile ? 12 : 16),
         CheckboxListTile(
           value: _addFriend,
-          onChanged: _isSubmitting ? null : (value) {
-            setState(() {
-              _addFriend = value ?? false;
-              if (_addFriend) {
-                _blockUser = false;
-              }
-            });
-          },
+          onChanged: _isSubmitting
+              ? null
+              : (value) {
+                  setState(() {
+                    _addFriend = value ?? false;
+                    if (_addFriend) {
+                      _blockUser = false;
+                    }
+                  });
+                },
           title: Text(
             'フレンド申請を送る',
             style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
@@ -288,14 +342,16 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         SizedBox(height: isMobile ? 4 : 8),
         CheckboxListTile(
           value: _blockUser,
-          onChanged: _isSubmitting ? null : (value) {
-            setState(() {
-              _blockUser = value ?? false;
-              if (_blockUser) {
-                _addFriend = false;
-              }
-            });
-          },
+          onChanged: _isSubmitting
+              ? null
+              : (value) {
+                  setState(() {
+                    _blockUser = value ?? false;
+                    if (_blockUser) {
+                      _addFriend = false;
+                    }
+                  });
+                },
           title: Text(
             'ブロックする',
             style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
@@ -316,7 +372,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             foregroundColor: AppColors.textWhite,
             padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(AppConstants.defaultBorderRadius),
             ),
           ),
           child: _isSubmitting
@@ -353,11 +410,13 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _isSubmitting ? null : () {
-          setState(() {
-            _selectedRating = value;
-          });
-        },
+        onTap: _isSubmitting
+            ? null
+            : () {
+                setState(() {
+                  _selectedRating = value;
+                });
+              },
         borderRadius: BorderRadius.circular(btnRadius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -368,7 +427,9 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
             horizontal: 8,
           ),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.12) : AppColors.inputBackground,
+            color: isSelected
+                ? color.withOpacity(0.12)
+                : AppColors.inputBackground,
             border: Border.all(
               color: isSelected ? color : AppColors.divider,
               width: isSelected ? 2.5 : 1.5,
@@ -395,7 +456,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 height: iconSize + (isSelected ? 12 : 0),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+                  color:
+                      isSelected ? color.withOpacity(0.15) : Colors.transparent,
                 ),
                 child: Center(
                   child: Icon(

@@ -214,7 +214,6 @@ class UserRepository extends BaseRepository<User> {
     await firestore.collection(collectionName).doc(docId).update({
       'premium': isPremium,
       'lastUpdatedPremium': FieldValue.serverTimestamp(),
-      'LastUpdated_Premium': FieldValue.serverTimestamp(),
     });
 
     logger.success('Firestore更新完了', name: _logName);
@@ -266,7 +265,6 @@ class UserRepository extends BaseRepository<User> {
     try {
       await updateFields(userId, {
         'rate': rate,
-        'Rate': rate,
       });
 
       logger.success('評価スコア更新完了', name: _logName);
@@ -290,7 +288,6 @@ class UserRepository extends BaseRepository<User> {
       final newCount = user.roomCount + 1;
       await updateFields(userId, {
         'roomCount': newCount,
-        'RoomCount': newCount,
       });
 
       logger.success('ルーム参加回数更新: $newCount', name: _logName);

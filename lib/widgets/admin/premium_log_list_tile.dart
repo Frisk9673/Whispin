@@ -88,46 +88,169 @@ class PremiumLogListTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Container(
-          padding: EdgeInsets.all(AppConstants.defaultPadding),
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ヘッダー
-              Row(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85, // ★重要
+              maxWidth: 500),
+          child: Padding(
+            padding: EdgeInsets.all(AppConstants.defaultPadding),
+            child: SingleChildScrollView(
+              // ★これ
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: AppColors.textWhite,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ユーザー詳細',
-                          style: AppTextStyles.titleLarge,
+                  // ヘッダー
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          shape: BoxShape.circle,
                         ),
-                        Text(
-                          '${user?.lastName} ${user?.firstName}',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textWhite,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ユーザー詳細',
+                              style: AppTextStyles.titleLarge,
+                            ),
+                            Text(
+                              '${user?.lastName} ${user?.firstName}',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          logger.info(
+                            'ダイアログを閉じました (email: ${log.email})',
+                            name: _logName,
+                          );
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 基本情報
+                  _buildInfoSection(
+                    title: '基本情報',
+                    icon: Icons.info_outline,
+                    children: [
+                      _buildInfoRow(
+                        Icons.email,
+                        'メールアドレス',
+                        user!.id,
+                      ),
+                      _buildInfoRow(
+                        Icons.phone,
+                        '電話番号',
+                        user.phoneNumber ?? '未設定',
+                      ),
+                      _buildInfoRow(
+                        Icons.badge,
+                        'ニックネーム',
+                        user.nickname.isEmpty ? '未設定' : user.nickname,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 契約状況
+                  _buildInfoSection(
+                    title: '契約状況',
+                    icon: Icons.diamond,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.defaultBorderRadius,
+                          ),
+                          border: Border.all(
+                            color: statusColor.withOpacity(0.3),
+                            width: 2,
                           ),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              user.premium ? Icons.check_circle : Icons.cancel,
+                              color: statusColor,
+                              size: 32,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '現在のステータス',
+                                    style: AppTextStyles.labelMedium,
+                                  ),
+                                  Text(
+                                    statusText,
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: statusColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  IconButton(
+
+                  const SizedBox(height: 16),
+
+                  // ログ情報
+                  _buildInfoSection(
+                    title: 'ログ情報',
+                    icon: Icons.history,
+                    children: [
+                      _buildInfoRow(
+                        Icons.event_note,
+                        '詳細',
+                        log.detail,
+                      ),
+                      _buildInfoRow(
+                        Icons.access_time,
+                        '日時',
+                        log.timestamp.toJapaneseDateWithWeekday +
+                            '\n' +
+                            log.timestamp.toTimeString,
+                      ),
+                      _buildInfoRow(
+                        Icons.schedule,
+                        '経過時間',
+                        log.timestamp.toRelativeTime,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  ElevatedButton(
                     onPressed: () {
                       logger.info(
                         'ダイアログを閉じました (email: ${log.email})',
@@ -135,140 +258,24 @@ class PremiumLogListTile extends StatelessWidget {
                       );
                       Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // 基本情報
-              _buildInfoSection(
-                title: '基本情報',
-                icon: Icons.info_outline,
-                children: [
-                  _buildInfoRow(
-                    Icons.email,
-                    'メールアドレス',
-                    user!.id,
-                  ),
-                  _buildInfoRow(
-                    Icons.phone,
-                    '電話番号',
-                    user.phoneNumber ?? '未設定',
-                  ),
-                  _buildInfoRow(
-                    Icons.badge,
-                    'ニックネーム',
-                    user.nickname.isEmpty ? '未設定' : user.nickname,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 契約状況
-              _buildInfoSection(
-                title: '契約状況',
-                icon: Icons.diamond,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.defaultBorderRadius,
-                      ),
-                      border: Border.all(
-                        color: statusColor.withOpacity(0.3),
-                        width: 2,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textWhite,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.defaultBorderRadius,
+                        ),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          user.premium ? Icons.check_circle : Icons.cancel,
-                          color: statusColor,
-                          size: 32,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '現在のステータス',
-                                style: AppTextStyles.labelMedium,
-                              ),
-                              Text(
-                                statusText,
-                                style: AppTextStyles.titleMedium.copyWith(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '閉じる',
+                      style: AppTextStyles.buttonMedium,
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 16),
-
-              // ログ情報
-              _buildInfoSection(
-                title: 'ログ情報',
-                icon: Icons.history,
-                children: [
-                  _buildInfoRow(
-                    Icons.event_note,
-                    '詳細',
-                    log.detail,
-                  ),
-                  _buildInfoRow(
-                    Icons.access_time,
-                    '日時',
-                    log.timestamp.toJapaneseDateWithWeekday +
-                        '\n' +
-                        log.timestamp.toTimeString,
-                  ),
-                  _buildInfoRow(
-                    Icons.schedule,
-                    '経過時間',
-                    log.timestamp.toRelativeTime,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: () {
-                  logger.info(
-                    'ダイアログを閉じました (email: ${log.email})',
-                    name: _logName,
-                  );
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textWhite,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.defaultBorderRadius,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  '閉じる',
-                  style: AppTextStyles.buttonMedium,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -383,6 +390,7 @@ class PremiumLogListTile extends StatelessWidget {
               // 情報
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min, // ★ 追加
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -396,6 +404,7 @@ class PremiumLogListTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             log.email,
+                            maxLines: 1,
                             style: AppTextStyles.titleMedium,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -445,6 +454,7 @@ class PremiumLogListTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             log.timestamp.toJapaneseDate,
+                            maxLines: 1,
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
