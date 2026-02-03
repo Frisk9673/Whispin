@@ -51,20 +51,67 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
     }
   }
 
-  /// メールアドレスでログを検索
+  /// メールアドレスでログを検索（フィールド名の互換性対応）
   Future<List<PremiumLog>> findByEmail(String email) async {
-    logger.debug('findByEmail($email)', name: _logName);
+    logger.section('findByEmail($email) 開始', name: _logName);
+    logger.info('検索email: $email', name: _logName);
 
     try {
-      final snapshot = await collection
+      // ===== 方法1: 'ID' フィールドで検索 =====
+      logger.start('方法1: ID フィールドで検索中...', name: _logName);
+      var snapshot = await collection
           .where('ID', isEqualTo: email)
           .orderBy('Timestamp', descending: true)
           .get();
 
-      final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+      if (snapshot.docs.isNotEmpty) {
+        logger.success('方法1で発見: ${snapshot.docs.length}件', name: _logName);
+        final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+        logger.section('findByEmail() 完了', name: _logName);
+        return results;
+      }
 
-      logger.success('検索結果: ${results.length}件', name: _logName);
-      return results;
+      logger.warning('方法1: 見つかりませんでした', name: _logName);
+
+      // ===== 方法2: 'email' フィールドで検索（フォールバック） =====
+      logger.start('方法2: email フィールドで検索中...', name: _logName);
+      snapshot = await collection
+          .where('email', isEqualTo: email)
+          .orderBy('Timestamp', descending: true)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        logger.success('方法2で発見: ${snapshot.docs.length}件', name: _logName);
+        final results = snapshot.docs.map((doc) => fromMap(doc.data())).toList();
+        logger.section('findByEmail() 完了', name: _logName);
+        return results;
+      }
+
+      logger.warning('方法2: 見つかりませんでした', name: _logName);
+
+      // ===== デバッグ: コレクション内のドキュメント確認 =====
+      logger.section('デバッグ: Log_Premium コレクション内容確認', name: _logName);
+      final allDocs = await collection.limit(5).get();
+
+      if (allDocs.docs.isEmpty) {
+        logger.warning('Log_Premium コレクションが空です！', name: _logName);
+      } else {
+        logger.info('最初の5件のドキュメント:', name: _logName);
+        for (var doc in allDocs.docs) {
+          final data = doc.data();
+          logger.debug('  Document ID: ${doc.id}', name: _logName);
+          logger.debug('    ID: ${data["ID"]}', name: _logName);
+          logger.debug('    email: ${data["email"]}', name: _logName);
+          logger.debug('    Detail: ${data["Detail"]}', name: _logName);
+        }
+      }
+
+      logger.warning(
+        '検索対象のメールアドレスが見つかりません: $email',
+        name: _logName,
+      );
+      logger.section('findByEmail() 完了（0件）', name: _logName);
+      return [];
     } catch (e, stack) {
       logger.error(
         'findByEmail() エラー: $e',
