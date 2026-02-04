@@ -127,6 +127,18 @@ class InvitationService {
 
   // ===== 招待の承認 =====
 
+  /// ルーム名を取得（招待表示用）
+  Future<String> getRoomTopic(String roomId) async {
+    logger.debug('getRoomTopic($roomId)', name: _logName);
+
+    final room = _storageService.rooms.firstWhere(
+      (r) => r.id == roomId,
+      orElse: () => throw Exception('ルームが見つかりません'),
+    );
+
+    return room.topic;
+  }
+
   /// 招待を承認してルームに参加
   ///
   /// [invitationId] 招待ID
@@ -296,7 +308,9 @@ class InvitationService {
     logger.debug('getReceivedInvitations() - userId: $userId', name: _logName);
 
     final invitations = _storageService.invitations
-        .where((inv) => inv.inviteeId == userId && inv.status == AppConstants.invitationStatusPending)
+        .where((inv) =>
+            inv.inviteeId == userId &&
+            inv.status == AppConstants.invitationStatusPending)
         .where((inv) => !inv.isExpired)
         .toList();
 
@@ -321,7 +335,9 @@ class InvitationService {
     logger.debug('getRoomInvitations() - roomId: $roomId', name: _logName);
 
     final invitations = _storageService.invitations
-        .where((inv) => inv.roomId == roomId && inv.status == AppConstants.invitationStatusPending)
+        .where((inv) =>
+            inv.roomId == roomId &&
+            inv.status == AppConstants.invitationStatusPending)
         .toList();
 
     logger.debug('ルーム招待数: ${invitations.length}件', name: _logName);
@@ -340,7 +356,8 @@ class InvitationService {
     for (int i = 0; i < _storageService.invitations.length; i++) {
       final invitation = _storageService.invitations[i];
 
-      if (invitation.status == AppConstants.invitationStatusPending && invitation.isExpired) {
+      if (invitation.status == AppConstants.invitationStatusPending &&
+          invitation.isExpired) {
         _storageService.invitations[i] = invitation.copyWith(
           status: AppConstants.invitationStatusExpired,
           respondedAt: DateTime.now(),

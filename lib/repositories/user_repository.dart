@@ -355,7 +355,8 @@ class UserRepository extends BaseRepository<User> {
       final batch = firestore.batch();
 
       // 1. ログを作成
-      final logRef = firestore.collection(AppConstants.premiumLogCollection).doc();
+      final logRef =
+          firestore.collection(AppConstants.premiumLogCollection).doc();
       batch.set(logRef, {
         'ID': id,
         'Timestamp': Timestamp.fromDate(now),
@@ -365,7 +366,9 @@ class UserRepository extends BaseRepository<User> {
       logger.info('Log_Premium 作成予約: ${logRef.id}', name: _logName);
 
       // 2. カウンターを更新
-      final counterRef = firestore.collection(AppConstants.premiumCounterCollection).doc('counter');
+      final counterRef = firestore
+          .collection(AppConstants.premiumCounterCollection)
+          .doc('counter');
 
       // カウンターが存在するか確認（事前チェック）
       final counterDoc = await counterRef.get();
@@ -460,5 +463,24 @@ class UserRepository extends BaseRepository<User> {
 
     logger.success('FCMトークン更新完了', name: _logName);
     logger.debug('Token: ${fcmToken.substring(0, 20)}...', name: _logName);
+  }
+
+  /// 表示名を取得（失敗時は userId を返す）
+  Future<String> getDisplayName(String userId) async {
+    try {
+      logger.debug('表示名取得: $userId', name: _logName);
+      final user = await findById(userId);
+
+      if (user != null) {
+        logger.debug('  → ${user.displayName}', name: _logName);
+        return user.displayName;
+      }
+
+      logger.warning('ユーザー情報なし: $userId', name: _logName);
+      return userId;
+    } catch (e) {
+      logger.warning('表示名取得失敗: $e', name: _logName);
+      return userId;
+    }
   }
 }

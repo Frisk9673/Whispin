@@ -377,9 +377,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
             borderRadius:
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
-              color: isDark
-                ? AppColors.info.withOpacity(0.3)
-                : AppColors.info.withOpacity(0.3),
+              color: AppColors.info.withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -416,9 +414,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                           Text(
                             'があなたを招待しました',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark 
-                                ? Colors.grey[400]
-                                : AppColors.textSecondary,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -434,8 +432,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isDark
-                      ? AppColors.info.withOpacity(0.1)
-                      : AppColors.info.withOpacity(0.05),
+                        ? AppColors.info.withOpacity(0.1)
+                        : AppColors.info.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
@@ -459,8 +457,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                               'ルーム名',
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: isDark
-                                  ? Colors.grey[400]
-                                  : AppColors.textSecondary,
+                                    ? Colors.grey[400]
+                                    : AppColors.textSecondary,
                               ),
                             ),
                             Text(
@@ -487,8 +485,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                      ? const Color(0xFF2C2C2C)
-                      : AppColors.backgroundLight,
+                        ? const Color(0xFF2C2C2C)
+                        : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -497,17 +495,16 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                       Icon(
                         Icons.access_time,
                         size: 16,
-                        color: isDark
-                          ? Colors.grey[400]
-                          : AppColors.textSecondary,
+                        color:
+                            isDark ? Colors.grey[400] : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         invitation.createdAt.toRelativeTime,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: isDark
-                            ? Colors.grey[400]
-                            : AppColors.textSecondary,
+                              ? Colors.grey[400]
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -566,7 +563,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   Widget _buildFriendRequestCard(FriendRequest request, bool isDark) {
     return FutureBuilder<String>(
-      future: _getSenderName(request.senderId),
+      future: _userRepository.getDisplayName(request.senderId),
       builder: (context, snapshot) {
         final senderName = snapshot.data ?? request.senderId;
 
@@ -579,8 +576,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
               color: isDark
-                ? AppColors.primary.withOpacity(0.3)
-                : AppColors.primary.withOpacity(0.2),
+                  ? AppColors.primary.withOpacity(0.3)
+                  : AppColors.primary.withOpacity(0.2),
               width: 2,
             ),
           ),
@@ -611,8 +608,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                             request.senderId,
                             style: AppTextStyles.labelMedium.copyWith(
                               color: isDark
-                                ? Colors.grey[400]
-                                : AppColors.textSecondary,
+                                  ? Colors.grey[400]
+                                  : AppColors.textSecondary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -629,8 +626,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                      ? const Color(0xFF2C2C2C)
-                      : AppColors.backgroundLight,
+                        ? const Color(0xFF2C2C2C)
+                        : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -639,17 +636,16 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                       Icon(
                         Icons.access_time,
                         size: 16,
-                        color: isDark
-                          ? Colors.grey[400]
-                          : AppColors.textSecondary,
+                        color:
+                            isDark ? Colors.grey[400] : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         request.createdAt.toRelativeTime,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: isDark
-                            ? Colors.grey[400]
-                            : AppColors.textSecondary,
+                              ? Colors.grey[400]
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -703,42 +699,20 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     );
   }
 
-  Future<String> _getSenderName(String userId) async {
-    try {
-      logger.debug('ユーザー名取得: $userId', name: _logName);
-      final user = await _userRepository.findById(userId);
-
-      if (user != null) {
-        logger.debug('  → ${user.displayName}', name: _logName);
-        return user.displayName;
-      }
-
-      logger.warning('ユーザー情報なし: $userId', name: _logName);
-      return userId;
-    } catch (e) {
-      logger.warning('ユーザー名取得失敗: $e', name: _logName);
-      return userId;
-    }
-  }
-
   Future<Map<String, String>> _getInvitationDetails(
       Invitation invitation) async {
     try {
-      final storageService = context.read<StorageService>();
-
       // 招待者情報を取得
-      final inviter = await _userRepository.findById(invitation.inviterId);
-      final inviterName = inviter?.displayName ?? invitation.inviterId;
+      final inviterName =
+          await _userRepository.getDisplayName(invitation.inviterId);
 
       // ルーム情報を取得
-      final room = storageService.rooms.firstWhere(
-        (r) => r.id == invitation.roomId,
-        orElse: () => throw Exception('ルームが見つかりません'),
-      );
+      final roomTopic =
+          await _invitationService.getRoomTopic(invitation.roomId);
 
       return {
         'inviterName': inviterName,
-        'roomName': room.topic,
+        'roomName': roomTopic,
       };
     } catch (e) {
       logger.error('招待詳細取得エラー: $e', name: _logName, error: e);
