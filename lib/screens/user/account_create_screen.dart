@@ -82,6 +82,11 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       return;
     }
 
+    if (!RegExp(r'^[0-9]+$').hasMatch(telId)) {
+      context.showErrorSnackBar('電話番号は半角数字で入力してください');
+      return;
+    }
+
     setState(() => loading = true);
 
     try {
@@ -356,9 +361,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                   ),
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: loading
-                          ? null
-                          : AppColors.primaryGradient,
+                      gradient: loading ? null : AppColors.primaryGradient,
                       color: loading ? AppColors.divider : null,
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
@@ -440,9 +443,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: loading
-            ? null
-            : () => NavigationHelper.toLogin(context),
+        onTap: loading ? null : () => NavigationHelper.toLogin(context),
         borderRadius: BorderRadius.circular(
           AppConstants.defaultBorderRadius,
         ),
