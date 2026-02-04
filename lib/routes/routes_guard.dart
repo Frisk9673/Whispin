@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/storage_service.dart';
+import '../models/chat_room.dart';
 import '../constants/routes.dart';
 import '../utils/app_logger.dart';
 
@@ -140,12 +143,61 @@ class RouteGuard {
     String roomId,
     String userId,
   ) {
-    // TODO: ルームの参加可能性チェックロジックを実装
-    // - ルームが存在するか
-    // - ブロックされていないか
-    // - 満員でないか
-
     logger.debug('ルームアクセスチェック: roomId=$roomId, userId=$userId', name: _logName);
+    final storageService = context.read<StorageService>();
+    ChatRoom? room;
+
+    for (final entry in storageService.rooms) {
+      if (entry.id == roomId) {
+        room = entry;
+        break;
+      }
+    }
+
+    if (room == null) {
+      logger.warning('ルームが見つかりません: roomId=$roomId', name: _logName);
+      return false;
+    }
+
+    if (room.id1 == userId || room.id2 == userId) {
+      logger.debug('既に参加中のユーザーです: roomId=$roomId', name: _logName);
+      return true;
+    }
+
+    final otherUserIds = <String>{
+      if (room.id1 != null && room.id1!.isNotEmpty) room.id1!,
+      if (room.id2 != null && room.id2!.isNotEmpty) room.id2!,
+    };
+
+    for (final otherUserId in otherUserIds) {
+      final hasBlock = storageService.blocks.any((block) {
+        if (!block.active) {
+          return false;
+        }
+        final isBlockedByMe =
+            block.blockerId == userId && block.blockedId == otherUserId;
+        final isBlockedByOther =
+            block.blockerId == otherUserId && block.blockedId == userId;
+        return isBlockedByMe || isBlockedByOther;
+      });
+
+      if (hasBlock) {
+        logger.warning(
+          'ブロック関係のためアクセス不可: roomId=$roomId, userId=$userId, otherUserId=$otherUserId',
+          name: _logName,
+        );
+        return false;
+      }
+    }
+
+    final isRoomFull = (room.id1?.isNotEmpty ?? false) &&
+        (room.id2?.isNotEmpty ?? false);
+    if (isRoomFull) {
+      logger.warning('ルームが満員です: roomId=$roomId', name: _logName);
+      return false;
+    }
+
+    logger.debug('ルームアクセス許可: roomId=$roomId, userId=$userId', name: _logName);
     return true;
   }
 
