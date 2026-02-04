@@ -167,18 +167,28 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667EEA),
-              Color(0xFF764BA2),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF1E1E1E),
+                  Color(0xFF121212),
+                ],
+              )
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF667EEA),
+                  Color(0xFF764BA2),
+                ],
+              ),
         ),
         child: SafeArea(
           child: Center(
@@ -188,15 +198,15 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
-                  _buildHeader(context, isMobile),
+                  _buildHeader(context, isMobile, isDark),
                   SizedBox(height: isMobile ? 32 : 48),
 
                   // フォームカード
-                  _buildFormCard(context, isMobile),
+                  _buildFormCard(context, isMobile, isDark),
                   SizedBox(height: isMobile ? 16 : 24),
 
                   // ログインリンク
-                  _buildLoginLink(context, isMobile),
+                  _buildLoginLink(context, isMobile, isDark),
                 ],
               ),
             ),
@@ -207,14 +217,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   }
 
   /// ヘッダーを構築
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader(BuildContext context, bool isMobile, bool isDark) {
     return Column(
       children: [
         Container(
           padding: EdgeInsets.all(isMobile ? 20 : AppConstants.defaultPadding),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
           ),
           child: Icon(
             Icons.person_add_outlined,
@@ -243,13 +253,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   }
 
   /// フォームカードを構築
-  Widget _buildFormCard(BuildContext context, bool isMobile) {
+  Widget _buildFormCard(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
       ),
       child: Card(
         elevation: AppConstants.cardElevation * 2,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -263,6 +274,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 isMobile: isMobile,
+                isDark: isDark,
               ),
               SizedBox(height: isMobile ? 12 : 16),
               _buildTextField(
@@ -271,6 +283,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 isMobile: isMobile,
+                isDark: isDark,
               ),
               SizedBox(height: isMobile ? 12 : 16),
               Row(
@@ -281,6 +294,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                       label: '姓',
                       icon: Icons.person_outline,
                       isMobile: isMobile,
+                      isDark: isDark,
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
@@ -290,6 +304,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                       label: '名',
                       icon: Icons.person_outline,
                       isMobile: isMobile,
+                      isDark: isDark,
                     ),
                   ),
                 ],
@@ -300,6 +315,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 label: 'ニックネーム（オプション）',
                 icon: Icons.badge_outlined,
                 isMobile: isMobile,
+                isDark: isDark,
               ),
               SizedBox(height: isMobile ? 12 : 16),
               _buildTextField(
@@ -308,11 +324,13 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 icon: Icons.lock_outlined,
                 obscureText: _obscurePassword,
                 isMobile: isMobile,
+                isDark: isDark,
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
+                    color: isDark ? Colors.grey[400] : null,
                   ),
                   onPressed: () {
                     setState(() {
@@ -328,11 +346,13 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 icon: Icons.lock_outlined,
                 obscureText: _obscureConfirmPassword,
                 isMobile: isMobile,
+                isDark: isDark,
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscureConfirmPassword
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
+                    color: isDark ? Colors.grey[400] : null,
                   ),
                   onPressed: () {
                     setState(() {
@@ -362,7 +382,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                   child: Ink(
                     decoration: BoxDecoration(
                       gradient: loading ? null : AppColors.primaryGradient,
-                      color: loading ? AppColors.divider : null,
+                      color: loading 
+                        ? (isDark ? const Color(0xFF2C2C2C) : AppColors.divider)
+                        : null,
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
                       ),
@@ -401,6 +423,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     required String label,
     required IconData icon,
     required bool isMobile,
+    required bool isDark,
     bool obscureText = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
@@ -410,36 +433,62 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       enabled: !loading,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      style: AppTextStyles.bodyLarge.copyWith(
+        fontSize: context.responsiveFontSize(16),
+        color: isDark ? Colors.white : Colors.black87,
+      ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
           fontSize: context.responsiveFontSize(14),
+          color: isDark ? Colors.grey[400] : null,
         ),
-        prefixIcon: Icon(icon, size: isMobile ? 20 : 24),
+        prefixIcon: Icon(
+          icon,
+          size: isMobile ? 20 : 24,
+          color: isDark ? Colors.grey[400] : null,
+        ),
         suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+          borderSide: BorderSide(
+            color: isDark 
+              ? AppColors.primary.lighten(0.2)
+              : AppColors.primary,
+            width: 2,
+          ),
         ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: isMobile ? 12 : 16,
           vertical: isMobile ? 12 : 16,
         ),
       ),
-      style: AppTextStyles.bodyLarge.copyWith(
-        fontSize: context.responsiveFontSize(16),
-      ),
     );
   }
 
   /// ログインリンクを構築
-  Widget _buildLoginLink(BuildContext context, bool isMobile) {
+  Widget _buildLoginLink(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
       ),
       padding: EdgeInsets.all(isMobile ? 12 : AppConstants.defaultPadding - 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
@@ -453,7 +502,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
             horizontal: isMobile ? 12 : 16,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
             borderRadius: BorderRadius.circular(
               AppConstants.defaultBorderRadius,
             ),

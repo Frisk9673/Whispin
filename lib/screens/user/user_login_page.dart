@@ -209,11 +209,21 @@ class _UserLoginPageState extends State<UserLoginPage> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
+          gradient: isDark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF1E1E1E),
+                  Color(0xFF121212),
+                ],
+              )
+            : AppColors.primaryGradient,
         ),
         child: SafeArea(
           child: Center(
@@ -223,15 +233,15 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ロゴ・タイトル
-                  _buildHeader(context, isMobile),
+                  _buildHeader(context, isMobile, isDark),
                   SizedBox(height: isMobile ? 32 : 48),
 
                   // フォームカード
-                  _buildFormCard(context, isMobile),
+                  _buildFormCard(context, isMobile, isDark),
                   SizedBox(height: isMobile ? 16 : 24),
 
                   // リンクボタン群
-                  _buildLinks(context, isMobile),
+                  _buildLinks(context, isMobile, isDark),
                 ],
               ),
             ),
@@ -242,14 +252,14 @@ class _UserLoginPageState extends State<UserLoginPage> {
   }
 
   /// ヘッダーを構築
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader(BuildContext context, bool isMobile, bool isDark) {
     return Column(
       children: [
         Container(
           padding: EdgeInsets.all(isMobile ? 20 : AppConstants.defaultPadding),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
           ),
           child: Icon(
             Icons.lock_outline,
@@ -278,13 +288,14 @@ class _UserLoginPageState extends State<UserLoginPage> {
   }
 
   /// フォームカードを構築
-  Widget _buildFormCard(BuildContext context, bool isMobile) {
+  Widget _buildFormCard(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
       ),
       child: Card(
         elevation: AppConstants.cardElevation * 2,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -296,28 +307,55 @@ class _UserLoginPageState extends State<UserLoginPage> {
               TextField(
                 controller: emailController,
                 enabled: !_isLoading,
+                keyboardType: TextInputType.emailAddress,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontSize: context.responsiveFontSize(16),
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
                 decoration: InputDecoration(
                   labelText: 'メールアドレス',
                   labelStyle: TextStyle(
                     fontSize: context.responsiveFontSize(14),
+                    color: isDark ? Colors.grey[400] : null,
                   ),
                   prefixIcon: Icon(
                     Icons.email_outlined,
                     size: isMobile ? 20 : 24,
+                    color: isDark ? Colors.grey[400] : null,
                   ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark 
+                        ? AppColors.primary.lighten(0.2)
+                        : AppColors.primary,
+                      width: 2,
                     ),
                   ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 12 : 16,
                     vertical: isMobile ? 12 : 16,
                   ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontSize: context.responsiveFontSize(16),
                 ),
               ),
               SizedBox(height: isMobile ? 12 : 16),
@@ -327,14 +365,20 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 controller: passwordController,
                 enabled: !_isLoading,
                 obscureText: _obscurePassword,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontSize: context.responsiveFontSize(16),
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
                 decoration: InputDecoration(
                   labelText: 'パスワード',
                   labelStyle: TextStyle(
                     fontSize: context.responsiveFontSize(14),
+                    color: isDark ? Colors.grey[400] : null,
                   ),
                   prefixIcon: Icon(
                     Icons.lock_outlined,
                     size: isMobile ? 20 : 24,
+                    color: isDark ? Colors.grey[400] : null,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -342,6 +386,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
                       size: isMobile ? 20 : 24,
+                      color: isDark ? Colors.grey[400] : null,
                     ),
                     onPressed: () {
                       setState(() {
@@ -349,18 +394,39 @@ class _UserLoginPageState extends State<UserLoginPage> {
                       });
                     },
                   ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark 
+                        ? AppColors.primary.lighten(0.2)
+                        : AppColors.primary,
+                      width: 2,
                     ),
                   ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 12 : 16,
                     vertical: isMobile ? 12 : 16,
                   ),
-                ),
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontSize: context.responsiveFontSize(16),
                 ),
               ),
               SizedBox(height: isMobile ? 16 : 24),
@@ -372,12 +438,12 @@ class _UserLoginPageState extends State<UserLoginPage> {
                   padding: EdgeInsets.all(isMobile ? 10 : 12),
                   margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
+                    color: AppColors.error.withOpacity(isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
                     border: Border.all(
-                      color: AppColors.error.withOpacity(0.3),
+                      color: AppColors.error.withOpacity(isDark ? 0.5 : 0.3),
                     ),
                   ),
                   child: Column(
@@ -395,6 +461,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                             'エラー',
                             style: AppTextStyles.error.copyWith(
                               fontSize: context.responsiveFontSize(14),
+                              color: isDark ? Colors.red[300] : AppColors.error,
                             ),
                           ),
                         ],
@@ -404,6 +471,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                         message,
                         style: AppTextStyles.error.copyWith(
                           fontSize: context.responsiveFontSize(13),
+                          color: isDark ? Colors.red[300] : AppColors.error,
                         ),
                       ),
                     ],
@@ -431,7 +499,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
                       gradient: _isLoading
                           ? null
                           : AppColors.primaryGradient,
-                      color: _isLoading ? AppColors.divider : null,
+                      color: _isLoading 
+                        ? (isDark ? const Color(0xFF2C2C2C) : AppColors.divider)
+                        : null,
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
                       ),
@@ -465,14 +535,14 @@ class _UserLoginPageState extends State<UserLoginPage> {
   }
 
   /// リンクボタン群を構築
-  Widget _buildLinks(BuildContext context, bool isMobile) {
+  Widget _buildLinks(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
       ),
       padding: EdgeInsets.all(isMobile ? 12 : AppConstants.defaultPadding - 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -484,6 +554,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 ? null
                 : () => NavigationHelper.toRegister(context),
             isMobile: isMobile,
+            isDark: isDark,
           ),
           SizedBox(height: isMobile ? 10 : 12),
           _buildLinkButton(
@@ -493,6 +564,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 ? null
                 : () => NavigationHelper.toAdminLogin(context),
             isMobile: isMobile,
+            isDark: isDark,
           ),
         ],
       ),
@@ -505,6 +577,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
     required String text,
     required VoidCallback? onTap,
     required bool isMobile,
+    required bool isDark,
   }) {
     return InkWell(
       onTap: onTap,
@@ -515,7 +588,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
           horizontal: isMobile ? 12 : 16,
         ),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         child: Row(
