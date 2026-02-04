@@ -1,10 +1,8 @@
-// lib/services/startup_invitation_service.dart
 import 'package:flutter/material.dart';
 import '../models/invitation.dart';
 import '../services/invitation_service.dart';
 import '../services/fcm_service.dart';
 import '../services/storage_service.dart';
-import '../routes/navigation_helper.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';

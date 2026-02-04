@@ -88,6 +88,19 @@ class _UserLoginPageState extends State<UserLoginPage> {
         password: password,
       );
 
+      if (loginResult == null) {
+        logger.warning('Auth ログイン結果が null のため中断', name: _logName);
+
+        if (!mounted) return;
+
+        context.showErrorSnackBar('ログインに失敗しました');
+        setState(() {
+          message = "ログインに失敗しました";
+          _isLoading = false;
+        });
+        return;
+      }
+
       logger.success('Auth ログイン成功', name: _logName);
 
       if (!mounted) return;

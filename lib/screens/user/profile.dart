@@ -201,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildThemeToggleCard(BuildContext context, bool isMobile) {
     final themeProvider = context.watch<ThemeProvider>();
-    final isDark = themeProvider.isDarkMode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Card(
       elevation: AppConstants.cardElevation,
@@ -250,7 +250,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Switch(
               value: isDark,
               onChanged: (_) async {
-                await themeProvider.toggleTheme();
+                await themeProvider.setThemeMode(
+                  isDark ? ThemeMode.light : ThemeMode.dark,
+                );
                 
                 if (!mounted) return;
                 

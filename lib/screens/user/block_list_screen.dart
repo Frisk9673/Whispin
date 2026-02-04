@@ -130,13 +130,6 @@ class _BlockListScreenState extends State<BlockListScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // セクションヘッダー
-          SectionHeader(
-            icon: Icons.block,
-            title: 'ブロック一覧',
-            color: AppColors.error,
-          ),
-
           // ブロックリスト
           Expanded(
             child: _isLoading

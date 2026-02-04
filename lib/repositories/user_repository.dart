@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
-import 'premium_counter_repository.dart';
 import '../utils/app_logger.dart';
 
 /// ユーザーデータのリポジトリ

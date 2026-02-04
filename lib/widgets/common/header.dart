@@ -22,8 +22,6 @@ class CommonHeader extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onProfilePressed;
   final List<Widget>? additionalActions;
 
-  static const String _logName = 'CommonHeader';
-
   const CommonHeader({
     super.key,
     this.title = AppConstants.appName,

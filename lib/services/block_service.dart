@@ -1,5 +1,4 @@
 import '../models/block.dart';
-import '../models/user.dart';
 import '../repositories/block_repository.dart';
 import '../repositories/user_repository.dart';
 import '../utils/app_logger.dart';

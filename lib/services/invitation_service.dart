@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/invitation.dart';
 import '../models/chat_room.dart';
-import '../models/user.dart';
-import '../models/friendship.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
@@ -89,7 +87,7 @@ class InvitationService {
       (inv) =>
           inv.roomId == roomId &&
           inv.inviteeId == inviteeId &&
-          inv.status == 'pending',
+          inv.status == AppConstants.invitationStatusPending,
       orElse: () => Invitation(
         id: '',
         roomId: '',
@@ -234,7 +232,7 @@ class InvitationService {
 
     // 招待を承認済みに更新
     _storageService.invitations[invitationIndex] = invitation.copyWith(
-      status: 'accepted',
+      status: AppConstants.invitationStatusAccepted,
       respondedAt: DateTime.now(),
     );
     logger.success('招待ステータス更新: accepted', name: _logName);
@@ -273,7 +271,7 @@ class InvitationService {
     final invitation = _storageService.invitations[invitationIndex];
     logger.success('招待発見', name: _logName);
 
-    if (invitation.status != 'pending') {
+    if (invitation.status != AppConstants.invitationStatusPending) {
       logger.error('この招待は既に処理されています', name: _logName);
       logger.info('  現在のステータス: ${invitation.status}', name: _logName);
       throw Exception('この招待は既に処理されています');
@@ -281,7 +279,7 @@ class InvitationService {
 
     logger.start('招待を拒否中...', name: _logName);
     _storageService.invitations[invitationIndex] = invitation.copyWith(
-      status: 'rejected',
+      status: AppConstants.invitationStatusRejected,
       respondedAt: DateTime.now(),
     );
 
@@ -298,7 +296,7 @@ class InvitationService {
     logger.debug('getReceivedInvitations() - userId: $userId', name: _logName);
 
     final invitations = _storageService.invitations
-        .where((inv) => inv.inviteeId == userId && inv.status == 'pending')
+        .where((inv) => inv.inviteeId == userId && inv.status == AppConstants.invitationStatusPending)
         .where((inv) => !inv.isExpired)
         .toList();
 
@@ -323,7 +321,7 @@ class InvitationService {
     logger.debug('getRoomInvitations() - roomId: $roomId', name: _logName);
 
     final invitations = _storageService.invitations
-        .where((inv) => inv.roomId == roomId && inv.status == 'pending')
+        .where((inv) => inv.roomId == roomId && inv.status == AppConstants.invitationStatusPending)
         .toList();
 
     logger.debug('ルーム招待数: ${invitations.length}件', name: _logName);
@@ -342,9 +340,9 @@ class InvitationService {
     for (int i = 0; i < _storageService.invitations.length; i++) {
       final invitation = _storageService.invitations[i];
 
-      if (invitation.status == 'pending' && invitation.isExpired) {
+      if (invitation.status == AppConstants.invitationStatusPending && invitation.isExpired) {
         _storageService.invitations[i] = invitation.copyWith(
-          status: 'expired',
+          status: AppConstants.invitationStatusExpired,
           respondedAt: DateTime.now(),
         );
         hasUpdates = true;
@@ -400,7 +398,7 @@ class InvitationService {
       throw Exception('この招待をキャンセルする権限がありません');
     }
 
-    if (invitation.status != 'pending') {
+    if (invitation.status != AppConstants.invitationStatusPending) {
       logger.error('この招待は既に処理されています', name: _logName);
       logger.info('  現在のステータス: ${invitation.status}', name: _logName);
       throw Exception('この招待は既に処理されています');

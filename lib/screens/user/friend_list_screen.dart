@@ -337,15 +337,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
-          // セクションヘッダー
-          Container(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            child: SectionHeader(
-              icon: Icons.people,
-              title: 'フレンド一覧',
-            ),
-          ),
-
           // フレンドリスト
           Expanded(
             child: _isLoading

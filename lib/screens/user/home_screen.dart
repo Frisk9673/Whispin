@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/common/header.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
-import '../../services/chat_service.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
@@ -30,13 +29,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const String _logName = 'HomeScreen';
 
-  late ChatService _chatService;
-
   @override
   void initState() {
     super.initState();
-    _chatService = ChatService(widget.storageService);
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
     });
