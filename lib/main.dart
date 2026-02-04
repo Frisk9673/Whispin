@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'services/block_service.dart';
 import 'config/environment.dart';
 import 'config/firebase_config.dart';
+import 'config/app_config.dart';
 import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'constants/routes.dart';
@@ -23,6 +24,7 @@ import 'services/notification_cache_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/admin_provider.dart';
+import 'providers/theme_provider.dart';
 import 'repositories/user_repository.dart';
 import 'repositories/friendship_repository.dart';
 import 'repositories/chat_room_repository.dart';
@@ -95,6 +97,10 @@ Future<void> main() async {
     fcmService: fcmService,
   );
 
+  // ThemeProviderの初期化
+  final themeProvider = ThemeProvider();
+  await themeProvider.initialize();
+
   logger.success('Services 初期化完了', name: 'Main');
 
   // Repository層の初期化
@@ -122,7 +128,7 @@ Future<void> main() async {
   );
   logger.success('BlockService 初期化完了', name: 'Main');
 
-    logger.start('NotificationCacheService 初期化中...', name: 'Main');
+  logger.start('NotificationCacheService 初期化中...', name: 'Main');
   final notificationCacheService = NotificationCacheService(
     friendRequestRepository: friendRequestRepository,
     invitationService: invitationService,
@@ -142,6 +148,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => AdminProvider(userRepository: userRepository),
         ),
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         Provider<NotificationCacheService>.value(
             value: notificationCacheService),
 
@@ -154,7 +161,7 @@ Future<void> main() async {
         Provider<StartupInvitationService>.value(
             value: startupInvitationService),
         Provider<FriendshipService>.value(value: friendshipService),
-        Provider<BlockService>.value(value: blockService), // ✅ 追加
+        Provider<BlockService>.value(value: blockService),
 
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
@@ -225,24 +232,24 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      title: 'Whispin',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF667EEA),
-          primary: const Color(0xFF667EEA),
-          secondary: const Color(0xFF764BA2),
-        ),
-      ),
-      navigatorObservers: [
-        NavigationLogger(),
-      ],
-      onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute:
-          widget.authService.isLoggedIn() ? AppRoutes.home : AppRoutes.login,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          navigatorKey: _navigatorKey,
+          title: 'Whispin',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeProvider.themeMode,
+          theme: AppConfig.lightTheme,
+          darkTheme: AppConfig.darkTheme,
+          navigatorObservers: [
+            NavigationLogger(),
+          ],
+          onGenerateRoute: AppRouter.onGenerateRoute,
+          initialRoute: widget.authService.isLoggedIn()
+              ? AppRoutes.home
+              : AppRoutes.login,
+        );
+      },
     );
   }
 }

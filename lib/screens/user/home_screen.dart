@@ -1,4 +1,3 @@
-// lib/screens/user/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -109,6 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: CommonHeader(
         title: AppConstants.appName,
@@ -118,14 +119,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundLight,
-              AppColors.backgroundSecondary,
-            ],
-          ),
+          gradient: isDark
+              ? LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF1E1E1E),
+                    const Color(0xFF121212),
+                  ],
+                )
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.backgroundLight,
+                    AppColors.backgroundSecondary,
+                  ],
+                ),
         ),
         child: Padding(
           padding: EdgeInsets.all(AppConstants.defaultPadding),
@@ -138,21 +148,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.meeting_room,
                 label: '部屋に参加',
                 onTap: _navigateToJoinRoom,
+                isDark: isDark,
               ),
               _buildMenuButton(
                 icon: Icons.block,
                 label: 'ブロック一覧',
                 onTap: _navigateToBlockList,
+                isDark: isDark,
               ),
               _buildMenuButton(
                 icon: Icons.add_circle,
                 label: '部屋を作成',
                 onTap: _navigateToCreateRoom,
+                isDark: isDark,
               ),
               _buildMenuButton(
                 icon: Icons.people,
                 label: 'フレンド一覧',
                 onTap: _navigateToFriendList,
+                isDark: isDark,
               ),
             ],
           ),
@@ -165,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return Card(
       elevation: AppConstants.cardElevation,
@@ -176,8 +191,26 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
+            gradient: isDark
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withOpacity(0.8),
+                      AppColors.secondary.withOpacity(0.8),
+                    ],
+                  )
+                : AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(16),
+            boxShadow: isDark
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -190,7 +223,16 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               Text(
                 label,
-                style: AppTextStyles.buttonMedium,
+                style: AppTextStyles.buttonMedium.copyWith(
+                  shadows: isDark
+                      ? [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                          ),
+                        ]
+                      : null,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

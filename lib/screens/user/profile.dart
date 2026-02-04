@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../widgets/common/header.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../providers/user_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
@@ -155,12 +156,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Row(
       children: [
         Container(
           padding: EdgeInsets.all(isMobile ? 6 : 8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -178,6 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label,
                 style: AppTextStyles.labelMedium.copyWith(
                   fontSize: context.responsiveFontSize(12),
+                  color: isDark ? Colors.grey[400] : null,
                 ),
               ),
               const SizedBox(height: 4),
@@ -185,6 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value,
                 style: AppTextStyles.bodyLarge.copyWith(
                   fontSize: context.responsiveFontSize(16),
+                  color: isDark ? Colors.white : null,
                 ),
               ),
             ],
@@ -194,12 +199,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildThemeToggleCard(BuildContext context, bool isMobile) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+    
+    return Card(
+      elevation: AppConstants.cardElevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(isMobile ? 6 : 8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isDark ? Icons.dark_mode : Icons.light_mode,
+                color: AppColors.primary,
+                size: isMobile ? 20 : 24,
+              ),
+            ),
+            SizedBox(width: isMobile ? 12 : 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'テーマ設定',
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontSize: context.responsiveFontSize(12),
+                      color: isDark ? Colors.grey[400] : null,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isDark ? 'ダークモード' : 'ライトモード',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontSize: context.responsiveFontSize(16),
+                      color: isDark ? Colors.white : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: isDark,
+              onChanged: (_) async {
+                await themeProvider.toggleTheme();
+                
+                if (!mounted) return;
+                
+                context.showSuccessSnackBar(
+                  isDark 
+                    ? 'ライトモードに変更しました' 
+                    : 'ダークモードに変更しました'
+                );
+              },
+              activeColor: AppColors.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final currentUser = userProvider.currentUser;
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: const CommonHeader(
@@ -236,7 +311,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   shape: BoxShape.circle,
                                   gradient: AppColors.primaryGradient,
                                   border: Border.all(
-                                    color: AppColors.cardBackground,
+                                    color: isDark 
+                                      ? const Color(0xFF1E1E1E) 
+                                      : AppColors.cardBackground,
                                     width: 4,
                                   ),
                                   boxShadow: [
@@ -259,6 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     AppConstants.defaultNickname,
                                 style: AppTextStyles.headlineMedium.copyWith(
                                   fontSize: context.responsiveFontSize(24),
+                                  color: isDark ? Colors.white : null,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -266,6 +344,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
+
+                      SizedBox(height: isMobile ? 16 : 24),
+
+                      // テーマ切り替えカード
+                      _buildThemeToggleCard(context, isMobile),
 
                       SizedBox(height: isMobile ? 16 : 24),
 
@@ -309,8 +392,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     padding: EdgeInsets.all(isMobile ? 6 : 8),
                                     decoration: BoxDecoration(
                                       color: userProvider.isPremium
-                                          ? AppColors.primary.withOpacity(0.1)
-                                          : AppColors.inputBackground,
+                                          ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1)
+                                          : (isDark 
+                                            ? const Color(0xFF2C2C2C)
+                                            : AppColors.inputBackground),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -319,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           : Icons.person,
                                       color: userProvider.isPremium
                                           ? AppColors.primary
-                                          : AppColors.textSecondary,
+                                          : (isDark ? Colors.grey[400] : AppColors.textSecondary),
                                       size: isMobile ? 20 : 24,
                                     ),
                                   ),
@@ -332,6 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           '会員ステータス',
                                           style: AppTextStyles.labelMedium.copyWith(
                                             fontSize: context.responsiveFontSize(12),
+                                            color: isDark ? Colors.grey[400] : null,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -342,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: AppTextStyles.titleMedium.copyWith(
                                             color: userProvider.isPremium
                                                 ? AppColors.primary
-                                                : AppColors.textSecondary,
+                                                : (isDark ? Colors.grey[400] : AppColors.textSecondary),
                                             fontSize: context.responsiveFontSize(16),
                                           ),
                                         ),

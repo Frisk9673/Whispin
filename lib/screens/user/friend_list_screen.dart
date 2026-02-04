@@ -112,6 +112,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
     final isMobile = context.isMobile;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     logger.section('フレンド削除/ブロック選択', name: _logName);
     logger.info('対象フレンド: ${friend['name']}', name: _logName);
@@ -119,18 +120,23 @@ class _FriendListScreenState extends State<FriendListScreen> {
     final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         title: Row(
           children: [
-            Icon(Icons.person_remove, color: AppColors.error),
+            Icon(
+              Icons.person_remove,
+              color: AppColors.error,
+            ),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
                 'フレンド削除',
                 style: TextStyle(
                   fontSize: context.responsiveFontSize(18),
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
             ),
@@ -144,13 +150,14 @@ class _FriendListScreenState extends State<FriendListScreen> {
               '${friend['name']} との関係を解除します。',
               style: TextStyle(
                 fontSize: context.responsiveFontSize(15),
+                color: isDark ? Colors.grey[300] : Colors.black87,
               ),
             ),
             SizedBox(height: isMobile ? 12 : 16),
             Text(
               'どのように削除しますか？',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: context.responsiveFontSize(14),
               ),
@@ -164,6 +171,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
               'キャンセル',
               style: TextStyle(
                 fontSize: context.responsiveFontSize(14),
+                color: isDark ? Colors.grey[400] : null,
               ),
             ),
           ),
@@ -174,6 +182,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
               label: const Text('フレンド削除のみ'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.warning,
+                side: BorderSide(
+                  color: isDark 
+                    ? AppColors.warning.withOpacity(0.8)
+                    : AppColors.warning,
+                ),
               ),
             ),
             ElevatedButton.icon(
@@ -195,6 +208,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   label: const Text('フレンド削除のみ'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.warning,
+                    side: BorderSide(
+                      color: isDark 
+                        ? AppColors.warning.withOpacity(0.8)
+                        : AppColors.warning,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -307,6 +325,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -315,13 +334,16 @@ class _FriendListScreenState extends State<FriendListScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
           // セクションヘッダー
-          SectionHeader(
-            icon: Icons.people,
-            title: 'フレンド一覧',
+          Container(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            child: SectionHeader(
+              icon: Icons.people,
+              title: 'フレンド一覧',
+            ),
           ),
 
           // フレンドリスト
@@ -336,6 +358,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: _loadFriends,
+                        color: AppColors.primary,
+                        backgroundColor: isDark 
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
                             horizontal: padding.left,
@@ -344,28 +370,75 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           itemCount: _friends.length,
                           itemBuilder: (context, index) {
                             final friend = _friends[index];
-                            return ListItemCard(
-                              leading: UserAvatar(
-                                name: friend['name']!,
-                                size: isMobile ? 40 : 48,
-                              ),
-                              title: friend['name']!,
-                              subtitle: friend['id']!,
-                              trailing: IconButton(
-                                icon: Icon(
-                                  Icons.more_vert,
-                                  color: AppColors.textSecondary,
-                                  size: isMobile ? 20 : 24,
-                                ),
-                                onPressed: () => _showRemoveOptions(index),
-                              ),
-                              borderColor: AppColors.border,
-                            );
+                            return _buildFriendCard(friend, index, isMobile, isDark);
                           },
                         ),
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFriendCard(
+    Map<String, dynamic> friend,
+    int index,
+    bool isMobile,
+    bool isDark,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: AppConstants.cardElevation,
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        side: BorderSide(
+          color: isDark 
+            ? AppColors.primary.withOpacity(0.3)
+            : AppColors.border,
+          width: isDark ? 1 : 2,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        leading: UserAvatar(
+          name: friend['name']!,
+          size: isMobile ? 40 : 48,
+        ),
+        title: Text(
+          friend['name']!,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          friend['id']!,
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : AppColors.textSecondary,
+            fontSize: 12,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Container(
+          decoration: BoxDecoration(
+            color: isDark
+              ? AppColors.textSecondary.withOpacity(0.1)
+              : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: isDark ? Colors.grey[400] : AppColors.textSecondary,
+              size: isMobile ? 20 : 24,
+            ),
+            onPressed: () => _showRemoveOptions(index),
+          ),
+        ),
       ),
     );
   }
