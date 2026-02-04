@@ -257,6 +257,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: CommonHeader(
         title: '通知',
@@ -264,7 +266,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: _isLoading
           ? const LoadingWidget()
           : _friendRequests.isEmpty && _invitations.isEmpty
@@ -282,9 +284,12 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Widget _buildNotificationList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       color: AppColors.primary,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: ListView(
         padding: EdgeInsets.all(AppConstants.defaultPadding),
         children: [
@@ -294,10 +299,11 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
               icon: Icons.mail,
               title: 'ルーム招待',
               count: _invitations.length,
+              isDark: isDark,
             ),
             const SizedBox(height: 12),
             ..._invitations
-                .map((invitation) => _buildInvitationCard(invitation)),
+                .map((invitation) => _buildInvitationCard(invitation, isDark)),
             const SizedBox(height: 24),
           ],
 
@@ -307,10 +313,11 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
               icon: Icons.person_add,
               title: 'フレンドリクエスト',
               count: _friendRequests.length,
+              isDark: isDark,
             ),
             const SizedBox(height: 12),
             ..._friendRequests
-                .map((request) => _buildFriendRequestCard(request)),
+                .map((request) => _buildFriendRequestCard(request, isDark)),
           ],
         ],
       ),
@@ -321,6 +328,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     required IconData icon,
     required String title,
     required int count,
+    required bool isDark,
   }) {
     return Row(
       children: [
@@ -329,7 +337,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         Text(
           title,
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.primary,
+            color: isDark ? Colors.white : AppColors.primary,
           ),
         ),
         const SizedBox(width: 8),
@@ -351,7 +359,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     );
   }
 
-  Widget _buildInvitationCard(Invitation invitation) {
+  Widget _buildInvitationCard(Invitation invitation, bool isDark) {
     return FutureBuilder<Map<String, String>>(
       future: _getInvitationDetails(invitation),
       builder: (context, snapshot) {
@@ -364,11 +372,14 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
-              color: AppColors.info.withOpacity(0.3),
+              color: isDark
+                ? AppColors.info.withOpacity(0.3)
+                : AppColors.info.withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -380,7 +391,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                 // 招待者情報
                 Row(
                   children: [
-                    // 統一ウィジェット使用
                     UserAvatar(
                       name: details['inviterName']!,
                       size: 56,
@@ -398,13 +408,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                         children: [
                           Text(
                             details['inviterName']!,
-                            style: AppTextStyles.titleMedium,
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: isDark ? Colors.white : null,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'があなたを招待しました',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
+                              color: isDark 
+                                ? Colors.grey[400]
+                                : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -419,7 +433,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.05),
+                    color: isDark
+                      ? AppColors.info.withOpacity(0.1)
+                      : AppColors.info.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
@@ -442,13 +458,16 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                             Text(
                               'ルーム名',
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.textSecondary,
+                                color: isDark
+                                  ? Colors.grey[400]
+                                  : AppColors.textSecondary,
                               ),
                             ),
                             Text(
                               details['roomName']!,
                               style: AppTextStyles.bodyMedium.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : null,
                               ),
                             ),
                           ],
@@ -467,7 +486,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight,
+                    color: isDark
+                      ? const Color(0xFF2C2C2C)
+                      : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -476,13 +497,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                       Icon(
                         Icons.access_time,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: isDark
+                          ? Colors.grey[400]
+                          : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         invitation.createdAt.toRelativeTime,
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: isDark
+                            ? Colors.grey[400]
+                            : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -539,7 +564,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     );
   }
 
-  Widget _buildFriendRequestCard(FriendRequest request) {
+  Widget _buildFriendRequestCard(FriendRequest request, bool isDark) {
     return FutureBuilder<String>(
       future: _getSenderName(request.senderId),
       builder: (context, snapshot) {
@@ -548,11 +573,14 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
             side: BorderSide(
-              color: AppColors.primary.withOpacity(0.2),
+              color: isDark
+                ? AppColors.primary.withOpacity(0.3)
+                : AppColors.primary.withOpacity(0.2),
               width: 2,
             ),
           ),
@@ -563,7 +591,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
               children: [
                 Row(
                   children: [
-                    // 統一ウィジェット使用
                     UserAvatar(
                       name: senderName,
                       size: 56,
@@ -575,13 +602,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                         children: [
                           Text(
                             senderName,
-                            style: AppTextStyles.titleLarge,
+                            style: AppTextStyles.titleLarge.copyWith(
+                              color: isDark ? Colors.white : null,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             request.senderId,
                             style: AppTextStyles.labelMedium.copyWith(
-                              color: AppColors.textSecondary,
+                              color: isDark
+                                ? Colors.grey[400]
+                                : AppColors.textSecondary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -597,7 +628,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight,
+                    color: isDark
+                      ? const Color(0xFF2C2C2C)
+                      : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -606,13 +639,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                       Icon(
                         Icons.access_time,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: isDark
+                          ? Colors.grey[400]
+                          : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         request.createdAt.toRelativeTime,
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: isDark
+                            ? Colors.grey[400]
+                            : AppColors.textSecondary,
                         ),
                       ),
                     ],

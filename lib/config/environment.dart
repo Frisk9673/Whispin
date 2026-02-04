@@ -59,13 +59,6 @@ class Environment {
     return firebaseMode == FirebaseMode.emulator;
   }
 
-  // 後方互換性のため残す（非推奨）
-  @Deprecated('Use shouldUseFirebaseEmulator instead')
-  static bool get isFirebaseEmulator => shouldUseFirebaseEmulator;
-
-  @Deprecated('Use shouldUseFirebaseEmulator instead')
-  static bool get isFirebaseProduction => !shouldUseFirebaseEmulator;
-
   // ===== Database =====
   static late final int databaseEmulatorPort;
 

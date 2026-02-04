@@ -13,7 +13,6 @@ class Block {
     required this.createdAt,
   });
 
-  /// 👍 copyWith を追加
   Block copyWith({
     String? id,
     String? blockerId,

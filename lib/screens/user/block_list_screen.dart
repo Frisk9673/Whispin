@@ -119,6 +119,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -127,7 +128,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
           // ブロックリスト
@@ -144,6 +145,10 @@ class _BlockListScreenState extends State<BlockListScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: _loadBlockedUsers,
+                        color: AppColors.error,
+                        backgroundColor: isDark 
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
                             horizontal: padding.left,
@@ -152,46 +157,104 @@ class _BlockListScreenState extends State<BlockListScreen> {
                           itemCount: _blockedUsers.length,
                           itemBuilder: (context, index) {
                             final user = _blockedUsers[index];
-                            return ListItemCard(
-                              leading: CircleAvatar(
-                                radius: isMobile ? 20 : 24,
-                                backgroundColor: AppColors.error,
-                                child: Icon(
-                                  Icons.block,
-                                  color: Colors.white,
-                                  size: isMobile ? 20 : 24,
-                                ),
-                              ),
-                              title: user['name']!,
-                              subtitle: user['id']!,
-                              trailing: ElevatedButton(
-                                onPressed: () => _unblockUser(index),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.info,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 12 : 16,
-                                    vertical: isMobile ? 8 : 10,
-                                  ),
-                                ),
-                                child: Text(
-                                  '解除',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: context.responsiveFontSize(14),
-                                  ),
-                                ),
-                              ),
-                              borderColor: AppColors.error,
+                            return _buildBlockedUserCard(
+                              user,
+                              index,
+                              isMobile,
+                              isDark,
                             );
                           },
                         ),
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBlockedUserCard(
+    Map<String, String> user,
+    int index,
+    bool isMobile,
+    bool isDark,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: AppConstants.cardElevation,
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        side: BorderSide(
+          color: isDark 
+            ? AppColors.error.withOpacity(0.3)
+            : AppColors.error,
+          width: isDark ? 1 : 2,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        leading: Container(
+          width: isMobile ? 40 : 48,
+          height: isMobile ? 40 : 48,
+          decoration: BoxDecoration(
+            color: isDark
+              ? AppColors.error.withOpacity(0.2)
+              : AppColors.error.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.error.withOpacity(isDark ? 0.4 : 0.3),
+              width: 2,
+            ),
+          ),
+          child: Icon(
+            Icons.block,
+            color: AppColors.error,
+            size: isMobile ? 20 : 24,
+          ),
+        ),
+        title: Text(
+          user['name']!,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          user['id']!,
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : AppColors.textSecondary,
+            fontSize: 12,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: ElevatedButton(
+          onPressed: () => _unblockUser(index),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDark
+              ? AppColors.info.withOpacity(0.8)
+              : AppColors.info,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 16,
+              vertical: isMobile ? 8 : 10,
+            ),
+            elevation: isDark ? 2 : 4,
+          ),
+          child: Text(
+            '解除',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: context.responsiveFontSize(14),
+            ),
+          ),
+        ),
       ),
     );
   }

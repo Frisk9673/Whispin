@@ -56,6 +56,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ChatProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (provider.loading || provider.chatId == null) {
       return Scaffold(
@@ -64,25 +65,30 @@ class _UserChatScreenState extends State<UserChatScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                const Color(0xFF667EEA).withOpacity(0.1),
-                const Color(0xFF764BA2).withOpacity(0.1),
-              ],
+              colors: isDark
+                ? [
+                    const Color(0xFF1E1E1E),
+                    const Color(0xFF121212),
+                  ]
+                : [
+                    const Color(0xFF667EEA).withOpacity(0.1),
+                    const Color(0xFF764BA2).withOpacity(0.1),
+                  ],
             ),
           ),
-          child: const Center(
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(
-                  color: Color(0xFF667EEA),
+                  color: const Color(0xFF667EEA),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   'チャットを準備中...',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey,
+                    color: isDark ? Colors.grey[400] : Colors.grey,
                   ),
                 ),
               ],
@@ -98,17 +104,22 @@ class _UserChatScreenState extends State<UserChatScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF667EEA).withOpacity(0.1),
-              const Color(0xFF764BA2).withOpacity(0.1),
-            ],
+            colors: isDark
+              ? [
+                  const Color(0xFF1E1E1E),
+                  const Color(0xFF121212),
+                ]
+              : [
+                  const Color(0xFF667EEA).withOpacity(0.1),
+                  const Color(0xFF764BA2).withOpacity(0.1),
+                ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               // ヘッダー
-              _buildHeader(context),
+              _buildHeader(context, isDark),
 
               // メッセージリスト
               Expanded(
@@ -116,9 +127,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   stream: _service.messageStream(provider.chatId!),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const Center(
+                      return Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF667EEA),
+                          color: const Color(0xFF667EEA),
                         ),
                       );
                     }
@@ -135,33 +146,38 @@ class _UserChatScreenState extends State<UserChatScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFF667EEA).withOpacity(0.2),
-                                    const Color(0xFF764BA2).withOpacity(0.2),
-                                  ],
+                                  colors: isDark
+                                    ? [
+                                        const Color(0xFF667EEA).withOpacity(0.3),
+                                        const Color(0xFF764BA2).withOpacity(0.3),
+                                      ]
+                                    : [
+                                        const Color(0xFF667EEA).withOpacity(0.2),
+                                        const Color(0xFF764BA2).withOpacity(0.2),
+                                      ],
                                 ),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.chat_bubble_outline,
                                 size: 64,
-                                color: Color(0xFF667EEA),
+                                color: const Color(0xFF667EEA),
                               ),
                             ),
                             const SizedBox(height: 24),
-                            const Text(
+                            Text(
                               'メッセージがありません',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey,
+                                color: isDark ? Colors.grey[400] : Colors.grey,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'お気軽にご質問ください',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: isDark ? Colors.grey[500] : Colors.grey,
                               ),
                             ),
                           ],
@@ -179,7 +195,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final message = messages[index];
-                        return _buildMessageBubble(message);
+                        return _buildMessageBubble(message, isDark);
                       },
                     );
                   },
@@ -187,7 +203,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
               ),
 
               // 入力欄
-              _buildInputArea(context),
+              _buildInputArea(context, isDark),
             ],
           ),
         ),
@@ -195,14 +211,14 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -236,11 +252,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'お問い合わせ',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
                 Row(
@@ -254,11 +271,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Text(
+                    Text(
                       'オンライン',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: isDark ? Colors.grey[400] : Colors.grey,
                       ),
                     ),
                   ],
@@ -269,7 +286,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF667EEA).withOpacity(0.1),
+              color: const Color(0xFF667EEA).withOpacity(isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -283,7 +300,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(Message message) {
+  Widget _buildMessageBubble(Message message, bool isDark) {
     final isAdmin = message.isAdmin;
     final alignment = isAdmin ? Alignment.centerLeft : Alignment.centerRight;
 
@@ -297,7 +314,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (isAdmin) ...[
-              _buildAvatar(isAdmin),
+              _buildAvatar(isAdmin, isDark),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -316,7 +333,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
                           : const LinearGradient(
                               colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                             ),
-                      color: isAdmin ? Colors.grey.shade200 : null,
+                      color: isAdmin 
+                        ? (isDark 
+                            ? const Color(0xFF2C2C2C)
+                            : Colors.grey.shade200)
+                        : null,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -326,7 +347,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       boxShadow: [
                         BoxShadow(
                           color: isAdmin
-                              ? Colors.black.withOpacity(0.05)
+                              ? Colors.black.withOpacity(isDark ? 0.2 : 0.05)
                               : const Color(0xFF667EEA).withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
@@ -336,7 +357,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     child: Text(
                       message.text,
                       style: TextStyle(
-                        color: isAdmin ? Colors.black87 : Colors.white,
+                        color: isAdmin 
+                          ? (isDark ? Colors.white : Colors.black87)
+                          : Colors.white,
                         fontSize: 15,
                       ),
                     ),
@@ -348,7 +371,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       _formatTimestamp(message.createdAt),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.grey[500] : Colors.grey.shade600,
                       ),
                     ),
                   ),
@@ -357,7 +380,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
             ),
             if (!isAdmin) ...[
               const SizedBox(width: 8),
-              _buildAvatar(isAdmin),
+              _buildAvatar(isAdmin, isDark),
             ],
           ],
         ),
@@ -365,23 +388,28 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  Widget _buildAvatar(bool isAdmin) {
+  Widget _buildAvatar(bool isAdmin, bool isDark) {
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
         gradient: isAdmin
             ? LinearGradient(
-                colors: [Colors.grey.shade400, Colors.grey.shade600],
+                colors: isDark
+                  ? [Colors.grey.shade600, Colors.grey.shade800]
+                  : [Colors.grey.shade400, Colors.grey.shade600],
               )
             : const LinearGradient(
                 colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
               ),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -395,7 +423,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  Widget _buildInputArea(BuildContext context) {
+  Widget _buildInputArea(BuildContext context, bool isDark) {
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -404,10 +432,10 @@ class _UserChatScreenState extends State<UserChatScreen> {
         16 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -418,14 +446,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: isDark 
+                  ? const Color(0xFF2C2C2C)
+                  : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
                 controller: _controller,
                 decoration: InputDecoration(
                   hintText: 'メッセージを入力...',
-                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                  hintStyle: TextStyle(
+                    color: isDark 
+                      ? Colors.grey[600]
+                      : Colors.grey.shade500,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -433,13 +467,21 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   ),
                   suffixIcon: _controller.text.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey.shade600),
+                          icon: Icon(
+                            Icons.clear,
+                            color: isDark
+                              ? Colors.grey[500]
+                              : Colors.grey.shade600,
+                          ),
                           onPressed: () {
                             _controller.clear();
                             setState(() {});
                           },
                         )
                       : null,
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,
@@ -459,7 +501,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                     ),
               color: _controller.text.trim().isEmpty
-                  ? Colors.grey.shade300
+                  ? (isDark
+                      ? const Color(0xFF2C2C2C)
+                      : Colors.grey.shade300)
                   : null,
               shape: BoxShape.circle,
               boxShadow: _controller.text.trim().isEmpty
@@ -483,14 +527,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ✅ DateTime拡張メソッド使用
   String _formatTimestamp(dynamic timestamp) {
     try {
       final DateTime dateTime = timestamp is DateTime
           ? timestamp
           : (timestamp as Timestamp).toDate();
 
-      // ✅ toRelativeTime 拡張メソッドを使用
       return dateTime.toRelativeTime;
     } catch (e) {
       return '';
