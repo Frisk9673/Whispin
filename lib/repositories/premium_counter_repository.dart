@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../constants/app_constants.dart';
 import '../models/premium_counter.dart';
 import '../utils/app_logger.dart';
 
 /// プレミアム会員数カウンターのリポジトリ
 class PremiumCounterRepository {
   static const String _logName = 'PremiumCounterRepository';
-  static const String _collectionName = 'PremiumCounter';
+  static const String _collectionName = AppConstants.premiumCounterCollection;
   static const String _documentId = 'counter';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -48,7 +49,7 @@ class PremiumCounterRepository {
     try {
       // 実際のプレミアム会員数を計算
       final snapshot = await _firestore
-          .collection('users')
+          .collection(AppConstants.usersCollection)
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();

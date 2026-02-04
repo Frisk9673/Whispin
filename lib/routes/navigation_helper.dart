@@ -108,13 +108,13 @@ class NavigationHelper {
   /// 新しいルーム作成画面へ遷移（Firestore版）
   static Future<void> toRoomCreate(BuildContext context) {
     logger.navigation('current', 'RoomCreate', name: _logName);
-    return AppRouter.navigateTo(context, '/room/create-new');
+    return AppRouter.navigateTo(context, AppRoutes.createRoom);
   }
 
   /// ルーム参加画面へ遷移（Firestore版）
   static Future<void> toRoomJoin(BuildContext context) {
     logger.navigation('current', 'RoomJoin', name: _logName);
-    return AppRouter.navigateTo(context, '/room/join-new');
+    return AppRouter.navigateTo(context, AppRoutes.joinRoom);
   }
 
   // ===== Friend Navigation =====

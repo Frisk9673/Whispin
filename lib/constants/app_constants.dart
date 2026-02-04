@@ -50,6 +50,7 @@ class AppConstants {
   static const String administratorCollection = 'administrator';
   static const String questionChatCollection = 'QuestionChat';
   static const String premiumLogCollection = 'Log_Premium';
+  static const String premiumCounterCollection = 'PremiumCounter';
 
   // ===== Room Status =====
   static const int roomStatusWaiting = 0;

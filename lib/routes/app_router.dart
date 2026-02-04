@@ -93,13 +93,13 @@ class AppRouter {
         );
 
       // ===== Room Routes =====
-      case '/room/create-new':
+      case AppRoutes.createRoom:
         return MaterialPageRoute(
           settings: settings,
           builder: (context) => const RoomCreateScreen(),
         );
 
-      case '/room/join-new':
+      case AppRoutes.joinRoom:
         return MaterialPageRoute(
           settings: settings,
           builder: (context) => const RoomJoinScreen(),

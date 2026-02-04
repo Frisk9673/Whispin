@@ -355,7 +355,7 @@ class UserRepository extends BaseRepository<User> {
       final batch = firestore.batch();
 
       // 1. ログを作成
-      final logRef = firestore.collection('Log_Premium').doc();
+      final logRef = firestore.collection(AppConstants.premiumLogCollection).doc();
       batch.set(logRef, {
         'ID': id,
         'Timestamp': Timestamp.fromDate(now),
@@ -365,7 +365,7 @@ class UserRepository extends BaseRepository<User> {
       logger.info('Log_Premium 作成予約: ${logRef.id}', name: _logName);
 
       // 2. カウンターを更新
-      final counterRef = firestore.collection('PremiumCounter').doc('counter');
+      final counterRef = firestore.collection(AppConstants.premiumCounterCollection).doc('counter');
 
       // カウンターが存在するか確認（事前チェック）
       final counterDoc = await counterRef.get();
