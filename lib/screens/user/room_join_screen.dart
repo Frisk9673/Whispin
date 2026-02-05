@@ -170,7 +170,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [
           // 検索ヘッダー
@@ -200,7 +200,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         isMobile ? 12 : AppConstants.defaultPadding,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : AppColors.backgroundLight,
+        color: isDark ? AppColors.darkSurface : AppColors.backgroundLight,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -237,14 +237,14 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                           : AppColors.primary,
                     ),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                    fillColor: isDark ? AppColors.darkInput : Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
                       ),
                       borderSide: BorderSide(
                         color: isDark
-                            ? const Color(0xFF404040)
+                            ? AppColors.darkBorder
                             : Colors.grey.shade300,
                       ),
                     ),
@@ -254,7 +254,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                       ),
                       borderSide: BorderSide(
                         color: isDark
-                            ? const Color(0xFF404040)
+                            ? AppColors.darkBorder
                             : Colors.grey.shade300,
                       ),
                     ),
@@ -319,7 +319,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
             : AppColors.primary,
         foregroundColor: Colors.white,
         disabledBackgroundColor: isDark
-            ? const Color(0xFF2C2C2C)
+            ? AppColors.darkInput
             : Colors.grey.shade300,
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 16 : 20,
@@ -442,7 +442,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     return Card(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       elevation: AppConstants.cardElevation,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? AppColors.darkSurface : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         side: isDark
@@ -538,7 +538,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                         : AppColors.primary,
                     foregroundColor: AppColors.textWhite,
                     disabledBackgroundColor: isDark
-                        ? const Color(0xFF2C2C2C)
+                        ? AppColors.darkInput
                         : Colors.grey.shade300,
                     padding: EdgeInsets.symmetric(vertical: isMobile ? 10 : 12),
                     shape: RoundedRectangleBorder(

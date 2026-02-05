@@ -53,7 +53,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
       final currentUserEmail = currentUser.email!;
 
       logger.start('Service経由でフレンド一覧取得中...', name: _logName);
-      final friendships = await _friendshipService.getUserFriends(currentUserEmail);
+      final friendships =
+          await _friendshipService.getUserFriends(currentUserEmail);
 
       logger.success('フレンドシップ取得: ${friendships.length}件', name: _logName);
 
@@ -120,7 +121,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
     final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -183,9 +184,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.warning,
                 side: BorderSide(
-                  color: isDark 
-                    ? AppColors.warning.withOpacity(0.8)
-                    : AppColors.warning,
+                  color: isDark
+                      ? AppColors.warning.withOpacity(0.8)
+                      : AppColors.warning,
                 ),
               ),
             ),
@@ -209,9 +210,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.warning,
                     side: BorderSide(
-                      color: isDark 
-                        ? AppColors.warning.withOpacity(0.8)
-                        : AppColors.warning,
+                      color: isDark
+                          ? AppColors.warning.withOpacity(0.8)
+                          : AppColors.warning,
                     ),
                   ),
                 ),
@@ -255,7 +256,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
     try {
       logger.start('Service経由でフレンドシップ削除中...', name: _logName);
-      
+
       await _friendshipService.removeFriend(
         userId1: currentUserEmail,
         userId2: friend['id'],
@@ -293,7 +294,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
     try {
       logger.start('Service経由でブロック&削除処理実行中...', name: _logName);
-      
+
       await _friendshipService.blockAndRemoveFriend(
         blockerId: currentUserEmail,
         blockedId: friend['id'],
@@ -314,7 +315,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       logger.section('ブロック&削除完了', name: _logName);
     } catch (e, stack) {
-      logger.error('ブロック&削除エラー: $e', name: _logName, error: e, stackTrace: stack);
+      logger.error('ブロック&削除エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       context.hideLoadingDialog();
       if (!mounted) return;
       context.showErrorSnackBar('処理に失敗しました: $e');
@@ -334,7 +336,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [
           // フレンドリスト
@@ -350,18 +352,19 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     : RefreshIndicator(
                         onRefresh: _loadFriends,
                         color: AppColors.primary,
-                        backgroundColor: isDark 
-                          ? const Color(0xFF1E1E1E)
-                          : Colors.white,
+                        backgroundColor:
+                            isDark ? AppColors.darkSurface : Colors.white,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
                             horizontal: padding.left,
-                            vertical: isMobile ? 12 : AppConstants.defaultPadding,
+                            vertical:
+                                isMobile ? 12 : AppConstants.defaultPadding,
                           ),
                           itemCount: _friends.length,
                           itemBuilder: (context, index) {
                             final friend = _friends[index];
-                            return _buildFriendCard(friend, index, isMobile, isDark);
+                            return _buildFriendCard(
+                                friend, index, isMobile, isDark);
                           },
                         ),
                       ),
@@ -380,13 +383,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: AppConstants.cardElevation,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? AppColors.darkSurface : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         side: BorderSide(
-          color: isDark 
-            ? AppColors.primary.withOpacity(0.3)
-            : AppColors.border,
+          color: isDark ? AppColors.primary.withOpacity(0.3) : AppColors.border,
           width: isDark ? 1 : 2,
         ),
       ),
@@ -417,8 +418,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
         trailing: Container(
           decoration: BoxDecoration(
             color: isDark
-              ? AppColors.textSecondary.withOpacity(0.1)
-              : Colors.transparent,
+                ? AppColors.textSecondary.withOpacity(0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: IconButton(

@@ -314,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   gradient: AppColors.primaryGradient,
                                   border: Border.all(
                                     color: isDark 
-                                      ? const Color(0xFF1E1E1E) 
+                                      ? AppColors.darkSurface 
                                       : AppColors.cardBackground,
                                     width: 4,
                                   ),
@@ -396,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       color: userProvider.isPremium
                                           ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1)
                                           : (isDark 
-                                            ? const Color(0xFF2C2C2C)
+                                            ? AppColors.darkInput
                                             : AppColors.inputBackground),
                                       borderRadius: BorderRadius.circular(8),
                                     ),

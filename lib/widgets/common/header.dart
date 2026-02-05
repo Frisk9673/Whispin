@@ -124,7 +124,7 @@ class _CommonHeaderState extends State<CommonHeader> {
 
     return AppBar(
       title: _buildTitle(context, isDark),
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppColors.primary,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.primary,
       foregroundColor: isDark ? Colors.white : AppColors.textWhite,
       elevation: isDark ? 2 : 4,
       centerTitle: isMobile,

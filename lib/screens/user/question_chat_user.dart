@@ -5,6 +5,7 @@ import '../../providers/chat_provider.dart';
 import '../../services/question_chat.dart';
 import '../../models/question_message.dart';
 import '../../extensions/datetime_extensions.dart';
+import '../../constants/colors.dart';
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
@@ -67,8 +68,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
               end: Alignment.bottomCenter,
               colors: isDark
                 ? [
-                    const Color(0xFF1E1E1E),
-                    const Color(0xFF121212),
+                    AppColors.darkSurface,
+                    AppColors.darkBackground,
                   ]
                 : [
                     const Color(0xFF667EEA).withOpacity(0.1),
@@ -106,8 +107,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
             end: Alignment.bottomCenter,
             colors: isDark
               ? [
-                  const Color(0xFF1E1E1E),
-                  const Color(0xFF121212),
+                  AppColors.darkSurface,
+                  AppColors.darkBackground,
                 ]
               : [
                   const Color(0xFF667EEA).withOpacity(0.1),
@@ -215,7 +216,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -335,7 +336,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                             ),
                       color: isAdmin 
                         ? (isDark 
-                            ? const Color(0xFF2C2C2C)
+                            ? AppColors.darkInput
                             : Colors.grey.shade200)
                         : null,
                       borderRadius: BorderRadius.only(
@@ -404,7 +405,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
               ),
         shape: BoxShape.circle,
         border: Border.all(
-          color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+          color: isDark ? AppColors.darkInput : Colors.white,
           width: 2,
         ),
         boxShadow: [
@@ -432,7 +433,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
         16 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -447,7 +448,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: isDark 
-                  ? const Color(0xFF2C2C2C)
+                  ? AppColors.darkInput
                   : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(24),
               ),
@@ -502,7 +503,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     ),
               color: _controller.text.trim().isEmpty
                   ? (isDark
-                      ? const Color(0xFF2C2C2C)
+                      ? AppColors.darkInput
                       : Colors.grey.shade300)
                   : null,
               shape: BoxShape.circle,

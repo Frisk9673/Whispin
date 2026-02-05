@@ -26,6 +26,17 @@ class AppColors {
   static Color get backgroundLight => primary.withValues(alpha: 0.1);
   static Color get backgroundSecondary => secondary.withValues(alpha: 0.1);
 
+  // ===== Dark Mode Colors =====
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkInput = Color(0xFF2C2C2C);
+  static const Color darkBorder = Color(0xFF404040);
+  static const LinearGradient darkGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [darkSurface, darkBackground],
+  );
+
   // ===== Text Colors =====
   static const Color textPrimary = Colors.black87;
   static const Color textSecondary = Colors.grey;

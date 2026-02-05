@@ -177,16 +177,16 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1E1E1E),
-                  Color(0xFF121212),
+                  AppColors.darkSurface,
+                  AppColors.darkBackground,
                 ],
               )
             : const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF667EEA),
-                  Color(0xFF764BA2),
+                  AppColors.primary,
+                  AppColors.secondary,
                 ],
               ),
         ),
@@ -260,7 +260,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       ),
       child: Card(
         elevation: AppConstants.cardElevation * 2,
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -383,7 +383,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                     decoration: BoxDecoration(
                       gradient: loading ? null : AppColors.primaryGradient,
                       color: loading 
-                        ? (isDark ? const Color(0xFF2C2C2C) : AppColors.divider)
+                        ? (isDark ? AppColors.darkInput : AppColors.divider)
                         : null,
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
@@ -450,17 +450,17 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
+        fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
           borderSide: BorderSide(
-            color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+            color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
           borderSide: BorderSide(
-            color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+            color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
           ),
         ),
         focusedBorder: OutlineInputBorder(

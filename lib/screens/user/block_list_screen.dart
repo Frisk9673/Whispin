@@ -128,7 +128,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [
           // ブロックリスト
@@ -147,7 +147,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
                         onRefresh: _loadBlockedUsers,
                         color: AppColors.error,
                         backgroundColor: isDark 
-                          ? const Color(0xFF1E1E1E)
+                          ? AppColors.darkSurface
                           : Colors.white,
                         child: ListView.builder(
                           padding: EdgeInsets.symmetric(
@@ -181,7 +181,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: AppConstants.cardElevation,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? AppColors.darkSurface : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         side: BorderSide(

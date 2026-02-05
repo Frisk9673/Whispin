@@ -266,7 +266,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: _isLoading
           ? const LoadingWidget()
           : _friendRequests.isEmpty && _invitations.isEmpty
@@ -289,7 +289,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       color: AppColors.primary,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       child: ListView(
         padding: EdgeInsets.all(AppConstants.defaultPadding),
         children: [
@@ -372,7 +372,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
@@ -485,7 +485,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF2C2C2C)
+                        ? AppColors.darkInput
                         : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -570,7 +570,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           elevation: AppConstants.cardElevation,
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(AppConstants.defaultBorderRadius),
@@ -626,7 +626,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF2C2C2C)
+                        ? AppColors.darkInput
                         : AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),

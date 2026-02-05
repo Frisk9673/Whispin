@@ -172,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -388,7 +388,7 @@ class _ChatScreenState extends State<ChatScreen> {
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         title: Text(
           'ルームが削除されました',
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -426,7 +426,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -505,7 +505,7 @@ class _ChatScreenState extends State<ChatScreen> {
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         title: Text(
           '相手が退出しました',
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -700,7 +700,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (_currentRoom == null) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
         body: Center(
           child: CircularProgressIndicator(
             color: isDark ? AppColors.primary.lighten(0.2) : AppColors.primary,
@@ -722,7 +722,7 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(_currentRoom!.topic),
         backgroundColor: isDark
-            ? const Color(0xFF1E1E1E)
+            ? AppColors.darkSurface
             : AppColors.primary,
         foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false,
@@ -754,7 +754,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [
           if (!isChatStarted)
@@ -794,8 +794,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xFF1E1E1E),
-                          Color(0xFF121212),
+                          AppColors.darkSurface,
+                          AppColors.darkBackground,
                         ],
                       )
                     : LinearGradient(
@@ -819,7 +819,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Card(
                           elevation: AppConstants.cardElevation,
                           color: isDark
-                              ? const Color(0xFF2C2C2C)
+                              ? AppColors.darkInput
                               : AppColors.bubbleAdmin,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
@@ -997,7 +997,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : AppColors.cardBackground,
+              color: isDark ? AppColors.darkSurface : AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -1020,12 +1020,12 @@ class _ChatScreenState extends State<ChatScreen> {
                         color: isDark ? Colors.grey[600] : Colors.grey,
                       ),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                      fillColor: isDark ? AppColors.darkInput : Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(
                           color: isDark
-                              ? const Color(0xFF404040)
+                              ? AppColors.darkBorder
                               : Colors.grey.shade300,
                         ),
                       ),
@@ -1033,7 +1033,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(
                           color: isDark
-                              ? const Color(0xFF404040)
+                              ? AppColors.darkBorder
                               : Colors.grey.shade300,
                         ),
                       ),

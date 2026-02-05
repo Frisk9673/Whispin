@@ -131,7 +131,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.cardBackground,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.cardBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -217,7 +217,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       ),
       child: Card(
         elevation: AppConstants.cardElevation,
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -252,13 +252,13 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                     color: isDark ? Colors.grey[500] : null,
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
+                  fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
@@ -266,7 +266,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -320,14 +320,14 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
             ? (isDark 
                 ? AppColors.primary.withOpacity(0.15)
                 : AppColors.primary.withOpacity(0.1))
-            : (isDark ? const Color(0xFF2C2C2C) : AppColors.inputBackground),
+            : (isDark ? AppColors.darkInput : AppColors.inputBackground),
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         border: Border.all(
           color: _isPrivate 
               ? (isDark 
                   ? AppColors.primary.withOpacity(0.5)
                   : AppColors.primary)
-              : (isDark ? const Color(0xFF404040) : AppColors.divider),
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: 2,
         ),
       ),

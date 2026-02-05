@@ -130,7 +130,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   // フォームカード
                   Card(
                     elevation: AppConstants.cardElevation * 2,
-                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    color: isDark ? AppColors.darkSurface : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -156,7 +156,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               ),
                               filled: true,
                               fillColor: isDark
-                                  ? const Color(0xFF2C2C2C)
+                                  ? AppColors.darkInput
                                   : Colors.grey.shade50,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
@@ -226,7 +226,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               ),
                               filled: true,
                               fillColor: isDark
-                                  ? const Color(0xFF2C2C2C)
+                                  ? AppColors.darkInput
                                   : Colors.grey.shade50,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
@@ -310,7 +310,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: loading
                                     ? (isDark
-                                        ? const Color(0xFF2C2C2C)
+                                        ? AppColors.darkInput
                                         : AppColors.divider)
                                     : AppColors.primary,
                                 shape: RoundedRectangleBorder(

@@ -119,8 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF1E1E1E),
-                    const Color(0xFF121212),
+                    AppColors.darkSurface,
+                    AppColors.darkBackground,
                   ],
                 )
               : LinearGradient(

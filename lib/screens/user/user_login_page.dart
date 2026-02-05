@@ -219,8 +219,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1E1E1E),
-                  Color(0xFF121212),
+                  AppColors.darkSurface,
+                  AppColors.darkBackground,
                 ],
               )
             : AppColors.primaryGradient,
@@ -295,7 +295,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
       ),
       child: Card(
         elevation: AppConstants.cardElevation * 2,
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -324,13 +324,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
                     color: isDark ? Colors.grey[400] : null,
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
+                  fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
@@ -338,7 +338,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -395,13 +395,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
                     },
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
+                  fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
@@ -409,7 +409,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                       AppConstants.defaultBorderRadius,
                     ),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -500,7 +500,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                           ? null
                           : AppColors.primaryGradient,
                       color: _isLoading 
-                        ? (isDark ? const Color(0xFF2C2C2C) : AppColors.divider)
+                        ? (isDark ? AppColors.darkInput : AppColors.divider)
                         : null,
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
