@@ -121,13 +121,18 @@ class PremiumLogListTile extends StatelessWidget {
                           children: [
                             Text(
                               'ユーザー詳細',
-                              style: AppTextStyles.titleLarge,
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                             Text(
                               '${user?.lastName} ${user?.firstName}',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -149,20 +154,24 @@ class PremiumLogListTile extends StatelessWidget {
 
                   // 基本情報
                   _buildInfoSection(
+                    context: context,
                     title: '基本情報',
                     icon: Icons.info_outline,
                     children: [
                       _buildInfoRow(
+                        context,
                         Icons.email,
                         'メールアドレス',
                         user!.id,
                       ),
                       _buildInfoRow(
+                        context,
                         Icons.phone,
                         '電話番号',
                         user.phoneNumber ?? '未設定',
                       ),
                       _buildInfoRow(
+                        context,
                         Icons.badge,
                         'ニックネーム',
                         user.nickname.isEmpty ? '未設定' : user.nickname,
@@ -174,6 +183,7 @@ class PremiumLogListTile extends StatelessWidget {
 
                   // 契約状況
                   _buildInfoSection(
+                    context: context,
                     title: '契約状況',
                     icon: Icons.diamond,
                     children: [
@@ -203,7 +213,9 @@ class PremiumLogListTile extends StatelessWidget {
                                 children: [
                                   Text(
                                     '現在のステータス',
-                                    style: AppTextStyles.labelMedium,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium,
                                   ),
                                   Text(
                                     statusText,
@@ -225,15 +237,18 @@ class PremiumLogListTile extends StatelessWidget {
 
                   // ログ情報
                   _buildInfoSection(
+                    context: context,
                     title: 'ログ情報',
                     icon: Icons.history,
                     children: [
                       _buildInfoRow(
+                        context,
                         Icons.event_note,
                         '詳細',
                         log.detail,
                       ),
                       _buildInfoRow(
+                        context,
                         Icons.access_time,
                         '日時',
                         log.timestamp.toJapaneseDateWithWeekday +
@@ -241,6 +256,7 @@ class PremiumLogListTile extends StatelessWidget {
                             log.timestamp.toTimeString,
                       ),
                       _buildInfoRow(
+                        context,
                         Icons.schedule,
                         '経過時間',
                         log.timestamp.toRelativeTime,
@@ -285,21 +301,24 @@ class PremiumLogListTile extends StatelessWidget {
   }
 
   Widget _buildInfoSection({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required List<Widget> children,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 20),
+            Icon(icon, color: colorScheme.primary, size: 20),
             const SizedBox(width: 8),
             Text(
               title,
-              style: AppTextStyles.titleSmall.copyWith(
-                color: AppColors.primary,
+              style: textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
               ),
             ),
           ],
@@ -310,13 +329,20 @@ class PremiumLogListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
+          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -324,14 +350,14 @@ class PremiumLogListTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: AppTextStyles.bodyMedium,
+                  style: textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -350,6 +376,8 @@ class PremiumLogListTile extends StatelessWidget {
 
     final isSubscription = log.detail == '契約';
     final actionColor = isSubscription ? AppColors.success : AppColors.error;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -405,7 +433,7 @@ class PremiumLogListTile extends StatelessWidget {
                           child: Text(
                             log.email,
                             maxLines: 1,
-                            style: AppTextStyles.titleMedium,
+                            style: textTheme.titleMedium,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -435,28 +463,28 @@ class PremiumLogListTile extends StatelessWidget {
                         Icon(
                           Icons.access_time,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           log.timestamp.toRelativeTime,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Icon(
                           Icons.calendar_today,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             log.timestamp.toJapaneseDate,
                             maxLines: 1,
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.textSecondary,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -471,7 +499,7 @@ class PremiumLogListTile extends StatelessWidget {
 
               Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
           ),

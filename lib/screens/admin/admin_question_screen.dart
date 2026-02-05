@@ -221,14 +221,14 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AdminProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('お問い合わせ対応'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
         actions: [
-          // ✅ ステータス変更ボタンを追加
+          // ✅ ステータス変更ボタンを追加␊
           IconButton(
             icon: const Icon(Icons.edit_note),
             onPressed: _showStatusChangeDialog,
@@ -241,10 +241,12 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
           // メッセージ一覧
           Expanded(
             child: provider.messages.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'メッセージがありません',
-                      style: TextStyle(color: Colors.grey),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -269,8 +271,13 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
 
   /// メッセージ吹き出し
   Widget _buildMessageBubble(Message message) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isAdmin = message.isAdmin;
     final alignment = isAdmin ? Alignment.centerRight : Alignment.centerLeft;
+    final userBubbleColor = colorScheme.surfaceVariant;
+    final userTextColor = colorScheme.onSurface;
+    final adminBubbleColor = colorScheme.primary;
+    final adminTextColor = colorScheme.onPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -292,13 +299,13 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isAdmin ? AppColors.primary : Colors.grey.shade200,
+                  color: isAdmin ? adminBubbleColor : userBubbleColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   message.text,
                   style: TextStyle(
-                    color: isAdmin ? Colors.white : Colors.black87,
+                    color: isAdmin ? adminTextColor : userTextColor,
                   ),
                 ),
               ),
@@ -314,12 +321,14 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
   }
 
   Widget _buildAvatar(bool isAdmin) {
+    final colorScheme = Theme.of(context).colorScheme;
     return CircleAvatar(
       radius: 18,
-      backgroundColor: isAdmin ? AppColors.primary : Colors.grey,
+      backgroundColor:
+          isAdmin ? colorScheme.primary : colorScheme.surfaceVariant,
       child: Icon(
         isAdmin ? Icons.support_agent : Icons.person,
-        color: Colors.white,
+        color: isAdmin ? colorScheme.onPrimary : colorScheme.onSurface,
         size: 18,
       ),
     );
@@ -327,6 +336,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
 
   /// 入力エリア
   Widget _buildInputArea() {
+    final colorScheme = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -346,7 +356,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.send),
-              color: AppColors.primary,
+              color: colorScheme.primary,
               onPressed: _sendMessage,
             ),
           ],

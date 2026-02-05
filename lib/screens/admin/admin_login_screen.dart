@@ -75,10 +75,21 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1E1E1E),
+                    Color(0xFF121212),
+                  ],
+                )
+              : AppColors.primaryGradient,
         ),
         child: SafeArea(
           child: Center(
@@ -92,7 +103,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     padding: EdgeInsets.all(AppConstants.defaultPadding),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
                     ),
                     child: Icon(
                       Icons.admin_panel_settings,
@@ -119,6 +130,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   // フォームカード
                   Card(
                     elevation: AppConstants.cardElevation * 2,
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -130,17 +142,55 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           TextField(
                             controller: emailController,
                             enabled: !loading,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                             decoration: InputDecoration(
                               labelText: "メールアドレス",
-                              prefixIcon: Icon(Icons.email_outlined),
+                              labelStyle: TextStyle(
+                                color: isDark ? Colors.grey[400] : null,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: isDark ? Colors.grey[400] : null,
+                              ),
+                              filled: true,
+                              fillColor: isDark
+                                  ? const Color(0xFF2C2C2C)
+                                  : Colors.grey.shade50,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
                                   AppConstants.defaultBorderRadius,
                                 ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF404040)
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF404040)
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? AppColors.primary.lighten(0.2)
+                                      : AppColors.primary,
+                                  width: 2,
+                                ),
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            style: AppTextStyles.bodyLarge,
                           ),
                           const SizedBox(height: 16),
 
@@ -149,14 +199,24 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             controller: passwordController,
                             enabled: !loading,
                             obscureText: _obscurePassword,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                             decoration: InputDecoration(
                               labelText: "パスワード",
-                              prefixIcon: Icon(Icons.lock_outlined),
+                              labelStyle: TextStyle(
+                                color: isDark ? Colors.grey[400] : null,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outlined,
+                                color: isDark ? Colors.grey[400] : null,
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
+                                  color: isDark ? Colors.grey[400] : null,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -164,13 +224,42 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                   });
                                 },
                               ),
+                              filled: true,
+                              fillColor: isDark
+                                  ? const Color(0xFF2C2C2C)
+                                  : Colors.grey.shade50,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
                                   AppConstants.defaultBorderRadius,
                                 ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF404040)
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF404040)
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius,
+                                ),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? AppColors.primary.lighten(0.2)
+                                      : AppColors.primary,
+                                  width: 2,
+                                ),
                               ),
                             ),
-                            style: AppTextStyles.bodyLarge,
                           ),
 
                           const SizedBox(height: 24),
@@ -181,12 +270,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
-                                color: AppColors.error.withOpacity(0.1),
+                                color: AppColors.error
+                                    .withOpacity(isDark ? 0.2 : 0.1),
                                 borderRadius: BorderRadius.circular(
                                   AppConstants.defaultBorderRadius,
                                 ),
                                 border: Border.all(
-                                  color: AppColors.error.withOpacity(0.3),
+                                  color: AppColors.error
+                                      .withOpacity(isDark ? 0.5 : 0.3),
                                 ),
                               ),
                               child: Row(
@@ -199,7 +290,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                   Expanded(
                                     child: Text(
                                       message,
-                                      style: AppTextStyles.error,
+                                      style: AppTextStyles.error.copyWith(
+                                        color: isDark
+                                            ? Colors.red[300]
+                                            : AppColors.error,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -213,7 +308,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             child: ElevatedButton(
                               onPressed: loading ? null : loginAdmin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
+                                backgroundColor: loading
+                                    ? (isDark
+                                        ? const Color(0xFF2C2C2C)
+                                        : AppColors.divider)
+                                    : AppColors.primary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(
                                     AppConstants.defaultBorderRadius,
@@ -246,7 +345,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   Container(
                     padding: EdgeInsets.all(AppConstants.defaultPadding - 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -257,6 +356,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           onTap: loading
                               ? null
                               : () => NavigationHelper.toLogin(context),
+                          isDark: isDark,
                         ),
                         const SizedBox(height: 12),
                         _buildLinkButton(
@@ -265,6 +365,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           onTap: loading
                               ? null
                               : () => NavigationHelper.toRegister(context),
+                          isDark: isDark,
                         ),
                       ],
                     ),
@@ -282,6 +383,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     required IconData icon,
     required String text,
     required VoidCallback? onTap,
+    required bool isDark,
   }) {
     return InkWell(
       onTap: onTap,
@@ -289,7 +391,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withOpacity(isDark ? 0.05 : 0.1),
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
         child: Row(

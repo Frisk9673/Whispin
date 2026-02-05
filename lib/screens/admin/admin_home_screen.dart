@@ -18,12 +18,14 @@ class AdminHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final admin = Provider.of<AdminProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final appBarForeground =
+        Theme.of(context).appBarTheme.foregroundColor ?? colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('管理画面'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false, // 戻るボタンを非表示
         actions: [
           // リフレッシュボタン
@@ -51,10 +53,10 @@ class AdminHomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                           AppConstants.defaultBorderRadius),
                     ),
-                    title: Text('ログアウト', style: AppTextStyles.titleLarge),
+                    title: Text('ログアウト', style: textTheme.titleLarge),
                     content: Text(
                       'ログアウトしますか？',
-                      style: AppTextStyles.bodyMedium,
+                      style: textTheme.bodyMedium,
                     ),
                     actions: [
                       TextButton(
@@ -79,12 +81,12 @@ class AdminHomeScreen extends StatelessWidget {
                   NavigationHelper.toAdminLogin(context);
                 }
               },
-              child: const Align(
+              child: Align(
                 alignment: Alignment.center,
                 child: Text(
                   'ログアウト',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: appBarForeground,
                     fontSize: 16,
                   ),
                 ),
@@ -99,8 +101,8 @@ class AdminHomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.backgroundLight,
-              AppColors.backgroundSecondary,
+              colorScheme.surface,
+              colorScheme.background,
             ],
           ),
         ),
@@ -123,8 +125,8 @@ class AdminHomeScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(
                               '読み込み中...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -144,8 +146,7 @@ class AdminHomeScreen extends StatelessWidget {
                           ),
                           child: InkWell(
                             onTap: () {
-                              logger.info(
-                                  '有料会員数カードタップ → PremiumLogListScreen',
+                              logger.info('有料会員数カードタップ → PremiumLogListScreen',
                                   name: _logName);
                               AppRouter.navigateTo(
                                 context,
@@ -206,11 +207,11 @@ class AdminHomeScreen extends StatelessWidget {
                           children: [
                             // お問い合わせボタン（緑）
                             _buildCircleButton(
+                              context: context,
                               label: 'お問い合わせ',
                               icon: Icons.support_agent,
                               onPressed: () {
-                                logger.info('お問い合わせボタン押下',
-                                    name: _logName);
+                                logger.info('お問い合わせボタン押下', name: _logName);
                                 Navigator.of(context)
                                     .pushNamed(AppRoutes.questionChat);
                               },
@@ -219,12 +220,12 @@ class AdminHomeScreen extends StatelessWidget {
 
                             // 有料会員ログボタン（青）
                             _buildCircleButton(
+                              context: context,
                               label: '有料会員\nログ',
                               icon: Icons.receipt_long,
                               backgroundColor: Colors.blue,
                               onPressed: () {
-                                logger.info('有料会員ログボタン押下',
-                                    name: _logName);
+                                logger.info('有料会員ログボタン押下', name: _logName);
                                 AppRouter.navigateTo(
                                   context,
                                   AppRoutes.premiumLogs,
@@ -248,6 +249,7 @@ class AdminHomeScreen extends StatelessWidget {
   }
 
   Widget _buildCircleButton({
+    required BuildContext context,
     required String label,
     required IconData icon,
     required VoidCallback onPressed,
@@ -292,9 +294,10 @@ class AdminHomeScreen extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: AppTextStyles.labelLarge.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ),
       ],

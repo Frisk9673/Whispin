@@ -21,11 +21,10 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('お問い合わせ一覧'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -33,8 +32,8 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.backgroundLight,
-              AppColors.backgroundSecondary,
+              colorScheme.surface,
+              colorScheme.background,
             ],
           ),
         ),
@@ -52,7 +51,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           logger.error('エラー: ${snapshot.error}', name: _logName);
-          return _buildErrorView();
+          return _buildErrorView(context);
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -64,7 +63,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
         final chats = snapshot.data?.docs ?? [];
 
         if (chats.isEmpty) {
-          return _buildEmptyView();
+          return _buildEmptyView(context);
         }
 
         logger.info('お問い合わせ件数: ${chats.length}件', name: _logName);
@@ -82,7 +81,8 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
     );
   }
 
-  Widget _buildErrorView() {
+  Widget _buildErrorView(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -91,16 +91,16 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
           const SizedBox(height: 16),
           Text(
             'データの取得に失敗しました',
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.error,
-            ),
+            style: textTheme.bodyLarge?.copyWith(color: AppColors.error),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyView() {
+  Widget _buildEmptyView(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -120,8 +120,8 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
           const SizedBox(height: 24),
           Text(
             'お問い合わせはありません',
-            style: AppTextStyles.titleLarge.copyWith(
-              color: AppColors.textSecondary,
+            style: textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -130,6 +130,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
   }
 
   Widget _buildChatCard(BuildContext context, QuestionChat chat) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       elevation: AppConstants.cardElevation,
       margin: const EdgeInsets.only(bottom: 12),
@@ -157,7 +158,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
               ),
               Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -194,6 +195,8 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
   }
 
   Widget _buildChatInfo(QuestionChat chat) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     // ✅ ステータスに応じた色とアイコンを決定
     Color statusColor;
     IconData statusIcon;
@@ -224,7 +227,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
             Expanded(
               child: Text(
                 chat.userId,
-                style: AppTextStyles.titleMedium,
+                style: textTheme.titleMedium,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -269,8 +272,8 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
         const SizedBox(height: 4),
         Text(
           chat.lastMessage.isEmpty ? 'メッセージなし' : chat.lastMessage,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

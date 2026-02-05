@@ -55,17 +55,15 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<PremiumLogProvider>();
     final isMobile = context.isMobile;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'プレミアムログ',
-          style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.textWhite,
-          ),
+          style: textTheme.titleLarge,
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
         elevation: 0,
       ),
       body: Container(
@@ -74,8 +72,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.backgroundLight,
-              AppColors.backgroundSecondary,
+              colorScheme.surface,
+              colorScheme.background,
             ],
           ),
         ),
@@ -98,8 +96,10 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   }
 
   Widget _buildSearchArea(PremiumLogProvider provider, bool isMobile) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
-      color: AppColors.cardBackground,
+      color: Theme.of(context).cardColor,
       padding: EdgeInsets.all(AppConstants.defaultPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,11 +107,11 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
           // タイトル
           Row(
             children: [
-              Icon(Icons.search, color: AppColors.primary),
+              Icon(Icons.search, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'メールアドレスで検索',
-                style: AppTextStyles.titleSmall,
+                style: textTheme.titleSmall,
               ),
             ],
           ),
@@ -124,7 +124,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
               controller: _controller,
               decoration: InputDecoration(
                 hintText: 'メールアドレスを入力',
-                prefixIcon: Icon(Icons.email, color: AppColors.primary),
+                prefixIcon: Icon(Icons.email, color: colorScheme.primary),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -198,7 +198,7 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
                     controller: _controller,
                     decoration: InputDecoration(
                       hintText: 'メールアドレスを入力',
-                      prefixIcon: Icon(Icons.email, color: AppColors.primary),
+                      prefixIcon: Icon(Icons.email, color: colorScheme.primary),
                       suffixIcon: _controller.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -326,6 +326,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   }
 
   Widget _buildLogList(PremiumLogProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     if (provider.isLoading) {
       return Center(
         child: Column(
@@ -335,8 +337,8 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
             const SizedBox(height: 16),
             Text(
               '読み込み中...',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -364,15 +366,15 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
             const SizedBox(height: 24),
             Text(
               'ログが見つかりません',
-              style: AppTextStyles.titleLarge.copyWith(
-                color: AppColors.textSecondary,
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '検索条件を変更してください',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
