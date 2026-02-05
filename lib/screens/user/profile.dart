@@ -156,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value, bool isMobile) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Row(
       children: [
@@ -201,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildThemeToggleCard(BuildContext context, bool isMobile) {
     final themeProvider = context.watch<ThemeProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Card(
       elevation: AppConstants.cardElevation,
@@ -276,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = userProvider.currentUser;
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: const CommonHeader(

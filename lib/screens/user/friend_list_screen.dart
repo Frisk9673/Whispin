@@ -113,7 +113,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Future<void> _showRemoveOptions(int index) async {
     final friend = _friends[index];
     final isMobile = context.isMobile;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     logger.section('フレンド削除/ブロック選択', name: _logName);
     logger.info('対象フレンド: ${friend['name']}', name: _logName);
@@ -327,7 +327,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: CommonHeader(

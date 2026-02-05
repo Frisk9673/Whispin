@@ -5,6 +5,7 @@ import '../../providers/chat_provider.dart';
 import '../../services/question_chat.dart';
 import '../../models/question_message.dart';
 import '../../extensions/datetime_extensions.dart';
+import '../../extensions/context_extensions.dart';
 import '../../constants/colors.dart';
 
 class UserChatScreen extends StatefulWidget {
@@ -57,7 +58,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ChatProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     if (provider.loading || provider.chatId == null) {
       return Scaffold(
@@ -433,7 +434,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
         16 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: context.colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -447,9 +448,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: isDark 
-                  ? AppColors.darkInput
-                  : Colors.grey.shade100,
+                color: context.colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
@@ -457,9 +456,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                 decoration: InputDecoration(
                   hintText: 'メッセージを入力...',
                   hintStyle: TextStyle(
-                    color: isDark 
-                      ? Colors.grey[600]
-                      : Colors.grey.shade500,
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
@@ -470,9 +467,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       ? IconButton(
                           icon: Icon(
                             Icons.clear,
-                            color: isDark
-                              ? Colors.grey[500]
-                              : Colors.grey.shade600,
+                            color: context.colorScheme.onSurfaceVariant,
                           ),
                           onPressed: () {
                             _controller.clear();
@@ -482,7 +477,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       : null,
                 ),
                 style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: context.colorScheme.onSurface,
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,

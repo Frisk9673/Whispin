@@ -161,7 +161,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -200,7 +200,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         isMobile ? 12 : AppConstants.defaultPadding,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.backgroundLight,
+        color: context.colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -219,59 +219,20 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                   controller: _searchController,
                   enabled: !_isLoading && !_isSearching,
                   style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: context.colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'ルーム名で検索',
                     labelStyle: TextStyle(
-                      color: isDark ? Colors.grey[400] : null,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                     hintText: '例: 雑談、趣味の話、など',
                     hintStyle: TextStyle(
-                      color: isDark ? Colors.grey[600] : null,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                     prefixIcon: Icon(
                       Icons.search,
-                      color: isDark
-                          ? AppColors.primary.lighten(0.2)
-                          : AppColors.primary,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? AppColors.darkInput : Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.defaultBorderRadius,
-                      ),
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? AppColors.darkBorder
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.defaultBorderRadius,
-                      ),
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? AppColors.darkBorder
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.defaultBorderRadius,
-                      ),
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? AppColors.primary.lighten(0.2)
-                            : AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 12 : 16,
-                      vertical: isMobile ? 12 : 16,
+                      color: context.colorScheme.primary,
                     ),
                   ),
                   onSubmitted: (_) => _searchRooms(),

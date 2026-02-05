@@ -19,6 +19,26 @@ extension ContextExtensions on BuildContext {
   /// パディング（セーフエリア）を取得
   EdgeInsets get padding => mediaQuery.padding;
 
+  // ===== Theme Access =====
+
+  /// ThemeDataを取得
+  ThemeData get theme => Theme.of(this);
+
+  /// ColorSchemeを取得
+  ColorScheme get colorScheme => theme.colorScheme;
+
+  /// CardThemeDataを取得
+  CardThemeData get cardTheme => theme.cardTheme;
+
+  /// InputDecorationThemeを取得
+  InputDecorationThemeData get inputDecorationTheme => theme.inputDecorationTheme;
+
+  /// ダークモード判定
+  bool get isDark => theme.brightness == Brightness.dark;
+
+  /// サーフェスカラー
+  Color get surfaceColor => colorScheme.surface;
+
   // ===== スナックバー =====
 
   /// スナックバーを表示

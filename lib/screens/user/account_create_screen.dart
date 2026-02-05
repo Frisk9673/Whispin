@@ -167,7 +167,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       body: Container(
@@ -260,7 +260,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       ),
       child: Card(
         elevation: AppConstants.cardElevation * 2,
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: context.cardTheme.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -435,47 +435,20 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       keyboardType: keyboardType,
       style: AppTextStyles.bodyLarge.copyWith(
         fontSize: context.responsiveFontSize(16),
-        color: isDark ? Colors.white : Colors.black87,
+        color: context.colorScheme.onSurface,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
           fontSize: context.responsiveFontSize(14),
-          color: isDark ? Colors.grey[400] : null,
+          color: context.colorScheme.onSurfaceVariant,
         ),
         prefixIcon: Icon(
           icon,
           size: isMobile ? 20 : 24,
-          color: isDark ? Colors.grey[400] : null,
+          color: context.colorScheme.onSurfaceVariant,
         ),
         suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-          borderSide: BorderSide(
-            color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-          borderSide: BorderSide(
-            color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-          borderSide: BorderSide(
-            color: isDark 
-              ? AppColors.primary.lighten(0.2)
-              : AppColors.primary,
-            width: 2,
-          ),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16,
-          vertical: isMobile ? 12 : 16,
-        ),
       ),
     );
   }

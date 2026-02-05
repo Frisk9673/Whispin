@@ -257,7 +257,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -284,7 +284,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Widget _buildNotificationList() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return RefreshIndicator(
       onRefresh: _loadNotifications,

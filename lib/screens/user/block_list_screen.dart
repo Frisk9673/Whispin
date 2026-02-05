@@ -119,7 +119,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: CommonHeader(

@@ -122,7 +122,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -217,7 +217,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       ),
       child: Card(
         elevation: AppConstants.cardElevation,
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: context.cardTheme.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -231,54 +231,25 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 controller: _roomNameController,
                 maxLength: AppConstants.roomNameMaxLength,
                 style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: context.colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   labelText: 'ルーム名',
                   labelStyle: TextStyle(
-                    color: isDark ? Colors.grey[400] : null,
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
                   hintText: 'チャットのテーマを入力',
                   hintStyle: TextStyle(
-                    color: isDark ? Colors.grey[600] : null,
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
                   prefixIcon: Icon(
                     Icons.title,
-                    color: isDark ? Colors.grey[400] : AppColors.primary,
+                    color: context.colorScheme.primary,
                   ),
                   counterText:
                       '${_roomNameController.text.length}/${AppConstants.roomNameMaxLength}',
                   counterStyle: TextStyle(
-                    color: isDark ? Colors.grey[500] : null,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.darkInput : Colors.grey.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.defaultBorderRadius,
-                    ),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.defaultBorderRadius,
-                    ),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.defaultBorderRadius,
-                    ),
-                    borderSide: BorderSide(
-                      color: isDark 
-                        ? AppColors.primary.lighten(0.2)
-                        : AppColors.primary,
-                      width: 2,
-                    ),
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 onChanged: (_) => setState(() {}),

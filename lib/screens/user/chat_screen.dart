@@ -166,7 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.section('延長リクエストダイアログ表示', name: _logName);
     logger.info('requestId: ${request.id}', name: _logName);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     final result = await showDialog<bool>(
       context: context,
@@ -383,7 +383,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== ルーム状態ハンドラー =====
 
   void _handleRoomDisappeared() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     context.showCustomDialog(
       barrierDismissible: false,
@@ -420,7 +420,7 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.section('チャット時間終了処理開始', name: _logName);
 
     final isPrivateRoom = _currentRoom?.private ?? false;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     // ===== 1. まず時間切れダイアログを表示 =====
     await context.showCustomDialog(
@@ -500,7 +500,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showPartnerLeftDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     context.showCustomDialog(
       barrierDismissible: false,
@@ -696,7 +696,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     if (_currentRoom == null) {
       return Scaffold(
@@ -997,7 +997,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.cardBackground,
+              color: context.colorScheme.surface,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -1012,48 +1012,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _messageController,
                     style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: context.colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       hintText: 'メッセージを入力...',
                       hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[600] : Colors.grey,
-                      ),
-                      filled: true,
-                      fillColor: isDark ? AppColors.darkInput : Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.darkBorder
-                              : Colors.grey.shade300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.darkBorder
-                              : Colors.grey.shade300,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.primary.lighten(0.2)
-                              : AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        color: context.colorScheme.onSurfaceVariant,
                       ),
                       suffixText:
                           '${_messageController.text.length}/${AppConstants.messageMaxLength}',
                       suffixStyle: TextStyle(
-                        color: isDark ? Colors.grey[500] : Colors.grey,
+                        color: context.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     maxLength: AppConstants.messageMaxLength,
@@ -1068,9 +1037,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: isDark
-                      ? AppColors.primary.withOpacity(0.9)
-                      : AppColors.primary,
+                  backgroundColor: context.colorScheme.primary,
                   child: IconButton(
                     icon: Icon(Icons.send, color: AppColors.textWhite),
                     onPressed: _sendMessage,
