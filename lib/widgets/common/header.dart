@@ -9,7 +9,7 @@ import '../../constants/routes.dart';
 import '../../constants/responsive.dart';
 import '../../utils/app_logger.dart';
 
-/// レスポンシブ対応の統一ヘッダーコンポーネント
+/// レスポンシブ対応の統一ヘッダーコンポーネント（ダークモード対応版）
 ///
 /// 通知数は NotificationCacheService のキャッシュを経由し、
 /// 画面遷移時に再取得・5分ごとに自動リフレッシュする。
@@ -60,7 +60,6 @@ class _CommonHeaderState extends State<CommonHeader> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // ユーザー情報が読み込まれた後に初回ロード＋自動リフレッシュ開始
     final userId = _userProvider.currentUser?.id;
     if (userId != null && _isFirstLoad) {
       _isFirstLoad = false;
@@ -77,8 +76,6 @@ class _CommonHeaderState extends State<CommonHeader> {
 
   // ===== 通知数取得 =====
 
-  /// キャッシュから通知数を取得し、必要に応じて再取得する。
-  /// 画面遷移時に呼ばれる。
   Future<void> _loadNotificationCount(String userId) async {
     try {
       final count = await _cacheService.getCount(userId: userId);
@@ -100,10 +97,8 @@ class _CommonHeaderState extends State<CommonHeader> {
       return;
     }
 
-    // 通知画面へ遷移
     await Navigator.of(context).pushNamed(AppRoutes.friendRequests);
 
-    // 戻ってきたら強制リフレッシュ
     final userId = _userProvider.currentUser?.id;
     if (userId != null && mounted) {
       _cacheService.invalidateCache();
@@ -125,26 +120,32 @@ class _CommonHeaderState extends State<CommonHeader> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final isMobile = context.isMobile;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppBar(
-      title: _buildTitle(context),
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.textWhite,
-      elevation: 4,
+      title: _buildTitle(context, isDark),
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppColors.primary,
+      foregroundColor: isDark ? Colors.white : AppColors.textWhite,
+      elevation: isDark ? 2 : 4,
       centerTitle: isMobile,
-      actions: _buildActions(context, userProvider, isMobile),
+      iconTheme: IconThemeData(
+        color: isDark ? Colors.white : AppColors.textWhite,
+      ),
+      actions: _buildActions(context, userProvider, isMobile, isDark),
     );
   }
 
-  /// タイトル部分を構築（レスポンシブ対応）
-  Widget _buildTitle(BuildContext context) {
-    if (context.isMobile && widget.title.length > 15) {
+  /// タイトル部分を構築（ダークモード対応）
+  Widget _buildTitle(BuildContext context, bool isDark) {
+    final isMobile = context.isMobile;
+    
+    if (isMobile && widget.title.length > 15) {
       return Text(
         widget.title.length > 12
             ? '${widget.title.substring(0, 12)}...'
             : widget.title,
         style: AppTextStyles.titleMedium.copyWith(
-          color: AppColors.textWhite,
+          color: isDark ? Colors.white : AppColors.textWhite,
           fontSize: context.responsiveFontSize(18),
         ),
         overflow: TextOverflow.ellipsis,
@@ -154,30 +155,31 @@ class _CommonHeaderState extends State<CommonHeader> {
     return Text(
       widget.title,
       style: AppTextStyles.titleLarge.copyWith(
-        color: AppColors.textWhite,
+        color: isDark ? Colors.white : AppColors.textWhite,
         fontSize: context.responsiveFontSize(20),
       ),
     );
   }
 
-  /// アクション部分を構築（レスポンシブ対応）
+  /// アクション部分を構築（ダークモード対応）
   List<Widget> _buildActions(
     BuildContext context,
     UserProvider userProvider,
     bool isMobile,
+    bool isDark,
   ) {
     final actions = <Widget>[];
 
     if (widget.showNotifications) {
-      actions.add(_buildNotificationButton(isMobile));
+      actions.add(_buildNotificationButton(isMobile, isDark));
     }
 
     if (widget.showProfile) {
-      actions.add(_buildProfileButton(isMobile));
+      actions.add(_buildProfileButton(isMobile, isDark));
     }
 
     if (widget.showPremiumBadge && userProvider.isPremium) {
-      actions.add(_buildPremiumBadge(context, isMobile));
+      actions.add(_buildPremiumBadge(context, isMobile, isDark));
     }
 
     if (widget.additionalActions != null) {
@@ -187,15 +189,15 @@ class _CommonHeaderState extends State<CommonHeader> {
     return actions;
   }
 
-  /// 通知ボタンを構築
-  /// キャッシュから保持中の _notificationCount を直接使用
-  Widget _buildNotificationButton(bool isMobile) {
+  /// 通知ボタンを構築（ダークモード対応）
+  Widget _buildNotificationButton(bool isMobile, bool isDark) {
     return Stack(
       children: [
         IconButton(
           icon: Icon(
             Icons.notifications,
             size: isMobile ? 22 : 24,
+            color: isDark ? Colors.white : AppColors.textWhite,
           ),
           onPressed: _handleNotificationPressed,
           tooltip: '通知',
@@ -203,13 +205,13 @@ class _CommonHeaderState extends State<CommonHeader> {
               isMobile ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
         ),
         if (_notificationCount > 0)
-          _buildNotificationBadge(_notificationCount, isMobile),
+          _buildNotificationBadge(_notificationCount, isMobile, isDark),
       ],
     );
   }
 
-  /// 通知バッジを構築
-  Widget _buildNotificationBadge(int count, bool isMobile) {
+  /// 通知バッジを構築（ダークモード対応）
+  Widget _buildNotificationBadge(int count, bool isMobile, bool isDark) {
     return Positioned(
       right: isMobile ? 6 : 8,
       top: isMobile ? 6 : 8,
@@ -220,11 +222,13 @@ class _CommonHeaderState extends State<CommonHeader> {
           minHeight: isMobile ? 16 : 18,
         ),
         decoration: BoxDecoration(
-          color: AppColors.error,
+          color: isDark ? Colors.red[400] : AppColors.error,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowDark,
+              color: isDark
+                  ? Colors.red.withOpacity(0.4)
+                  : AppColors.shadowDark,
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -234,7 +238,7 @@ class _CommonHeaderState extends State<CommonHeader> {
           child: Text(
             count > 99 ? '99+' : '$count',
             style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textWhite,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: isMobile ? 9 : 10,
             ),
@@ -244,12 +248,13 @@ class _CommonHeaderState extends State<CommonHeader> {
     );
   }
 
-  /// プロフィールボタンを構築
-  Widget _buildProfileButton(bool isMobile) {
+  /// プロフィールボタンを構築（ダークモード対応）
+  Widget _buildProfileButton(bool isMobile, bool isDark) {
     return IconButton(
       icon: Icon(
         Icons.person,
         size: isMobile ? 22 : 24,
+        color: isDark ? Colors.white : AppColors.textWhite,
       ),
       onPressed: _handleProfilePressed,
       tooltip: 'プロフィール',
@@ -257,8 +262,8 @@ class _CommonHeaderState extends State<CommonHeader> {
     );
   }
 
-  /// プレミアムバッジを構築
-  Widget _buildPremiumBadge(BuildContext context, bool isMobile) {
+  /// プレミアムバッジを構築（ダークモード対応）
+  Widget _buildPremiumBadge(BuildContext context, bool isMobile, bool isDark) {
     return Padding(
       padding: EdgeInsets.only(right: isMobile ? 4 : 8),
       child: Center(
@@ -269,17 +274,22 @@ class _CommonHeaderState extends State<CommonHeader> {
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.premiumGold,
-                AppColors.premiumGold.darken(0.1),
-              ],
+              colors: isDark
+                  ? [
+                      AppColors.premiumGold.withOpacity(0.9),
+                      AppColors.premiumGold.darken(0.1).withOpacity(0.9),
+                    ]
+                  : [
+                      AppColors.premiumGold,
+                      AppColors.premiumGold.darken(0.1),
+                    ],
             ),
             borderRadius: BorderRadius.circular(
               AppConstants.defaultBorderRadius,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.premiumGold.withOpacity(0.3),
+                color: AppColors.premiumGold.withOpacity(isDark ? 0.4 : 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -291,14 +301,14 @@ class _CommonHeaderState extends State<CommonHeader> {
               Icon(
                 Icons.diamond,
                 size: isMobile ? 14 : 16,
-                color: AppColors.textWhite,
+                color: Colors.white,
               ),
               if (!isMobile) ...[
                 const SizedBox(width: 4),
                 Text(
                   'Premium',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textWhite,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: isMobile ? 10 : 11,
                   ),
