@@ -166,10 +166,13 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.section('延長リクエストダイアログ表示', name: _logName);
     logger.info('requestId: ${request.id}', name: _logName);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -178,7 +181,14 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                gradient: isDark
+                    ? LinearGradient(
+                        colors: [
+                          AppColors.primary.withOpacity(0.8),
+                          AppColors.secondary.withOpacity(0.8),
+                        ],
+                      )
+                    : AppColors.primaryGradient,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -188,8 +198,13 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
-              child: Text('延長リクエスト'),
+            Expanded(
+              child: Text(
+                '延長リクエスト',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
             ),
           ],
         ),
@@ -199,28 +214,38 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Text(
               '相手がチャット時間の延長を希望しています。',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? Colors.grey[300] : Colors.black87,
+              ),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
+                color: isDark
+                    ? AppColors.info.withOpacity(0.15)
+                    : AppColors.info.withOpacity(0.1),
                 borderRadius:
                     BorderRadius.circular(AppConstants.defaultBorderRadius),
                 border: Border.all(
-                  color: AppColors.info.withOpacity(0.3),
+                  color: isDark
+                      ? AppColors.info.withOpacity(0.4)
+                      : AppColors.info.withOpacity(0.3),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                  Icon(
+                    Icons.info_outline,
+                    color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '延長すると${AppConstants.extensionDurationMinutes}分間追加されます',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.info,
+                        color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
                       ),
                     ),
                   ),
@@ -234,13 +259,17 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               '拒否',
-              style: TextStyle(color: AppColors.error),
+              style: TextStyle(
+                color: isDark ? Colors.red[300] : AppColors.error,
+              ),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
+              backgroundColor: isDark
+                  ? AppColors.success.withOpacity(0.9)
+                  : AppColors.success,
               foregroundColor: Colors.white,
             ),
             child: const Text('承認'),
@@ -354,11 +383,20 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== ルーム状態ハンドラー =====
 
   void _handleRoomDisappeared() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        title: const Text('ルームが削除されました'),
-        content: const Text('このルームは削除されました。'),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'ルームが削除されました',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
+        content: Text(
+          'このルームは削除されました。',
+          style: TextStyle(color: isDark ? Colors.grey[300] : Colors.black87),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -382,11 +420,13 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.section('チャット時間終了処理開始', name: _logName);
 
     final isPrivateRoom = _currentRoom?.private ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // ===== 1. まず時間切れダイアログを表示 =====
     await context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -395,7 +435,9 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.warning,
+                color: isDark
+                    ? AppColors.warning.withOpacity(0.8)
+                    : AppColors.warning,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -405,12 +447,17 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('チャット時間終了'),
+            Text(
+              'チャット時間終了',
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            ),
           ],
         ),
         content: Text(
           '時間切れです。',
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? Colors.grey[300] : Colors.black87,
+          ),
         ),
         actions: [
           ElevatedButton(
@@ -436,7 +483,9 @@ class _ChatScreenState extends State<ChatScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: isDark
+                  ? AppColors.primary.withOpacity(0.9)
+                  : AppColors.primary,
             ),
             child: const Text(
               '退出する',
@@ -451,11 +500,20 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showPartnerLeftDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     context.showCustomDialog(
       barrierDismissible: false,
       child: AlertDialog(
-        title: const Text('相手が退出しました'),
-        content: const Text('退出ボタンを押してください'),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          '相手が退出しました',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
+        content: Text(
+          '退出ボタンを押してください',
+          style: TextStyle(color: isDark ? Colors.grey[300] : Colors.black87),
+        ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -638,10 +696,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_currentRoom == null) {
       return Scaffold(
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: CircularProgressIndicator(
+            color: isDark ? AppColors.primary.lighten(0.2) : AppColors.primary,
+          ),
         ),
       );
     }
@@ -658,9 +721,12 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentRoom!.topic),
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark
+            ? const Color(0xFF1E1E1E)
+            : AppColors.primary,
         foregroundColor: AppColors.textWhite,
         automaticallyImplyLeading: false,
+        elevation: isDark ? 2 : 4,
         actions: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -688,22 +754,32 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
           if (!isChatStarted)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
-              color: AppColors.warning.withOpacity(0.1),
+              color: isDark
+                  ? AppColors.warning.withOpacity(0.15)
+                  : AppColors.warning.withOpacity(0.1),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.hourglass_empty, color: AppColors.warning),
+                  Icon(
+                    Icons.hourglass_empty,
+                    color: isDark
+                        ? AppColors.warning.lighten(0.2)
+                        : AppColors.warning,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '相手の参加を待っています...',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.warning,
+                      color: isDark
+                          ? AppColors.warning.lighten(0.2)
+                          : AppColors.warning,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -713,14 +789,23 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.backgroundLight,
-                    AppColors.backgroundSecondary,
-                  ],
-                ),
+                gradient: isDark
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFF1E1E1E),
+                          Color(0xFF121212),
+                        ],
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.backgroundLight,
+                          AppColors.backgroundSecondary,
+                        ],
+                      ),
               ),
               child: Padding(
                 padding: EdgeInsets.all(AppConstants.defaultPadding),
@@ -733,14 +818,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             : null,
                         child: Card(
                           elevation: AppConstants.cardElevation,
-                          color: AppColors.bubbleAdmin,
+                          color: isDark
+                              ? const Color(0xFF2C2C2C)
+                              : AppColors.bubbleAdmin,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppConstants.defaultBorderRadius,
                             ),
                             side: !hasPartner && _currentRoom!.private
                                 ? BorderSide(
-                                    color: AppColors.primary,
+                                    color: isDark
+                                        ? AppColors.primary.lighten(0.2)
+                                        : AppColors.primary,
                                     width: 2,
                                   )
                                 : BorderSide.none,
@@ -757,7 +846,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     Text(
                                       '相手のメッセージ',
                                       style: AppTextStyles.titleSmall.copyWith(
-                                        color: AppColors.info,
+                                        color: isDark
+                                            ? AppColors.info.lighten(0.2)
+                                            : AppColors.info,
                                       ),
                                     ),
                                     if (!hasPartner &&
@@ -769,7 +860,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary,
+                                          color: isDark
+                                              ? AppColors.primary.withOpacity(0.8)
+                                              : AppColors.primary,
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
@@ -807,15 +900,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                               Icon(
                                                 Icons.person_add,
                                                 size: 48,
-                                                color: AppColors.primary
-                                                    .withOpacity(0.5),
+                                                color: isDark
+                                                    ? AppColors.primary
+                                                        .lighten(0.2)
+                                                        .withOpacity(0.5)
+                                                    : AppColors.primary
+                                                        .withOpacity(0.5),
                                               ),
                                               const SizedBox(height: 12),
                                               Text(
                                                 'フレンドを招待',
                                                 style: AppTextStyles.titleMedium
                                                     .copyWith(
-                                                  color: AppColors.primary,
+                                                  color: isDark
+                                                      ? AppColors.primary.lighten(0.2)
+                                                      : AppColors.primary,
                                                 ),
                                               ),
                                               const SizedBox(height: 4),
@@ -823,8 +922,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                                 'ここをタップして招待を送信',
                                                 style: AppTextStyles.bodySmall
                                                     .copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
+                                                  color: isDark
+                                                      ? Colors.grey[500]
+                                                      : AppColors.textSecondary,
                                                 ),
                                               ),
                                             ],
@@ -832,7 +932,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                         : SingleChildScrollView(
                                             child: Text(
                                               _getPartnerComment(),
-                                              style: AppTextStyles.bodyLarge,
+                                              style: AppTextStyles.bodyLarge.copyWith(
+                                                color: isDark ? Colors.grey[300] : Colors.black87,
+                                              ),
                                             ),
                                           ),
                                   ),
@@ -847,7 +949,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: Card(
                         elevation: AppConstants.cardElevation,
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: isDark
+                            ? AppColors.primary.withOpacity(0.15)
+                            : AppColors.primary.withOpacity(0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             AppConstants.defaultBorderRadius,
@@ -862,7 +966,9 @@ class _ChatScreenState extends State<ChatScreen> {
                               Text(
                                 'あなたのメッセージ',
                                 style: AppTextStyles.titleSmall.copyWith(
-                                  color: AppColors.primary,
+                                  color: isDark
+                                      ? AppColors.primary.lighten(0.2)
+                                      : AppColors.primary,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -871,7 +977,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: SingleChildScrollView(
                                     child: Text(
                                       _getMyComment(),
-                                      style: AppTextStyles.bodyLarge,
+                                      style: AppTextStyles.bodyLarge.copyWith(
+                                        color: isDark ? Colors.grey[300] : Colors.black87,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -889,10 +997,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: isDark ? const Color(0xFF1E1E1E) : AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadowLight,
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -903,10 +1011,40 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'メッセージを入力...',
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.grey[600] : Colors.grey,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF404040)
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF404040)
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppColors.primary.lighten(0.2)
+                              : AppColors.primary,
+                          width: 2,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -914,6 +1052,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       suffixText:
                           '${_messageController.text.length}/${AppConstants.messageMaxLength}',
+                      suffixStyle: TextStyle(
+                        color: isDark ? Colors.grey[500] : Colors.grey,
+                      ),
                     ),
                     maxLength: AppConstants.messageMaxLength,
                     buildCounter: (context,
@@ -923,12 +1064,13 @@ class _ChatScreenState extends State<ChatScreen> {
                         null,
                     onChanged: (value) => setState(() {}),
                     onSubmitted: (_) => _sendMessage(),
-                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: isDark
+                      ? AppColors.primary.withOpacity(0.9)
+                      : AppColors.primary,
                   child: IconButton(
                     icon: Icon(Icons.send, color: AppColors.textWhite),
                     onPressed: _sendMessage,

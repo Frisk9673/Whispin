@@ -16,7 +16,7 @@ import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
-/// レスポンシブ対応のルーム作成画面
+/// レスポンシブ対応のルーム作成画面（ダークモード対応版）
 class RoomCreateScreen extends StatefulWidget {
   const RoomCreateScreen({super.key});
 
@@ -122,6 +122,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -130,7 +131,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.cardBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -139,7 +140,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // アイコン
-                _buildHeaderIcon(isMobile),
+                _buildHeaderIcon(isMobile, isDark),
                 SizedBox(height: isMobile ? 16 : 24),
 
                 // タイトル
@@ -147,6 +148,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                   '部屋を作成',
                   style: AppTextStyles.headlineLarge.copyWith(
                     fontSize: context.responsiveFontSize(28),
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -156,7 +158,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 Text(
                   '新しいチャットルームを作成します',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                     fontSize: context.responsiveFontSize(15),
                   ),
                   textAlign: TextAlign.center,
@@ -164,11 +166,11 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 SizedBox(height: isMobile ? 24 : 40),
 
                 // 入力フォーム
-                _buildFormCard(context, isMobile),
+                _buildFormCard(context, isMobile, isDark),
                 SizedBox(height: isMobile ? 16 : 24),
 
                 // 情報カード
-                _buildInfoCard(context, isMobile),
+                _buildInfoCard(context, isMobile, isDark),
               ],
             ),
           ),
@@ -178,15 +180,22 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   /// ヘッダーアイコンを構築
-  Widget _buildHeaderIcon(bool isMobile) {
+  Widget _buildHeaderIcon(bool isMobile, bool isDark) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 20 : 24),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: AppColors.primaryGradient,
+        gradient: isDark
+            ? LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.8),
+                  AppColors.secondary.withOpacity(0.8),
+                ],
+              )
+            : AppColors.primaryGradient,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -201,13 +210,14 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   /// フォームカードを構築
-  Widget _buildFormCard(BuildContext context, bool isMobile) {
+  Widget _buildFormCard(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
       ),
       child: Card(
         elevation: AppConstants.cardElevation,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         ),
@@ -220,22 +230,63 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
               TextField(
                 controller: _roomNameController,
                 maxLength: AppConstants.roomNameMaxLength,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
                 decoration: InputDecoration(
                   labelText: 'ルーム名',
+                  labelStyle: TextStyle(
+                    color: isDark ? Colors.grey[400] : null,
+                  ),
                   hintText: 'チャットのテーマを入力',
-                  prefixIcon: const Icon(Icons.title),
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[600] : null,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.title,
+                    color: isDark ? Colors.grey[400] : AppColors.primary,
+                  ),
                   counterText:
                       '${_roomNameController.text.length}/${AppConstants.roomNameMaxLength}',
+                  counterStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : null,
+                  ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF404040) : Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.defaultBorderRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: isDark 
+                        ? AppColors.primary.lighten(0.2)
+                        : AppColors.primary,
+                      width: 2,
+                    ),
+                  ),
                 ),
                 onChanged: (_) => setState(() {}),
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontSize: context.responsiveFontSize(16),
-                ),
               ),
               SizedBox(height: isMobile ? 16 : 24),
 
               // Private/Public切り替え
-              _buildPrivacyToggle(isMobile),
+              _buildPrivacyToggle(isMobile, isDark),
               SizedBox(height: isMobile ? 16 : 24),
 
               // 作成ボタン
@@ -244,6 +295,14 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 onPressed: _createRoom,
                 isLoading: _isLoading,
                 height: isMobile ? 48 : AppConstants.buttonHeight,
+                gradient: isDark
+                    ? LinearGradient(
+                        colors: [
+                          AppColors.primary.withOpacity(0.9),
+                          AppColors.secondary.withOpacity(0.9),
+                        ],
+                      )
+                    : null,
               ),
             ],
           ),
@@ -253,16 +312,22 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   /// プライバシー切り替えを構築
-  Widget _buildPrivacyToggle(bool isMobile) {
+  Widget _buildPrivacyToggle(bool isMobile, bool isDark) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: _isPrivate
-            ? AppColors.primary.withOpacity(0.1)
-            : AppColors.inputBackground,
+            ? (isDark 
+                ? AppColors.primary.withOpacity(0.15)
+                : AppColors.primary.withOpacity(0.1))
+            : (isDark ? const Color(0xFF2C2C2C) : AppColors.inputBackground),
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
         border: Border.all(
-          color: _isPrivate ? AppColors.primary : AppColors.divider,
+          color: _isPrivate 
+              ? (isDark 
+                  ? AppColors.primary.withOpacity(0.5)
+                  : AppColors.primary)
+              : (isDark ? const Color(0xFF404040) : AppColors.divider),
           width: 2,
         ),
       ),
@@ -274,8 +339,10 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
               Icon(
                 _isPrivate ? Icons.lock : Icons.public,
                 color: _isPrivate
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                    ? (isDark 
+                        ? AppColors.primary.lighten(0.2)
+                        : AppColors.primary)
+                    : (isDark ? Colors.grey[400] : AppColors.textSecondary),
                 size: isMobile ? 20 : 24,
               ),
               SizedBox(width: isMobile ? 8 : 12),
@@ -284,8 +351,10 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                   _isPrivate ? 'プライベートルーム' : 'パブリックルーム',
                   style: AppTextStyles.titleMedium.copyWith(
                     color: _isPrivate
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
+                        ? (isDark 
+                            ? AppColors.primary.lighten(0.2)
+                            : AppColors.primary)
+                        : (isDark ? Colors.white : AppColors.textPrimary),
                     fontSize: context.responsiveFontSize(16),
                   ),
                 ),
@@ -297,7 +366,12 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                     _isPrivate = value;
                   });
                 },
-                activeColor: AppColors.primary,
+                activeColor: isDark 
+                    ? AppColors.primary.lighten(0.2)
+                    : AppColors.primary,
+                activeTrackColor: isDark
+                    ? AppColors.primary.withOpacity(0.3)
+                    : null,
               ),
             ],
           ),
@@ -307,7 +381,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
                 ? '招待したフレンドのみ参加可能です'
                 : '誰でも検索して参加できます',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark ? Colors.grey[500] : AppColors.textSecondary,
               fontSize: context.responsiveFontSize(13),
             ),
           ),
@@ -317,7 +391,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   /// 情報カードを構築
-  Widget _buildInfoCard(BuildContext context, bool isMobile) {
+  Widget _buildInfoCard(BuildContext context, bool isMobile, bool isDark) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.maxFormWidth,
@@ -325,36 +399,39 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       child: InfoCard(
         icon: Icons.info_outline,
         title: 'ルーム情報',
-        iconColor: AppColors.info,
+        iconColor: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
+        backgroundColor: isDark
+            ? AppColors.info.withOpacity(0.15)
+            : AppColors.info.withOpacity(0.1),
         padding: EdgeInsets.all(isMobile ? 12 : AppConstants.defaultPadding),
         children: [
           InfoItem(
             text: _isPrivate
                 ? '作成後、フレンドを招待できます'
                 : '作成後、チャット画面で相手の参加を待ちます',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
           InfoItem(
             text: _isPrivate
                 ? 'ルーム検索には表示されません'
                 : 'ルーム名で検索して参加してもらえます',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
           InfoItem(
             text: '最大2人まで参加可能',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
           InfoItem(
             text: '2人目が参加すると${AppConstants.defaultChatDurationMinutes}分間のチャット開始',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
           InfoItem(
             text: '残り${AppConstants.extensionRequestThresholdMinutes}分以下で延長リクエスト可能',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
           InfoItem(
             text: '両者退出で自動削除',
-            color: AppColors.info,
+            color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
           ),
         ],
       ),

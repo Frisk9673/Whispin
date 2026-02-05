@@ -16,7 +16,7 @@ import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
-/// レスポンシブ対応のルーム参加画面
+/// レスポンシブ対応のルーム参加画面（ダークモード対応版）
 class RoomJoinScreen extends StatefulWidget {
   const RoomJoinScreen({super.key});
 
@@ -161,6 +161,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CommonHeader(
@@ -169,15 +170,15 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         showProfile: true,
         showPremiumBadge: true,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
           // 検索ヘッダー
-          _buildSearchHeader(context, isMobile, padding),
+          _buildSearchHeader(context, isMobile, padding, isDark),
 
           // 検索結果リスト
           Expanded(
-            child: _buildSearchResults(context, isMobile, padding),
+            child: _buildSearchResults(context, isMobile, padding, isDark),
           ),
         ],
       ),
@@ -189,6 +190,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     BuildContext context,
     bool isMobile,
     EdgeInsets padding,
+    bool isDark,
   ) {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -198,10 +200,10 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
         isMobile ? 12 : AppConstants.defaultPadding,
       ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundLight,
+        color: isDark ? const Color(0xFF1E1E1E) : AppColors.backgroundLight,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -216,13 +218,55 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                 child: TextField(
                   controller: _searchController,
                   enabled: !_isLoading && !_isSearching,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'ルーム名で検索',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.grey[400] : null,
+                    ),
                     hintText: '例: 雑談、趣味の話、など',
-                    prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.grey[600] : null,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDark
+                          ? AppColors.primary.lighten(0.2)
+                          : AppColors.primary,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF404040)
+                            : Colors.grey.shade300,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF404040)
+                            : Colors.grey.shade300,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.defaultBorderRadius,
+                      ),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? AppColors.primary.lighten(0.2)
+                            : AppColors.primary,
+                        width: 2,
                       ),
                     ),
                     contentPadding: EdgeInsets.symmetric(
@@ -230,14 +274,11 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                       vertical: isMobile ? 12 : 16,
                     ),
                   ),
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    fontSize: context.responsiveFontSize(16),
-                  ),
                   onSubmitted: (_) => _searchRooms(),
                 ),
               ),
               SizedBox(width: isMobile ? 8 : 12),
-              _buildSearchButton(isMobile),
+              _buildSearchButton(isMobile, isDark),
             ],
           ),
 
@@ -246,13 +287,17 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
           // ヒントテキスト
           Row(
             children: [
-              Icon(Icons.info_outline, size: isMobile ? 14 : 16, color: AppColors.info),
+              Icon(
+                Icons.info_outline,
+                size: isMobile ? 14 : 16,
+                color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
+              ),
               SizedBox(width: isMobile ? 6 : 8),
               Expanded(
                 child: Text(
                   'ルーム名で検索できます（部分一致）',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.info,
+                    color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
                     fontSize: context.responsiveFontSize(12),
                   ),
                 ),
@@ -265,11 +310,17 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   }
 
   /// 検索ボタンを構築
-  Widget _buildSearchButton(bool isMobile) {
+  Widget _buildSearchButton(bool isMobile, bool isDark) {
     return ElevatedButton(
       onPressed: (_isLoading || _isSearching) ? null : _searchRooms,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark
+            ? AppColors.primary.withOpacity(0.9)
+            : AppColors.primary,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: isDark
+            ? const Color(0xFF2C2C2C)
+            : Colors.grey.shade300,
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 16 : 20,
           vertical: isMobile ? 14 : 16,
@@ -279,6 +330,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
             AppConstants.defaultBorderRadius,
           ),
         ),
+        elevation: isDark ? 2 : 4,
       ),
       child: _isSearching
           ? SizedBox(
@@ -305,18 +357,23 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     BuildContext context,
     bool isMobile,
     EdgeInsets padding,
+    bool isDark,
   ) {
     if (_isSearching) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
+            CircularProgressIndicator(
+              color: isDark
+                  ? AppColors.primary.lighten(0.2)
+                  : AppColors.primary,
+            ),
             SizedBox(height: isMobile ? 12 : 16),
             Text(
               '検索中...',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                 fontSize: context.responsiveFontSize(15),
               ),
             ),
@@ -326,7 +383,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     }
 
     if (_searchResults.isEmpty) {
-      return _buildEmptyState(isMobile);
+      return _buildEmptyState(isMobile, isDark);
     }
 
     return ListView.builder(
@@ -339,21 +396,30 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final room = _searchResults[index];
-        return _buildRoomCard(room, isMobile);
+        return _buildRoomCard(room, isMobile, isDark);
       },
     );
   }
 
   /// 空の状態を構築
-  Widget _buildEmptyState(bool isMobile) {
+  Widget _buildEmptyState(bool isMobile, bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search_off,
-            size: isMobile ? 64 : 80,
-            color: AppColors.textSecondary,
+          Container(
+            padding: EdgeInsets.all(isMobile ? 20 : 24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark
+                  ? AppColors.textSecondary.withOpacity(0.1)
+                  : AppColors.textSecondary.withOpacity(0.1),
+            ),
+            child: Icon(
+              Icons.search_off,
+              size: isMobile ? 64 : 80,
+              color: isDark ? Colors.grey[600] : AppColors.textSecondary,
+            ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
           Text(
@@ -361,7 +427,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                 ? 'ルーム名を入力して検索してください'
                 : '該当するルームが見つかりませんでした',
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark ? Colors.grey[400] : AppColors.textSecondary,
               fontSize: context.responsiveFontSize(16),
             ),
             textAlign: TextAlign.center,
@@ -372,12 +438,19 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   }
 
   /// ルームカードを構築
-  Widget _buildRoomCard(ChatRoom room, bool isMobile) {
+  Widget _buildRoomCard(ChatRoom room, bool isMobile, bool isDark) {
     return Card(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       elevation: AppConstants.cardElevation,
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        side: isDark
+            ? BorderSide(
+                color: AppColors.primary.withOpacity(0.3),
+                width: 1,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: _isLoading ? null : () => _joinRoom(room),
@@ -393,7 +466,14 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                   Container(
                     padding: EdgeInsets.all(isMobile ? 6 : 8),
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      gradient: isDark
+                          ? LinearGradient(
+                              colors: [
+                                AppColors.primary.withOpacity(0.8),
+                                AppColors.secondary.withOpacity(0.8),
+                              ],
+                            )
+                          : AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -408,6 +488,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                       room.topic,
                       style: AppTextStyles.titleLarge.copyWith(
                         fontSize: context.responsiveFontSize(18),
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -421,12 +502,16 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
               // ステータス
               Row(
                 children: [
-                  Icon(Icons.access_time, size: isMobile ? 14 : 16, color: AppColors.info),
+                  Icon(
+                    Icons.access_time,
+                    size: isMobile ? 14 : 16,
+                    color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
+                  ),
                   SizedBox(width: isMobile ? 3 : 4),
                   Text(
                     '参加待ち',
                     style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.info,
+                      color: isDark ? AppColors.info.lighten(0.2) : AppColors.info,
                       fontSize: context.responsiveFontSize(13),
                     ),
                   ),
@@ -448,12 +533,18 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: isDark
+                        ? AppColors.primary.withOpacity(0.9)
+                        : AppColors.primary,
                     foregroundColor: AppColors.textWhite,
+                    disabledBackgroundColor: isDark
+                        ? const Color(0xFF2C2C2C)
+                        : Colors.grey.shade300,
                     padding: EdgeInsets.symmetric(vertical: isMobile ? 10 : 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    elevation: isDark ? 2 : 4,
                   ),
                 ),
               ),
