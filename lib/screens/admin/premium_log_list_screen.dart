@@ -55,25 +55,27 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<PremiumLogProvider>();
     final isMobile = context.isMobile;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'プレミアムログ',
-          style: textTheme.titleLarge,
+          style: AppTextStyles.titleLarge.copyWith(
+            color: AppColors.textWhite,
+          ),
         ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textWhite,
         elevation: 0,
       ),
-      body: Container(
+            body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.surface,
-              colorScheme.background,
+              AppColors.backgroundLight,
+              AppColors.backgroundSecondary,
             ],
           ),
         ),
