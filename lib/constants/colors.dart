@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 /// アプリ全体で使用するカラーパレット
 class AppColors {
-  // プライベートコンストラクタ（インスタンス化を防ぐ）
+  // インスタンス化を防ぐ
   AppColors._();
 
-  // ===== Primary Colors =====
+  // 基本カラー
   static const Color primary = Color(0xFF667EEA);
   static const Color secondary = Color(0xFF764BA2);
 
-  // ===== Gradient =====
+  // グラデーション
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -22,11 +22,11 @@ class AppColors {
     colors: [primary, secondary],
   );
 
-  // ===== Background =====
+  // 背景色
   static Color get backgroundLight => primary.withValues(alpha: 0.1);
   static Color get backgroundSecondary => secondary.withValues(alpha: 0.1);
 
-  // ===== Dark Mode Colors =====
+  // ダークモード
   static const Color darkBackground = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF1E1E1E);
   static const Color darkInput = Color(0xFF2C2C2C);
@@ -37,38 +37,38 @@ class AppColors {
     colors: [darkSurface, darkBackground],
   );
 
-  // ===== Text Colors =====
+  // テキスト
   static const Color textPrimary = Colors.black87;
   static const Color textSecondary = Colors.grey;
   static const Color textWhite = Colors.white;
   static Color get textDisabled => Colors.grey.shade400;
 
-  // ===== Status Colors =====
+  // ステータス
   static const Color success = Colors.green;
   static const Color error = Colors.red;
   static const Color warning = Colors.orange;
   static const Color info = Colors.blue;
 
-  // ===== UI Colors =====
+  // UI
   static Color get cardBackground => Colors.white;
   static Color get divider => Colors.grey.shade300;
   static Color get border => Colors.black87;
   static Color get inputBackground => Colors.grey.shade50;
 
-  // ===== Premium Colors =====
+  // プレミアム
   static const Color premiumGold = Colors.amber;
   static const Color premiumIcon = Color(0xFF667EEA);
 
-  // ===== Shadow Colors =====
+  // シャドウ
   static Color get shadowLight => Colors.black.withValues(alpha: 0.05);
   static Color get shadowMedium => Colors.black.withValues(alpha: 0.1);
   static Color get shadowDark => Colors.black.withValues(alpha: 0.2);
 
-  // ===== Message Bubble Colors =====
+  // メッセージバブル
   static Color get bubbleAdmin => Colors.grey.shade200;
   static const Color bubbleUser = primary;
 
-  // ===== Admin Colors =====
+  // 管理画面
   static Color get adminBackground => Colors.grey.shade100;
   static const Color adminPrimary = primary;
 }

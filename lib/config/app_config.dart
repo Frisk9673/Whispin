@@ -3,12 +3,12 @@ import '../constants/colors.dart';
 
 /// アプリケーション設定を管理するクラス
 class AppConfig {
-  // プライベートコンストラクタ
+  // インスタンス化を防ぐ
   AppConfig._();
 
-  // ===== Theme Configuration =====
+  // テーマ設定
 
-  /// Light Theme
+  /// ライトテーマ
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -95,7 +95,7 @@ class AppConfig {
     );
   }
 
-  /// Dark Theme
+  /// ダークテーマ
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -189,20 +189,20 @@ class AppConfig {
     );
   }
 
-  // ===== App Settings =====
+  // アプリ設定
 
-  /// Default Locale
+  /// デフォルトLocale
   static const Locale defaultLocale = Locale('ja', 'JP');
 
-  /// Supported Locales
+  /// サポート対象のLocale
   static const List<Locale> supportedLocales = [
     Locale('ja', 'JP'),
     Locale('en', 'US'),
   ];
 
-  /// App Title
+  /// アプリタイトル
   static const String appTitle = 'Whispin';
 
-  /// Show Debug Banner
+  /// デバッグバナーの表示有無
   static const bool showDebugBanner = false;
 }

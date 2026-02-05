@@ -9,7 +9,7 @@ import 'environment.dart';
 class FirebaseConfig {
   static const String _logName = 'FirebaseConfig';
 
-  // プライベートコンストラクタ
+  // インスタンス化を防ぐ
   FirebaseConfig._();
 
   /// Firebase初期化
@@ -26,7 +26,7 @@ class FirebaseConfig {
 
       logger.success('Firebase Core 初期化完了', name: _logName);
 
-      // ✅ 修正: shouldUseFirebaseEmulator を使用
+      // エミュレーター利用判定
       if (Environment.shouldUseFirebaseEmulator) {
         logger.warning('⚠️ デバッグモード: Firebaseエミュレーターを使用します', name: _logName);
         await _configureEmulators();
@@ -50,7 +50,7 @@ class FirebaseConfig {
     logger.start('🔧 Firebase エミュレーター設定中...', name: _logName);
 
     try {
-      // Auth Emulator
+      // Authエミュレーター
       FirebaseAuth.instance.useAuthEmulator(
         Environment.emulatorHost,
         Environment.authEmulatorPort,
@@ -60,7 +60,7 @@ class FirebaseConfig {
         name: _logName,
       );
 
-      // Firestore Emulator
+      // Firestoreエミュレーター
       FirebaseFirestore.instance.useFirestoreEmulator(
         Environment.emulatorHost,
         Environment.firestoreEmulatorPort,

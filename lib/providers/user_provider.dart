@@ -30,7 +30,6 @@ class UserProvider extends ChangeNotifier {
     try {
       logger.start('Repository経由でユーザー検索中...', name: _logName);
 
-      // Repository経由でユーザー取得
       _currentUser = await _userRepository.findByEmail(email);
 
       if (_currentUser == null) {
@@ -41,7 +40,6 @@ class UserProvider extends ChangeNotifier {
         return;
       }
 
-      // 削除済みチェック
       if (_currentUser!.isDeleted) {
         logger.warning('削除済みユーザー: $email', name: _logName);
         _error = 'このアカウントは削除されています';
@@ -84,23 +82,22 @@ class UserProvider extends ChangeNotifier {
       logger.info('現在のプレミアム状態: ${_currentUser!.premium}', name: _logName);
       logger.info('変更後のプレミアム状態: $isPremium', name: _logName);
 
-      // Repository経由で更新
       await _userRepository.updatePremiumStatus(
         _currentUser!.id,
         isPremium,
       );
 
-      // ★ 追加：プレミアム契約・解約ログを作成
+      // プレミアム契約・解約ログを作成
       if (_currentUser!.id.isNotEmpty) {
         await _userRepository.createPremiumLog(
-          id: _currentUser!.id, // ← メールアドレスを使用
+          id: _currentUser!.id,
           isPremium: isPremium,
         );
       }
 
       logger.success('Repository更新完了', name: _logName);
 
-      // ★ 変更: ローカルのユーザー情報を即座に更新（Firestoreは信頼）
+      // Firestore更新後にローカルの状態を即時反映
       _currentUser = app_user.User(
         id: _currentUser!.id,
         password: _currentUser!.password,
@@ -109,10 +106,10 @@ class UserProvider extends ChangeNotifier {
         nickname: _currentUser!.nickname,
         phoneNumber: _currentUser!.phoneNumber,
         rate: _currentUser!.rate,
-        premium: isPremium, // ★ 更新
+        premium: isPremium,
         roomCount: _currentUser!.roomCount,
         createdAt: _currentUser!.createdAt,
-        lastUpdatedPremium: DateTime.now(), // ★ 更新
+        lastUpdatedPremium: DateTime.now(),
         deletedAt: _currentUser!.deletedAt,
       );
 
@@ -143,12 +140,11 @@ class UserProvider extends ChangeNotifier {
         name: _logName,
       );
 
-      // Repository 経由で deletedAt を更新
       await _userRepository.softDelete(_currentUser!.id);
 
       logger.success('Firestore deletedAt 更新完了', name: _logName);
 
-      // ★ 削除後は完全にログアウト状態へ
+      // 削除後はローカル状態をクリア
       _currentUser = null;
       _error = null;
 

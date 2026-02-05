@@ -15,7 +15,7 @@ enum FirebaseMode {
 class Environment {
   Environment._();
 
-  // ===== Build Mode Detection =====
+  // ビルドモード判定
 
   /// リリースビルドかどうか
   static bool get isReleaseBuild => kReleaseMode;
@@ -29,43 +29,44 @@ class Environment {
   /// Webプラットフォームかどうか
   static bool get isWeb => kIsWeb;
 
-  // ===== Environment Type =====
+  // 環境種別
   static late final String _environment;
 
+  /// 開発環境かどうか
   static bool get isDevelopment => _environment == 'development';
+  /// 本番環境かどうか
   static bool get isProduction => _environment == 'production';
+  /// ステージング環境かどうか
   static bool get isStaging => _environment == 'staging';
 
-  // ===== Backend =====
+  // バックエンド種別
   static late final BackendType backend;
+  /// Firebase を使用しているか
   static bool get isFirebase => backend == BackendType.firebase;
+  /// AWS を使用しているか
   static bool get isAws => backend == BackendType.aws;
 
-  // ===== Firebase Mode =====
+  // Firebase 接続モード
   static late final FirebaseMode firebaseMode;
 
   /// Firebaseエミュレーターを使用すべきか
   ///
-  /// **重要:** リリースビルド時は常に false を返す
-  /// これにより、APK・Firebase Hosting・AWS Hostingでは
-  /// 本番Firebaseに接続される
+  /// **重要:** リリースビルド時は常に false を返し、本番環境に接続する
   static bool get shouldUseFirebaseEmulator {
-    // リリースビルドでは絶対にエミュレーター使用しない
     if (isReleaseBuild) {
       return false;
     }
 
-    // デバッグビルドでは .env の設定に従う
     return firebaseMode == FirebaseMode.emulator;
   }
 
-  // ===== Database =====
+  // Database設定
   static late final int databaseEmulatorPort;
 
-  // ===== Debug =====
+  // Debug設定
   static late final bool isDebugMode;
 
-  // ===== Emulator =====
+  // Emulator設定
   static late final String emulatorHost;
   static late final int authEmulatorPort;
   static late final int firestoreEmulatorPort;
@@ -74,25 +75,25 @@ class Environment {
   ///
   /// defaultValue の挙動は String.fromEnvironment と同等
   static void loadFromEnv() {
-    // Environment
+    // 環境種別
     _environment = dotenv.env['ENVIRONMENT'] ?? 'development';
 
-    // Firebase Mode
+    // Firebaseモード
     final firebaseModeStr = dotenv.env['FIREBASE_MODE'] ?? 'emulator';
     firebaseMode = firebaseModeStr == 'production'
         ? FirebaseMode.production
         : FirebaseMode.emulator;
 
-    // Backend
+    // バックエンド
     final backendStr = dotenv.env['BACKEND'] ?? 'firebase';
     backend = backendStr == 'aws' ? BackendType.aws : BackendType.firebase;
 
-    // Debug
+    // デバッグ
     isDebugMode =
         (dotenv.env['DEBUG_MODE'] ?? kDebugMode.toString()).toLowerCase() ==
             'true';
 
-    // Emulator
+    // エミュレーター
     emulatorHost = dotenv.env['EMULATOR_HOST'] ?? 'localhost';
 
     authEmulatorPort =

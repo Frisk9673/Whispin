@@ -2,27 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../repositories/user_repository.dart';
-import '../repositories/premium_counter_repository.dart'; // ✅ 追加
-import '../models/premium_counter.dart'; // ✅ 追加
+import '../repositories/premium_counter_repository.dart';
+import '../models/premium_counter.dart';
 import '../utils/app_logger.dart';
 import '../models/question_message.dart';
 import '../services/admin_question_chat_service.dart';
 
 class AdminProvider extends ChangeNotifier {
   final UserRepository _userRepository;
-  final PremiumCounterRepository _counterRepository =
-      PremiumCounterRepository(); // ✅ 追加
+  final PremiumCounterRepository _counterRepository = PremiumCounterRepository();
   static const String _logName = 'AdminProvider';
 
   int paidMemberCount = 0;
   bool isLoading = false;
 
-  // ===== チャット用 =====
+  // チャット関連
   final AdminQuestionChatService _chatService = AdminQuestionChatService();
   StreamSubscription<List<Message>>? _messageSubscription;
   List<Message> messages = [];
 
-  // ✅ 修正: カウンター監視用
+  // プレミアム会員数の監視用
   StreamSubscription<PremiumCounter>? _counterSubscription;
 
   AdminProvider({required UserRepository userRepository})
@@ -30,11 +29,11 @@ class AdminProvider extends ChangeNotifier {
     _initializeProvider();
   }
 
-  /// ✅ 追加: Provider初期化処理
+  /// Providerの初期化処理
   Future<void> _initializeProvider() async {
     logger.section('AdminProvider初期化開始', name: _logName);
 
-    // 有料会員数ロード
+    // 初回ロード
     await loadPaidMemberCount();
 
     // リアルタイム監視開始
@@ -43,7 +42,7 @@ class AdminProvider extends ChangeNotifier {
     logger.section('AdminProvider初期化完了', name: _logName);
   }
 
-  /// ✅ 修正: カウンターのリアルタイム監視を開始
+  /// カウンターのリアルタイム監視を開始
   void _startCounterWatch() {
     logger.section('カウンター監視開始', name: _logName);
 
@@ -55,7 +54,7 @@ class AdminProvider extends ChangeNotifier {
           logger.info('プレミアム会員数変更: $paidMemberCount → $newCount',
               name: _logName);
           paidMemberCount = newCount;
-          isLoading = false; // ✅ ロード完了
+          isLoading = false;
           notifyListeners();
         }
       },
@@ -70,7 +69,7 @@ class AdminProvider extends ChangeNotifier {
     logger.success('カウンター監視開始完了', name: _logName);
   }
 
-  /// ✅ 修正: カウンターから有料会員数を取得
+  /// カウンターから有料会員数を取得
   Future<void> loadPaidMemberCount() async {
     logger.section('loadPaidMemberCount() 開始', name: _logName);
 
@@ -93,7 +92,7 @@ class AdminProvider extends ChangeNotifier {
     logger.section('loadPaidMemberCount() 完了', name: _logName);
   }
 
-  /// ✅ 追加: カウンターを再計算（管理者が手動で修正する場合）
+  /// カウンターを再計算（管理者の手動補正時に使用）
   Future<void> recalculateCounter() async {
     logger.section('カウンター再計算開始', name: _logName);
 
@@ -143,7 +142,7 @@ class AdminProvider extends ChangeNotifier {
     await _chatService.markMessagesAsRead(chatId);
   }
 
-  /// ✅ 新規追加: チャットを「対応済」にする
+  /// チャットを「対応済」にする
   Future<void> markAsResolved(String chatId) async {
     logger.section('markAsResolved() 開始', name: _logName);
     logger.info('chatId: $chatId', name: _logName);
@@ -158,7 +157,7 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  /// ✅ 新規追加: チャットを「対応中」にする
+  /// チャットを「対応中」にする
   Future<void> markAsInProgress(String chatId) async {
     logger.section('markAsInProgress() 開始', name: _logName);
     logger.info('chatId: $chatId', name: _logName);
@@ -173,7 +172,7 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  /// ✅ 新規追加: チャットを「未対応」に戻す
+  /// チャットを「未対応」に戻す
   Future<void> markAsPending(String chatId) async {
     logger.section('markAsPending() 開始', name: _logName);
     logger.info('chatId: $chatId', name: _logName);
@@ -203,7 +202,7 @@ class AdminProvider extends ChangeNotifier {
   @override
   void dispose() {
     disposeMessageStream();
-    _counterSubscription?.cancel(); // ✅ 修正
+    _counterSubscription?.cancel();
     super.dispose();
   }
 }

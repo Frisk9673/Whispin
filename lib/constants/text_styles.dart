@@ -3,10 +3,10 @@ import 'colors.dart';
 
 /// アプリ全体で使用するテキストスタイル
 class AppTextStyles {
-  // プライベートコンストラクタ
+  // インスタンス化を防ぐ
   AppTextStyles._();
 
-  // ===== Display Styles (超大見出し) =====
+  // Display（超大見出し）
   static const TextStyle displayLarge = TextStyle(
     fontSize: 40,
     fontWeight: FontWeight.bold,
@@ -19,7 +19,7 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // ===== Headline Styles (大見出し) =====
+  // Headline（大見出し）
   static const TextStyle headlineLarge = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,
@@ -38,7 +38,7 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // ===== Title Styles (タイトル) =====
+  // Title（タイトル）
   static const TextStyle titleLarge = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
@@ -57,7 +57,7 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // ===== Body Styles (本文) =====
+  // Body（本文）
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.normal,
@@ -76,7 +76,7 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // ===== Label Styles (ラベル) =====
+  // Label（ラベル）
   static const TextStyle labelLarge = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w500,
@@ -95,7 +95,7 @@ class AppTextStyles {
     color: AppColors.textSecondary,
   );
 
-  // ===== Button Styles (ボタン) =====
+  // Button（ボタン）
   static const TextStyle buttonLarge = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class AppTextStyles {
     color: AppColors.textWhite,
   );
 
-  // ===== Special Styles (特殊) =====
+  // Special（特殊）
   static const TextStyle appName = TextStyle(
     fontSize: 40,
     fontWeight: FontWeight.bold,
@@ -134,7 +134,7 @@ class AppTextStyles {
     color: AppColors.textSecondary,
   );
 
-  // ===== Message Bubble Styles =====
+  // メッセージバブル
   static const TextStyle messageBubbleUser = TextStyle(
     fontSize: 15,
     color: AppColors.textWhite,

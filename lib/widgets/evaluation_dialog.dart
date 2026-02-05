@@ -39,7 +39,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   final BlockRepository _blockRepository = BlockRepository();
 
   Future<void> _handleSubmit() async {
-    // 二重送信防止
+    // 二重送信の防止
     if (_isSubmitting) return;
 
     setState(() {
@@ -54,7 +54,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     logger.info('ブロック: $_blockUser', name: _logName);
 
     try {
-      // ===== 1. 評価の保存 =====
+      // 評価の保存
       if (_selectedRating != null) {
         logger.start('評価を保存中...', name: _logName);
         final evaluation = UserEvaluation(
@@ -67,13 +67,13 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         widget.storageService.evaluations.add(evaluation);
         logger.success('評価保存完了', name: _logName);
 
-        // ===== 1.5. 被評価者（相手）のrateを更新 =====
+        // 被評価者（相手）のrateを更新
         logger.start('相手のrateを更新中...', name: _logName);
         await _updatePartnerRate();
         logger.success('相手のrate更新完了', name: _logName);
       }
 
-      // ===== 2. フレンドリクエストの送信 =====
+      // フレンドリクエストの送信
       if (_addFriend) {
         logger.start('フレンドリクエスト送信', name: _logName);
 
@@ -90,7 +90,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         );
       }
 
-      // ===== 3. ブロックの実行 =====
+      // ブロックの実行
       if (_blockUser) {
         logger.start('ブロック処理中...', name: _logName);
 
@@ -116,7 +116,6 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           logger.debug('  blockerId: ${block.blockerId}', name: _logName);
           logger.debug('  blockedId: ${block.blockedId}', name: _logName);
 
-          // 既存のブロックを検索
           final existingIndex =
               widget.storageService.blocks.indexWhere((b) => b.id == blockId);
 
@@ -131,7 +130,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
         }
       }
 
-      // ===== 4. StorageService保存 =====
+      // StorageServiceへ保存
       logger.start('StorageService保存中...', name: _logName);
       await widget.storageService.save();
       logger.success('全データ保存完了', name: _logName);
@@ -154,17 +153,15 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     }
   }
 
-  /// ★ 追加: 被評価者（相手）のrateを更新するメソッド
+  /// 被評価者（相手）のrateを更新する
   Future<void> _updatePartnerRate() async {
     logger.section('_updatePartnerRate() 開始', name: _logName);
     logger.info('partnerId: ${widget.partnerId}', name: _logName);
     logger.info('selectedRating: $_selectedRating', name: _logName);
 
     try {
-      // UserRepositoryを取得
       final userRepository = context.read<UserRepository>();
 
-      // 相手のユーザー情報を取得
       logger.start('相手のユーザー情報を取得中...', name: _logName);
       final partnerUser = await userRepository.findById(widget.partnerId);
 
@@ -176,8 +173,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       logger.success('相手のユーザー情報取得完了', name: _logName);
       logger.info('  現在のrate: ${partnerUser.rate}', name: _logName);
 
-      // 新しいrateを計算
-      // 高評価(thumbs_up): +1, 低評価(thumbs_down): -1
+      // 高評価: +1, 低評価: -1
       final rateAdjustment =
           _selectedRating == AppConstants.ratingThumbsUp ? 1.0 : -1.0;
 
@@ -186,7 +182,6 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       logger.info('rate調整: $_selectedRating → $rateAdjustment', name: _logName);
       logger.info('新しいrate: $newRate', name: _logName);
 
-      // Repository経由でrateを更新
       logger.start('Repository経由でrateを更新中...', name: _logName);
       await userRepository.updateRate(widget.partnerId, newRate);
       logger.success('Repository更新完了', name: _logName);
@@ -227,7 +222,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
   Widget _buildBottomSheet(BuildContext context) {
     return Material(
-      color: Colors.transparent, // ← 重要
+      color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardBackground,

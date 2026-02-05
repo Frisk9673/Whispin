@@ -89,12 +89,12 @@ class PremiumLogListTile extends StatelessWidget {
         ),
         child: Container(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.85, // ★重要
-              maxWidth: 500),
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxWidth: 500,
+          ),
           child: Padding(
             padding: EdgeInsets.all(AppConstants.defaultPadding),
             child: SingleChildScrollView(
-              // ★これ
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,7 +152,6 @@ class PremiumLogListTile extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // 基本情報
                   _buildInfoSection(
                     context: context,
                     title: '基本情報',
@@ -181,7 +180,6 @@ class PremiumLogListTile extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // 契約状況
                   _buildInfoSection(
                     context: context,
                     title: '契約状況',
@@ -235,7 +233,6 @@ class PremiumLogListTile extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // ログ情報
                   _buildInfoSection(
                     context: context,
                     title: 'ログ情報',
@@ -392,7 +389,6 @@ class PremiumLogListTile extends StatelessWidget {
           padding: EdgeInsets.all(AppConstants.defaultPadding),
           child: Row(
             children: [
-              // アイコン
               Container(
                 width: 56,
                 height: 56,
@@ -415,10 +411,9 @@ class PremiumLogListTile extends StatelessWidget {
 
               const SizedBox(width: 16),
 
-              // 情報
               Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // ★ 追加
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(

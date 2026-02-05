@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// ===== Context拡張メソッド =====
+// Context拡張メソッド
 
 /// BuildContext に対するレスポンシブ対応の拡張メソッド
 ///
@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 /// );
 /// ```
 extension ResponsiveContext on BuildContext {
-  // ===== デバイス判定 =====
+  // デバイス判定
 
   /// モバイルデバイスかどうか
   bool get isMobile => ResponsiveHelper.isMobile(this);
@@ -30,7 +30,7 @@ extension ResponsiveContext on BuildContext {
   /// 大画面デスクトップかどうか
   bool get isLargeDesktop => ResponsiveHelper.isLargeDesktop(this);
 
-  // ===== 画面サイズ =====
+  // 画面サイズ
 
   /// 画面の幅
   double get screenWidth => ResponsiveHelper.getWidth(this);
@@ -41,7 +41,7 @@ extension ResponsiveContext on BuildContext {
   /// 画面のサイズ
   Size get screenSize => ResponsiveHelper.getSize(this);
 
-  // ===== レスポンシブ値 =====
+  // レスポンシブ値
 
   /// デバイスサイズに応じた値を返す
   double responsiveValue({
@@ -85,7 +85,7 @@ extension ResponsiveContext on BuildContext {
     );
   }
 
-  // ===== スペーシング =====
+  // スペーシング
 
   /// デバイスサイズに応じたパディング
   EdgeInsets get responsivePadding {
@@ -102,7 +102,7 @@ extension ResponsiveContext on BuildContext {
     return ResponsiveHelper.getResponsiveVerticalPadding(this);
   }
 
-  // ===== フォント =====
+  // フォント
 
   /// デバイスサイズに応じたフォントスケールファクター
   double get fontScaleFactor => ResponsiveHelper.getFontScaleFactor(this);
@@ -112,7 +112,7 @@ extension ResponsiveContext on BuildContext {
     return ResponsiveHelper.getResponsiveFontSize(this, baseFontSize);
   }
 
-  // ===== Grid設定 =====
+  // Grid設定
 
   /// デバイスサイズに応じたGridカラム数
   int get gridCrossAxisCount {
@@ -122,7 +122,7 @@ extension ResponsiveContext on BuildContext {
   /// デバイスサイズに応じたGridスペーシング
   double get gridSpacing => ResponsiveHelper.getGridSpacing(this);
 
-  // ===== コンテナ幅 =====
+  // コンテナ幅
 
   /// デバイスサイズに応じた最大コンテナ幅
   double get maxContainerWidth {
@@ -132,7 +132,7 @@ extension ResponsiveContext on BuildContext {
   /// デバイスサイズに応じた最大フォーム幅
   double get maxFormWidth => ResponsiveHelper.getMaxFormWidth(this);
 
-  // ===== 向き判定 =====
+  // 向き判定
 
   /// 横向き（ランドスケープ）かどうか
   bool get isLandscape => ResponsiveHelper.isLandscape(this);
@@ -140,7 +140,7 @@ extension ResponsiveContext on BuildContext {
   /// 縦向き（ポートレート）かどうか
   bool get isPortrait => ResponsiveHelper.isPortrait(this);
 
-  // ===== 安全領域 =====
+  // 安全領域
 
   /// 画面のパディング（SafeArea用）
   EdgeInsets get safeAreaPadding => ResponsiveHelper.getPadding(this);
@@ -151,7 +151,7 @@ extension ResponsiveContext on BuildContext {
   /// キーボードが表示されているか
   bool get isKeyboardVisible => ResponsiveHelper.isKeyboardVisible(this);
 
-  // ===== デバッグ =====
+  // デバッグ
 
   /// デバイス情報（デバッグ用）
   String get deviceInfo => ResponsiveHelper.getDeviceInfo(this);
@@ -180,7 +180,7 @@ class ResponsiveHelper {
   // プライベートコンストラクタ
   ResponsiveHelper._();
 
-  // ===== デバイス判定 =====
+  // デバイス判定
 
   /// モバイルデバイスかどうか（幅 < 600px）
   static bool isMobile(BuildContext context) {
@@ -205,7 +205,7 @@ class ResponsiveHelper {
         ResponsiveBreakpoints.largeDesktop;
   }
 
-  // ===== 画面サイズ取得 =====
+  // 画面サイズ取得
 
   /// 画面の幅を取得
   static double getWidth(BuildContext context) {
@@ -222,7 +222,7 @@ class ResponsiveHelper {
     return MediaQuery.of(context).size;
   }
 
-  // ===== レスポンシブ値の取得 =====
+  // レスポンシブ値の取得
 
   /// デバイスサイズに応じた値を返す
   ///
@@ -292,7 +292,7 @@ class ResponsiveHelper {
     return mobile;
   }
 
-  // ===== スペーシング =====
+  // スペーシング
 
   /// デバイスサイズに応じたパディングを返す
   static EdgeInsets getResponsivePadding(
@@ -342,7 +342,7 @@ class ResponsiveHelper {
     return EdgeInsets.symmetric(vertical: value);
   }
 
-  // ===== フォントサイズ =====
+  // フォントサイズ
 
   /// デバイスサイズに応じたフォントスケールファクターを返す
   static double getFontScaleFactor(BuildContext context) {
@@ -363,7 +363,7 @@ class ResponsiveHelper {
     return baseFontSize * scaleFactor;
   }
 
-  // ===== アイコンサイズ =====
+  // アイコンサイズ
 
   /// デバイスサイズに応じたアイコンサイズを返す
   static double getResponsiveIconSize(
@@ -380,7 +380,7 @@ class ResponsiveHelper {
     );
   }
 
-  // ===== GridView設定 =====
+  // GridView設定
 
   /// デバイスサイズに応じたGridViewのカラム数を返す
   static int getGridCrossAxisCount(
@@ -407,7 +407,7 @@ class ResponsiveHelper {
     );
   }
 
-  // ===== コンテナ幅制限 =====
+  // コンテナ幅制限
 
   /// デバイスサイズに応じた最大コンテナ幅を返す
   ///
@@ -433,7 +433,7 @@ class ResponsiveHelper {
     );
   }
 
-  // ===== 向き判定 =====
+  // 向き判定
 
   /// 横向き（ランドスケープ）かどうか
   static bool isLandscape(BuildContext context) {
@@ -445,7 +445,7 @@ class ResponsiveHelper {
     return MediaQuery.of(context).orientation == Orientation.portrait;
   }
 
-  // ===== 安全領域 =====
+  // 安全領域
 
   /// 画面のパディング（SafeArea用）を取得
   static EdgeInsets getPadding(BuildContext context) {
@@ -462,7 +462,7 @@ class ResponsiveHelper {
     return MediaQuery.of(context).viewInsets.bottom > 0;
   }
 
-  // ===== デバッグ用 =====
+  // デバッグ用
 
   /// デバイス情報を文字列で返す（デバッグ用）
   static String getDeviceInfo(BuildContext context) {
