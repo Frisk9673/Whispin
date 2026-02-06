@@ -229,16 +229,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? const AlwaysScrollableScrollPhysics()
                   : const NeverScrollableScrollPhysics(),
               children: [
-                // 0: ルーム参加（ホーム画面）
+                // 0: ホーム
                 _buildHomeContent(isDark),
                 
-                // 1: ルーム作成
+                // 1: ルーム参加
+                const RoomJoinScreen(),
+
+                // 2: ルーム作成
                 const RoomCreateScreen(),
                 
-                // 2: フレンド一覧
+                // 3: フレンド一覧
                 const FriendListScreen(),
                 
-                // 3: ブロック一覧
+                // 4: ブロック一覧
                 const BlockListScreen(),
               ],
             ),
@@ -293,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
         label: 'ルームを作成',
         icon: Icons.add_circle,
         onPressed: () {
-          _onNavItemTapped(1); // ルーム作成タブに移動
+          _onNavItemTapped(2); // ルーム作成タブに移動
         },
       ),
     );

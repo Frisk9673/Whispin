@@ -23,6 +23,12 @@ class NavigationItems {
   /// メインナビゲーションアイテム（タブ一覧）
   static const List<NavigationItem> mainItems = [
     NavigationItem(
+      label: 'ホーム',
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home,
+      route: AppRoutes.home,
+    ),
+    NavigationItem(
       label: '部屋に参加',
       icon: Icons.meeting_room_outlined,
       activeIcon: Icons.meeting_room,
