@@ -39,12 +39,14 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Future<void> _loadFriends() async {
     logger.section('_loadFriends() 開始', name: _logName);
 
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null || currentUser.email == null) {
         logger.warning('未ログイン', name: _logName);
+        if (!mounted) return;
         setState(() => _isLoading = false);
         return;
       }
@@ -94,6 +96,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _friends = friendsList;
         _isLoading = false;
@@ -104,6 +107,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
     } catch (e, stack) {
       logger.error('フレンド一覧取得エラー: $e',
           name: _logName, error: e, stackTrace: stack);
+      if (!mounted) return;
       setState(() => _isLoading = false);
       context.showErrorSnackBar('フレンド一覧の取得に失敗しました: $e');
     }
@@ -263,21 +267,20 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       logger.success('フレンドシップ削除完了', name: _logName);
 
+      if (!mounted) return;
       context.hideLoadingDialog();
 
       setState(() {
         _friends.removeAt(index);
       });
 
-      if (!mounted) return;
-
       context.showSuccessSnackBar('フレンドを削除しました');
 
       logger.section('フレンド削除完了', name: _logName);
     } catch (e, stack) {
       logger.error('削除エラー: $e', name: _logName, error: e, stackTrace: stack);
-      context.hideLoadingDialog();
       if (!mounted) return;
+      context.hideLoadingDialog();
       context.showErrorSnackBar('削除に失敗しました: $e');
     }
   }
@@ -302,13 +305,12 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
       logger.success('ブロック&削除処理完了', name: _logName);
 
+      if (!mounted) return;
       context.hideLoadingDialog();
 
       setState(() {
         _friends.removeAt(index);
       });
-
-      if (!mounted) return;
 
       context.showWarningSnackBar('ブロックしてフレンドを削除しました');
 
@@ -316,8 +318,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
     } catch (e, stack) {
       logger.error('ブロック&削除エラー: $e',
           name: _logName, error: e, stackTrace: stack);
-      context.hideLoadingDialog();
       if (!mounted) return;
+      context.hideLoadingDialog();
       context.showErrorSnackBar('処理に失敗しました: $e');
     }
   }
