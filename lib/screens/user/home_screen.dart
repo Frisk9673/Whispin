@@ -17,6 +17,7 @@ import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../constants/navigation_items.dart';
+import '../../constants/routes.dart';
 import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
@@ -203,6 +204,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final isDark = context.isDark;
+    final pageMap = <String, Widget>{
+      AppRoutes.home: _buildHomeContent(isDark),
+      AppRoutes.joinRoom: const RoomJoinScreen(),
+      AppRoutes.createRoom: const RoomCreateScreen(),
+      AppRoutes.friendList: const FriendListScreen(),
+      AppRoutes.blockList: const BlockListScreen(),
+    };
+
+    assert(() {
+      final missingRoutes = NavigationItems.mainItems
+          .where((item) => !pageMap.containsKey(item.route))
+          .toList();
+      if (missingRoutes.isNotEmpty) {
+        logger.warning(
+          'NavigationItemsに対応する画面が不足しています: '
+          '${missingRoutes.map((item) => item.route).join(', ')}',
+          name: _logName,
+        );
+      }
+      return true;
+    }());
 
     return Scaffold(
       appBar: CommonHeader(
@@ -228,22 +250,9 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: isMobile
                   ? const AlwaysScrollableScrollPhysics()
                   : const NeverScrollableScrollPhysics(),
-              children: [
-                // 0: ホーム
-                _buildHomeContent(isDark),
-                
-                // 1: ルーム参加
-                const RoomJoinScreen(),
-
-                // 2: ルーム作成
-                const RoomCreateScreen(),
-                
-                // 3: フレンド一覧
-                const FriendListScreen(),
-                
-                // 4: ブロック一覧
-                const BlockListScreen(),
-              ],
+              children: NavigationItems.mainItems
+                  .map((item) => pageMap[item.route] ?? const SizedBox.shrink())
+                  .toList(),
             ),
           ),
         ],
