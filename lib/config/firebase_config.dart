@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:whispin/firebase_options.dart';
 import '../utils/app_logger.dart';
 import 'environment.dart';
@@ -67,6 +68,16 @@ class FirebaseConfig {
       );
       logger.success(
         '  ✓ Firestore Emulator: ${Environment.emulatorHost}:${Environment.firestoreEmulatorPort}',
+        name: _logName,
+      );
+
+      // Storageエミュレーター
+      FirebaseStorage.instance.useStorageEmulator(
+        Environment.emulatorHost,
+        Environment.storageEmulatorPort,
+      );
+      logger.success(
+        '  ✓ Storage Emulator: ${Environment.emulatorHost}:${Environment.storageEmulatorPort}',
         name: _logName,
       );
 

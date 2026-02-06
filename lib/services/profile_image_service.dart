@@ -128,8 +128,19 @@ class ProfileImageService {
 
       logger.section('画像アップロード成功', name: _logName);
       return downloadURL;
+    } on FirebaseException catch (e, stack) {
+      logger.error('アップロードエラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+
+      if (kIsWeb) {
+        throw Exception(
+          'WebからStorageへアップロードできませんでした。Firebase StorageのCORS設定またはstorageBucket設定を確認してください。',
+        );
+      }
+
+      rethrow;
     } catch (e, stack) {
-      logger.error('アップロードエラー: $e', 
+      logger.error('アップロードエラー: $e',
           name: _logName, error: e, stackTrace: stack);
       rethrow;
     }

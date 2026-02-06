@@ -19,6 +19,8 @@ class UserProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isPremium => _currentUser?.premium ?? false;
 
+  String? get profileImageUrl => _currentUser?.profileImageUrl;
+
   /// ログイン時にユーザー情報を読み込む
   Future<void> loadUserData(String email) async {
     logger.section('loadUserData() 開始 - email: $email', name: _logName);
@@ -111,6 +113,9 @@ class UserProvider extends ChangeNotifier {
         createdAt: _currentUser!.createdAt,
         lastUpdatedPremium: DateTime.now(),
         deletedAt: _currentUser!.deletedAt,
+        fcmToken: _currentUser!.fcmToken,
+        fcmTokenUpdatedAt: _currentUser!.fcmTokenUpdatedAt,
+        profileImageUrl: _currentUser!.profileImageUrl,
       );
 
       logger.success('ローカルユーザー情報更新完了', name: _logName);
@@ -121,6 +126,50 @@ class UserProvider extends ChangeNotifier {
       logger.section('updatePremiumStatus() 完了', name: _logName);
     } catch (e, stack) {
       logger.error('エラー発生: $e', name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+
+  /// プロフィール画像URLを更新
+  Future<void> updateProfileImageUrl(String? profileImageUrl) async {
+    logger.section('updateProfileImageUrl() 開始', name: _logName);
+
+    if (_currentUser == null) {
+      logger.error('ユーザー情報が読み込まれていません', name: _logName);
+      throw Exception('ユーザー情報が読み込まれていません');
+    }
+
+    try {
+      await _userRepository.updateProfileImageUrl(
+        _currentUser!.id,
+        profileImageUrl,
+      );
+
+      _currentUser = app_user.User(
+        id: _currentUser!.id,
+        password: _currentUser!.password,
+        firstName: _currentUser!.firstName,
+        lastName: _currentUser!.lastName,
+        nickname: _currentUser!.nickname,
+        phoneNumber: _currentUser!.phoneNumber,
+        rate: _currentUser!.rate,
+        premium: _currentUser!.premium,
+        roomCount: _currentUser!.roomCount,
+        createdAt: _currentUser!.createdAt,
+        lastUpdatedPremium: _currentUser!.lastUpdatedPremium,
+        deletedAt: _currentUser!.deletedAt,
+        fcmToken: _currentUser!.fcmToken,
+        fcmTokenUpdatedAt: _currentUser!.fcmTokenUpdatedAt,
+        profileImageUrl: profileImageUrl,
+      );
+
+      notifyListeners();
+
+      logger.section('updateProfileImageUrl() 完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('プロフィール画像URL更新エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -193,6 +242,9 @@ class UserProvider extends ChangeNotifier {
         createdAt: _currentUser!.createdAt,
         lastUpdatedPremium: _currentUser!.lastUpdatedPremium,
         deletedAt: _currentUser!.deletedAt,
+        fcmToken: _currentUser!.fcmToken,
+        fcmTokenUpdatedAt: _currentUser!.fcmTokenUpdatedAt,
+        profileImageUrl: _currentUser!.profileImageUrl,
       );
 
       notifyListeners();
@@ -224,6 +276,9 @@ class UserProvider extends ChangeNotifier {
         createdAt: _currentUser!.createdAt,
         lastUpdatedPremium: _currentUser!.lastUpdatedPremium,
         deletedAt: _currentUser!.deletedAt,
+        fcmToken: _currentUser!.fcmToken,
+        fcmTokenUpdatedAt: _currentUser!.fcmTokenUpdatedAt,
+        profileImageUrl: _currentUser!.profileImageUrl,
       );
 
       notifyListeners();

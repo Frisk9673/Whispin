@@ -16,6 +16,7 @@ class User {
   final DateTime? deletedAt;
   final String? fcmToken;
   final DateTime? fcmTokenUpdatedAt;
+  final String? profileImageUrl;
 
   User({
     required this.id,
@@ -32,6 +33,7 @@ class User {
     this.deletedAt,
     this.fcmToken,
     this.fcmTokenUpdatedAt,
+    this.profileImageUrl,
   }) : createdAt = createdAt ?? DateTime.now();
 
   String get displayName =>
@@ -74,6 +76,7 @@ class User {
       
       fcmToken: map['fcmToken'] as String?,
       fcmTokenUpdatedAt: _toDate(map['fcmTokenUpdatedAt']),
+      profileImageUrl: map['profileImageUrl'] as String?,
     );
   }
 
@@ -96,6 +99,7 @@ class User {
       'deletedAt': _ts(deletedAt),
       'fcmToken': fcmToken,
       'fcmTokenUpdatedAt': _ts(fcmTokenUpdatedAt),
+      'profileImageUrl': profileImageUrl,
     };
   }
 }

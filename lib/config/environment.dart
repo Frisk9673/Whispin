@@ -70,6 +70,7 @@ class Environment {
   static late final String emulatorHost;
   static late final int authEmulatorPort;
   static late final int firestoreEmulatorPort;
+  static late final int storageEmulatorPort;
 
   /// .env から環境変数を読み込む
   ///
@@ -102,6 +103,9 @@ class Environment {
     firestoreEmulatorPort =
         int.tryParse(dotenv.env['FIRESTORE_EMULATOR_PORT'] ?? '') ?? 8080;
 
+    storageEmulatorPort =
+        int.tryParse(dotenv.env['STORAGE_EMULATOR_PORT'] ?? '') ?? 9199;
+
     databaseEmulatorPort =
         int.tryParse(dotenv.env['DATABASE_EMULATOR_PORT'] ?? '') ?? 9000;
   }
@@ -121,6 +125,7 @@ class Environment {
       debugPrint('Emulator Host: $emulatorHost');
       debugPrint('Auth Emulator Port: $authEmulatorPort');
       debugPrint('Firestore Emulator Port: $firestoreEmulatorPort');
+      debugPrint('Storage Emulator Port: $storageEmulatorPort');
     }
     debugPrint('====================================');
   }

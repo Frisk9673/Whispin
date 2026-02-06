@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../widgets/common/header.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../providers/user_provider.dart';
@@ -12,6 +13,7 @@ import '../../constants/text_styles.dart';
 import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
+import '../../services/profile_image_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,6 +24,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   static const String _logName = 'ProfileScreen';
+  final ProfileImageService _profileImageService = ProfileImageService();
 
   Future<void> _logout() async {
     logger.section('ログアウト処理開始', name: _logName);
@@ -152,6 +155,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       
       context.showErrorSnackBar(e.toString());
+    }
+  }
+
+  Future<void> _showProfileImageActionSheet() async {
+    final userProvider = context.read<UserProvider>();
+    final userId = userProvider.currentUser?.id;
+
+    if (userId == null || userId.isEmpty) {
+      context.showErrorSnackBar('ユーザー情報が読み込まれていません。');
+      return;
+    }
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (bottomSheetContext) {
+        final isDark = bottomSheetContext.isDark;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('ギャラリーから選択'),
+                onTap: () => Navigator.pop(bottomSheetContext, 'gallery'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('カメラで撮影'),
+                onTap: () => Navigator.pop(bottomSheetContext, 'camera'),
+              ),
+              if (userProvider.profileImageUrl != null &&
+                  userProvider.profileImageUrl!.isNotEmpty)
+                ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: isDark ? Colors.red[300] : Colors.red,
+                  ),
+                  title: Text(
+                    '画像を削除',
+                    style: TextStyle(color: isDark ? Colors.red[300] : Colors.red),
+                  ),
+                  onTap: () => Navigator.pop(bottomSheetContext, 'delete'),
+                ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text('キャンセル'),
+                onTap: () => Navigator.pop(bottomSheetContext),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'delete') {
+      await _removeProfileImage();
+      return;
+    }
+
+    XFile? pickedImage;
+    try {
+      if (action == 'gallery') {
+        pickedImage = await _profileImageService.pickImageFromGallery();
+      } else if (action == 'camera') {
+        pickedImage = await _profileImageService.takePhoto();
+      }
+
+      if (pickedImage == null) return;
+
+      await _uploadProfileImage(pickedImage);
+    } catch (e, stack) {
+      logger.error('プロフィール画像操作エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      if (!mounted) return;
+      context.showErrorSnackBar('画像の処理に失敗しました。');
+    }
+  }
+
+  Future<void> _uploadProfileImage(XFile imageFile) async {
+    final userProvider = context.read<UserProvider>();
+    final userId = userProvider.currentUser?.id;
+
+    if (userId == null || userId.isEmpty) {
+      context.showErrorSnackBar('ユーザー情報が読み込まれていません。');
+      return;
+    }
+
+    final previousImageUrl = userProvider.profileImageUrl;
+
+    context.showLoadingDialog(message: 'プロフィール画像をアップロード中...');
+
+    try {
+      final downloadUrl = await _profileImageService.uploadProfileImage(
+        userId: userId,
+        imageFile: imageFile,
+      );
+
+      await userProvider.updateProfileImageUrl(downloadUrl);
+
+      if (previousImageUrl != null && previousImageUrl.isNotEmpty) {
+        await _profileImageService.deleteProfileImage(previousImageUrl);
+      }
+
+      if (!mounted) return;
+      context.hideLoadingDialog();
+      context.showSuccessSnackBar('プロフィール画像を更新しました');
+    } catch (e, stack) {
+      logger.error('プロフィール画像アップロード失敗: $e',
+          name: _logName, error: e, stackTrace: stack);
+      if (!mounted) return;
+      context.hideLoadingDialog();
+      context.showErrorSnackBar('プロフィール画像の更新に失敗しました。');
+    }
+  }
+
+  Future<void> _removeProfileImage() async {
+    final userProvider = context.read<UserProvider>();
+    final imageUrl = userProvider.profileImageUrl;
+
+    if (imageUrl == null || imageUrl.isEmpty) {
+      context.showWarningSnackBar('削除する画像がありません。');
+      return;
+    }
+
+    final result = await context.showConfirmDialog(
+      title: 'プロフィール画像を削除',
+      message: '現在のプロフィール画像を削除しますか？',
+      confirmText: '削除する',
+      cancelText: 'キャンセル',
+    );
+
+    if (!result) return;
+
+    context.showLoadingDialog(message: 'プロフィール画像を削除中...');
+
+    try {
+      await userProvider.updateProfileImageUrl(null);
+      await _profileImageService.deleteProfileImage(imageUrl);
+
+      if (!mounted) return;
+      context.hideLoadingDialog();
+      context.showSuccessSnackBar('プロフィール画像を削除しました');
+    } catch (e, stack) {
+      logger.error('プロフィール画像削除失敗: $e',
+          name: _logName, error: e, stackTrace: stack);
+      if (!mounted) return;
+      context.hideLoadingDialog();
+      context.showErrorSnackBar('プロフィール画像の削除に失敗しました。');
     }
   }
 
@@ -306,31 +459,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: padding,
                           child: Column(
                             children: [
-                              Container(
-                                width: isMobile ? 100 : AppConstants.avatarSize,
-                                height: isMobile ? 100 : AppConstants.avatarSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: AppColors.primaryGradient,
-                                  border: Border.all(
-                                    color: isDark 
-                                      ? AppColors.darkSurface 
-                                      : AppColors.cardBackground,
-                                    width: 4,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Container(
+                                    width: isMobile ? 100 : AppConstants.avatarSize,
+                                    height: isMobile ? 100 : AppConstants.avatarSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: AppColors.primaryGradient,
+                                      border: Border.all(
+                                        color: isDark
+                                            ? AppColors.darkSurface
+                                            : AppColors.cardBackground,
+                                        width: 4,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.primary.withOpacity(0.3),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.account_circle,
-                                  size: isMobile ? 100 : AppConstants.avatarSize,
-                                  color: AppColors.textWhite,
-                                ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: (userProvider.profileImageUrl != null &&
+                                            userProvider.profileImageUrl!.isNotEmpty)
+                                        ? Image.network(
+                                            userProvider.profileImageUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) {
+                                              return Icon(
+                                                Icons.account_circle,
+                                                size: isMobile ? 100 : AppConstants.avatarSize,
+                                                color: AppColors.textWhite,
+                                              );
+                                            },
+                                          )
+                                        : Icon(
+                                            Icons.account_circle,
+                                            size: isMobile ? 100 : AppConstants.avatarSize,
+                                            color: AppColors.textWhite,
+                                          ),
+                                  ),
+                                  Positioned(
+                                    right: -4,
+                                    bottom: -4,
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: _showProfileImageActionSheet,
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? AppColors.darkSurface
+                                                  : AppColors.cardBackground,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.camera_alt,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               SizedBox(height: isMobile ? 16 : 24),
                               Text(

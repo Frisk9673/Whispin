@@ -218,6 +218,46 @@ class UserRepository extends BaseRepository<User> {
     logger.success('Firestore更新完了', name: _logName);
   }
 
+  /// プロフィール画像URLを更新
+  Future<void> updateProfileImageUrl(String userId, String? profileImageUrl) async {
+    logger.start('updateProfileImageUrl($userId) 開始', name: _logName);
+
+    try {
+      final userSnapshot = await firestore
+          .collection(collectionName)
+          .where('id', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        await firestore.collection(collectionName).doc(userSnapshot.docs.first.id).update({
+          'profileImageUrl': profileImageUrl,
+        });
+      } else {
+        final altSnapshot = await firestore
+            .collection(collectionName)
+            .where('EmailAddress', isEqualTo: userId)
+            .limit(1)
+            .get();
+
+        if (altSnapshot.docs.isEmpty) {
+          logger.error('ユーザーが見つかりません: $userId', name: _logName);
+          throw Exception('ユーザー情報が見つかりません');
+        }
+
+        await firestore.collection(collectionName).doc(altSnapshot.docs.first.id).update({
+          'profileImageUrl': profileImageUrl,
+        });
+      }
+
+      logger.success('プロフィール画像URL更新完了', name: _logName);
+    } catch (e, stack) {
+      logger.error('updateProfileImageUrl() エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
   /// ユーザーを論理削除
   Future<void> softDelete(String userId) async {
     logger.start('softDelete($userId) 開始', name: _logName);
