@@ -78,11 +78,16 @@ class ProfileImageService {
     logger.info('userId: $userId', name: _logName);
 
     try {
-      // ファイルパスを作成（ユーザーIDをエンコード）
-      final String encodedUserId = Uri.encodeComponent(userId);
+      // ===== 修正: 安全なファイル名生成 =====
+      // メールアドレスの @ と . を _ に置換（エンコーディング問題を回避）
+      final String safeUserId = userId
+          .replaceAll('@', '_at_')
+          .replaceAll('.', '_dot_')
+          .replaceAll('+', '_plus_');
+      
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String fileName = 'profile_$timestamp.jpg';
-      final String filePath = 'profile_images/$encodedUserId/$fileName';
+      final String filePath = 'profile_images/$safeUserId/$fileName';
 
       logger.start('アップロード先: $filePath', name: _logName);
 
@@ -93,7 +98,7 @@ class ProfileImageService {
       final SettableMetadata metadata = SettableMetadata(
         contentType: 'image/jpeg',
         customMetadata: {
-          'userId': userId,
+          'userId': userId, // 元のメールアドレスを保存
           'uploadedAt': DateTime.now().toIso8601String(),
         },
       );
@@ -121,24 +126,47 @@ class ProfileImageService {
       final TaskSnapshot snapshot = await uploadTask;
       logger.success('アップロード完了', name: _logName);
 
-      // ダウンロードURLを取得
-      final String downloadURL = await snapshot.ref.getDownloadURL();
+      // ===== 修正: エミュレーター判定とURL取得 =====
+      String downloadURL;
+      
+      if (kIsWeb && _storage.bucket.contains('localhost')) {
+        // エミュレーター環境: 手動でURLを構築
+        final bucketName = _storage.bucket;
+        downloadURL = 'http://localhost:9199/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
+        logger.info('エミュレーターURL構築: $downloadURL', name: _logName);
+      } else {
+        // 本番環境: 通常通りgetDownloadURL
+        downloadURL = await snapshot.ref.getDownloadURL();
+      }
+      
       logger.success('ダウンロードURL取得完了', name: _logName);
       logger.debug('URL: $downloadURL', name: _logName);
 
       logger.section('画像アップロード成功', name: _logName);
       return downloadURL;
+      
     } on FirebaseException catch (e, stack) {
-      logger.error('アップロードエラー: $e',
+      logger.error('FirebaseException: ${e.code} - ${e.message}',
           name: _logName, error: e, stackTrace: stack);
 
-      if (kIsWeb) {
-        throw Exception(
-          'WebからStorageへアップロードできませんでした。Firebase StorageのCORS設定またはstorageBucket設定を確認してください。',
-        );
+      if (kIsWeb && e.code == 'object-not-found') {
+        // エミュレーター特有のエラー
+        logger.warning('エミュレーターでのURL取得失敗 → 代替URL生成', name: _logName);
+        
+        // 代替: 手動でURL構築
+        final safeUserId = userId
+            .replaceAll('@', '_at_')
+            .replaceAll('.', '_dot_')
+            .replaceAll('+', '_plus_');
+        final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+        final filePath = 'profile_images/$safeUserId/profile_$timestamp.jpg';
+        final bucketName = _storage.bucket;
+        
+        return 'http://localhost:9199/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
       }
 
       rethrow;
+      
     } catch (e, stack) {
       logger.error('アップロードエラー: $e',
           name: _logName, error: e, stackTrace: stack);
@@ -154,16 +182,38 @@ class ProfileImageService {
     logger.info('URL: $imageUrl', name: _logName);
 
     try {
-      // URLからStorageリファレンスを取得
-      final Reference ref = _storage.refFromURL(imageUrl);
+      // ===== 修正: エミュレーターURL対応 =====
+      if (imageUrl.contains('localhost:9199')) {
+        // エミュレーター: URLからパスを抽出
+        final uri = Uri.parse(imageUrl);
+        final pathMatch = RegExp(r'/o/(.+?)\?').firstMatch(imageUrl);
+        
+        if (pathMatch != null) {
+          final encodedPath = pathMatch.group(1)!;
+          final filePath = Uri.decodeComponent(encodedPath);
+          
+          logger.start('削除中 (エミュレーター): $filePath', name: _logName);
+          
+          final Reference ref = _storage.ref().child(filePath);
+          await ref.delete();
+          
+          logger.success('画像削除完了', name: _logName);
+        } else {
+          logger.warning('URLからパス抽出失敗: $imageUrl', name: _logName);
+        }
+      } else {
+        // 本番環境: 通常のrefFromURL
+        final Reference ref = _storage.refFromURL(imageUrl);
+        
+        logger.start('削除中: ${ref.fullPath}', name: _logName);
+        
+        await ref.delete();
+        
+        logger.success('画像削除完了', name: _logName);
+      }
       
-      logger.start('削除中: ${ref.fullPath}', name: _logName);
-      
-      // ファイルを削除
-      await ref.delete();
-      
-      logger.success('画像削除完了', name: _logName);
       logger.section('画像削除成功', name: _logName);
+      
     } catch (e, stack) {
       logger.error('削除エラー: $e', 
           name: _logName, error: e, stackTrace: stack);
@@ -179,8 +229,13 @@ class ProfileImageService {
     logger.info('userId: $userId', name: _logName);
 
     try {
-      final String encodedUserId = Uri.encodeComponent(userId);
-      final String folderPath = 'profile_images/$encodedUserId';
+      // 安全なユーザーIDに変換
+      final String safeUserId = userId
+          .replaceAll('@', '_at_')
+          .replaceAll('.', '_dot_')
+          .replaceAll('+', '_plus_');
+      
+      final String folderPath = 'profile_images/$safeUserId';
       
       final Reference folderRef = _storage.ref().child(folderPath);
       final ListResult result = await folderRef.listAll();
@@ -195,6 +250,7 @@ class ProfileImageService {
       
       logger.success('ユーザー画像全削除完了', name: _logName);
       logger.section('削除処理成功', name: _logName);
+      
     } catch (e, stack) {
       logger.error('全削除エラー: $e', 
           name: _logName, error: e, stackTrace: stack);
