@@ -4,6 +4,7 @@ import '../models/extension_request.dart';
 import '../constants/app_constants.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import '../extensions/context_extensions.dart';
 
 class ExtensionRequestDialog extends StatelessWidget {
   final ExtensionRequest request;
@@ -19,7 +20,12 @@ class ExtensionRequestDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final titleColor = isDark ? Colors.white : AppColors.textPrimary;
+    final bodyColor = isDark ? Colors.white70 : AppColors.textPrimary;
+
     return AlertDialog(
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
       ),
@@ -27,7 +33,7 @@ class ExtensionRequestDialog extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.primaryGradient,
               shape: BoxShape.circle,
             ),
@@ -38,8 +44,11 @@ class ExtensionRequestDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Text('延長リクエスト'),
+          Expanded(
+            child: Text(
+              '延長リクエスト',
+              style: AppTextStyles.headlineSmall.copyWith(color: titleColor),
+            ),
           ),
         ],
       ),
@@ -49,17 +58,17 @@ class ExtensionRequestDialog extends StatelessWidget {
         children: [
           Text(
             '相手がチャット時間の延長を希望しています。',
-            style: AppTextStyles.bodyMedium,
+            style: AppTextStyles.bodyMedium.copyWith(color: bodyColor),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
+              color: AppColors.info.withValues(alpha: isDark ? 0.2 : 0.1),
               borderRadius:
                   BorderRadius.circular(AppConstants.defaultBorderRadius),
               border: Border.all(
-                color: AppColors.info.withOpacity(0.3),
+                color: AppColors.info.withValues(alpha: isDark ? 0.45 : 0.3),
               ),
             ),
             child: Row(
@@ -70,7 +79,7 @@ class ExtensionRequestDialog extends StatelessWidget {
                   child: Text(
                     '延長すると${AppConstants.extensionDurationMinutes}分間追加されます',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.info,
+                      color: isDark ? Colors.lightBlue[200] : AppColors.info,
                     ),
                   ),
                 ),
@@ -84,13 +93,13 @@ class ExtensionRequestDialog extends StatelessWidget {
           onPressed: onReject,
           child: Text(
             '拒否',
-            style: TextStyle(color: AppColors.error),
+            style: TextStyle(color: isDark ? Colors.red[300] : AppColors.error),
           ),
         ),
         ElevatedButton(
           onPressed: onApprove,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.success,
+            backgroundColor: isDark ? Colors.green[600] : AppColors.success,
             foregroundColor: Colors.white,
           ),
           child: const Text('承認'),

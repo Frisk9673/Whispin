@@ -206,10 +206,13 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   }
 
   Widget _buildDialog(BuildContext context) {
+    final isDark = context.isDark;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
+      backgroundColor:
+          isDark ? AppColors.darkSurface : AppColors.cardBackground,
       child: Container(
         padding: EdgeInsets.all(AppConstants.defaultPadding),
         constraints: const BoxConstraints(maxWidth: 450),
@@ -221,11 +224,12 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
   }
 
   Widget _buildBottomSheet(BuildContext context) {
+    final isDark = context.isDark;
     return Material(
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: isDark ? AppColors.darkSurface : AppColors.cardBackground,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: EdgeInsets.fromLTRB(
@@ -261,23 +265,44 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
   Widget _buildContent({required bool isMobile}) {
     final fontSize = context.responsiveFontSize(16);
+    final isDark = context.isDark;
+    final titleColor = isDark ? Colors.white : AppColors.textPrimary;
+    final subtitleColor = isDark ? Colors.white70 : AppColors.textSecondary;
+    final dividerColor = isDark ? AppColors.darkBorder : AppColors.divider;
+    final closeIconColor = isDark ? Colors.white70 : AppColors.textSecondary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'チャットの評価',
-          style: AppTextStyles.headlineSmall.copyWith(
-            fontSize: context.responsiveFontSize(20),
-          ),
-          textAlign: TextAlign.center,
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Text(
+              'チャットの評価',
+              style: AppTextStyles.headlineSmall.copyWith(
+                fontSize: context.responsiveFontSize(20),
+                color: titleColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                color: closeIconColor,
+                tooltip: '閉じる',
+                splashRadius: 20,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: isMobile ? 6 : 8),
         Text(
           '相手とのチャットはいかがでしたか？',
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: subtitleColor,
             fontSize: context.responsiveFontSize(13),
           ),
           textAlign: TextAlign.center,
@@ -308,7 +333,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           ],
         ),
         SizedBox(height: isMobile ? 16 : 24),
-        Divider(color: AppColors.divider),
+        Divider(color: dividerColor),
         SizedBox(height: isMobile ? 12 : 16),
         CheckboxListTile(
           value: _addFriend,
@@ -324,7 +349,10 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 },
           title: Text(
             'フレンド申請を送る',
-            style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: fontSize,
+              color: titleColor,
+            ),
           ),
           secondary: Icon(
             Icons.person_add,
@@ -349,7 +377,10 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 },
           title: Text(
             'ブロックする',
-            style: AppTextStyles.bodyMedium.copyWith(fontSize: fontSize),
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: fontSize,
+              color: titleColor,
+            ),
           ),
           secondary: Icon(
             Icons.block,
@@ -398,9 +429,15 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     required Color color,
     required bool isMobile,
   }) {
+    final isDark = context.isDark;
     final isSelected = _selectedRating == value;
     final iconSize = isMobile ? 36.0 : 44.0;
     final btnRadius = isMobile ? 16.0 : AppConstants.defaultBorderRadius;
+    final baseButtonColor =
+        isDark ? AppColors.darkInput : AppColors.inputBackground;
+    final baseBorderColor = isDark ? AppColors.darkBorder : AppColors.divider;
+    final unselectedIconColor = isDark ? Colors.white54 : AppColors.textDisabled;
+    final unselectedTextColor = isDark ? Colors.white70 : AppColors.textSecondary;
 
     return Material(
       color: Colors.transparent,
@@ -423,17 +460,17 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
           ),
           decoration: BoxDecoration(
             color: isSelected
-                ? color.withOpacity(0.12)
-                : AppColors.inputBackground,
+                ? color.withValues(alpha: 0.12)
+                : baseButtonColor,
             border: Border.all(
-              color: isSelected ? color : AppColors.divider,
+              color: isSelected ? color : baseBorderColor,
               width: isSelected ? 2.5 : 1.5,
             ),
             borderRadius: BorderRadius.circular(btnRadius),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.25),
+                      color: color.withValues(alpha: 0.25),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -452,13 +489,15 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color:
-                      isSelected ? color.withOpacity(0.15) : Colors.transparent,
+                      isSelected
+                          ? color.withValues(alpha: 0.15)
+                          : Colors.transparent,
                 ),
                 child: Center(
                   child: Icon(
                     icon,
                     size: iconSize,
-                    color: isSelected ? color : AppColors.textDisabled,
+                    color: isSelected ? color : unselectedIconColor,
                   ),
                 ),
               ),
@@ -468,7 +507,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
                 style: TextStyle(
                   fontSize: isMobile ? 15 : 16,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected ? color : AppColors.textSecondary,
+                  color: isSelected ? color : unselectedTextColor,
                 ),
               ),
               if (isSelected) ...[
