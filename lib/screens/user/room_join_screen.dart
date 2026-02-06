@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/repositories/user_repository.dart';
-import '../../widgets/common/header.dart';
 import '../../repositories/block_repository.dart';
 import '../../providers/user_provider.dart';
 import '../../models/chat_room.dart';
@@ -164,12 +163,6 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      appBar: CommonHeader(
-        title: '部屋を検索',
-        showNotifications: true,
-        showProfile: true,
-        showPremiumBadge: true,
-      ),
       backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [

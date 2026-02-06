@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/common/header.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/block_repository.dart';
@@ -330,12 +329,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      appBar: CommonHeader(
-        title: 'フレンド一覧',
-        showNotifications: true,
-        showProfile: true,
-        showPremiumBadge: true,
-      ),
       backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [

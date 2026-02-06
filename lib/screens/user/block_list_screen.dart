@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/common/header.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../services/block_service.dart';
 import '../../constants/app_constants.dart';
@@ -122,12 +121,6 @@ class _BlockListScreenState extends State<BlockListScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      appBar: CommonHeader(
-        title: 'ブロック一覧',
-        showNotifications: true,
-        showProfile: true,
-        showPremiumBadge: true,
-      ),
       backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       body: Column(
         children: [

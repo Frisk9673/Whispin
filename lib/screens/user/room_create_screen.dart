@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/common/header.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../models/chat_room.dart';
 import '../../repositories/chat_room_repository.dart';
@@ -125,12 +124,6 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      appBar: CommonHeader(
-        title: '部屋を作成',
-        showNotifications: true,
-        showProfile: true,
-        showPremiumBadge: true,
-      ),
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.cardBackground,
       body: SafeArea(
         child: Center(
