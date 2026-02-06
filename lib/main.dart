@@ -166,8 +166,7 @@ Future<void> main() async {
         // Repositories
         Provider<UserRepository>.value(value: userRepository),
         Provider<FriendshipRepository>.value(value: friendshipRepository),
-        Provider<FriendRequestRepository>.value(
-            value: friendRequestRepository),
+        Provider<FriendRequestRepository>.value(value: friendRequestRepository),
         Provider<ChatRoomRepository>.value(value: chatRoomRepository),
         Provider<BlockRepository>.value(value: blockRepository),
       ],
@@ -245,9 +244,7 @@ class _MyAppState extends State<MyApp> {
             NavigationLogger(),
           ],
           onGenerateRoute: AppRouter.onGenerateRoute,
-          initialRoute: widget.authService.isLoggedIn()
-              ? AppRoutes.home
-              : AppRoutes.login,
+          initialRoute: AppRoutes.home,
         );
       },
     );

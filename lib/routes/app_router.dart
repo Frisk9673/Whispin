@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/providers/premium_log_provider.dart';
 import 'package:whispin/screens/admin/admin_question_list_screen.dart';
@@ -31,13 +32,14 @@ class AppRouter {
 
   /// ルート生成
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final routeName = _normalizeRouteName(settings.name);
     logger.navigation(
       'current',
-      settings.name ?? 'unknown',
+      routeName,
       name: _logName,
     );
 
-    switch (settings.name) {
+    switch (routeName) {
       // ===== Authentication Routes =====
       case AppRoutes.login:
         return _buildRoute(
@@ -60,21 +62,34 @@ class AppRouter {
       // ===== User Routes =====
       case AppRoutes.home:
         final args = settings.arguments as Map<String, dynamic>?;
-        if (args == null) {
-          return _buildErrorRoute('HomeScreen requires arguments');
-        }
-        return _buildRoute(
-          HomeScreen(
-            authService: args['authService'] as AuthService,
-            storageService: args['storageService'] as StorageService,
-          ),
+        return MaterialPageRoute(
           settings: settings,
+          builder: (context) {
+            final authService = (args != null && args['authService'] != null)
+                ? args['authService'] as AuthService
+                : context.read<AuthService>();
+            final storageService =
+                (args != null && args['storageService'] != null)
+                    ? args['storageService'] as StorageService
+                    : context.read<StorageService>();
+
+            final isLoggedIn = FirebaseAuth.instance.currentUser != null ||
+                authService.isLoggedIn();
+            if (!isLoggedIn) {
+              return const UserLoginPage();
+            }
+
+            return HomeScreen(
+              authService: authService,
+              storageService: storageService,
+            );
+          },
         );
 
       case AppRoutes.profile:
-        return _buildRoute(
-          const ProfileScreen(),
+        return _buildAuthGuardedRoute(
           settings: settings,
+          pageBuilder: (_) => const ProfileScreen(),
         );
 
       case AppRoutes.chat:
@@ -94,22 +109,22 @@ class AppRouter {
 
       // ===== Room Routes =====
       case AppRoutes.createRoom:
-        return MaterialPageRoute(
+        return _buildAuthGuardedRoute(
           settings: settings,
-          builder: (context) => const RoomCreateScreen(),
+          pageBuilder: (_) => const RoomCreateScreen(),
         );
 
       case AppRoutes.joinRoom:
-        return MaterialPageRoute(
+        return _buildAuthGuardedRoute(
           settings: settings,
-          builder: (context) => const RoomJoinScreen(),
+          pageBuilder: (_) => const RoomJoinScreen(),
         );
 
       // ===== Friend Routes =====
       case AppRoutes.friendList:
-        return _buildRoute(
-          const FriendListScreen(),
+        return _buildAuthGuardedRoute(
           settings: settings,
+          pageBuilder: (_) => const FriendListScreen(),
         );
 
       // ✅ 追加: フレンドリクエスト画面
@@ -120,9 +135,9 @@ class AppRouter {
         );
 
       case AppRoutes.blockList:
-        return _buildRoute(
-          const BlockListScreen(),
+        return _buildAuthGuardedRoute(
           settings: settings,
+          pageBuilder: (_) => const BlockListScreen(),
         );
 
       // ===== Admin Routes =====
@@ -149,18 +164,118 @@ class AppRouter {
 
       // ===== Support Routes =====
       case AppRoutes.userChat:
-        return _buildRoute(
-          const UserChatScreen(),
+        return _buildAuthGuardedRoute(
           settings: settings,
+          pageBuilder: (_) => const UserChatScreen(),
         );
 
       default:
         logger.warning(
-          '未定義のルート: ${settings.name}',
+          '未定義のルート: $routeName (raw: ${settings.name}) → ホーム/ログインへフォールバック',
           name: _logName,
         );
-        return _buildErrorRoute('Route not found: ${settings.name}');
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) {
+            final authService = context.read<AuthService>();
+            final storageService = context.read<StorageService>();
+            final isLoggedIn = FirebaseAuth.instance.currentUser != null ||
+                authService.isLoggedIn();
+
+            if (!isLoggedIn) {
+              return const UserLoginPage();
+            }
+
+            return HomeScreen(
+              authService: authService,
+              storageService: storageService,
+            );
+          },
+        );
     }
+  }
+
+
+
+  /// ルート名を正規化（webのURL/fragment形式を含めて吸収）
+  static String _normalizeRouteName(String? rawName) {
+    final raw = (rawName ?? AppRoutes.home).trim();
+
+    if (raw.isEmpty) {
+      return AppRoutes.home;
+    }
+
+    var name = raw;
+
+    // Hash URL（例: #/profile, /#/profile）を優先的に処理
+    final hashRouteMatch = RegExp(r'#(/[^?#]*)').firstMatch(name);
+    if (hashRouteMatch != null) {
+      name = hashRouteMatch.group(1)!;
+    } else {
+      final parsed = Uri.tryParse(name);
+      if (parsed != null) {
+        // フルURL入力時は path を利用（例: https://host/profile?x=1）
+        if (parsed.hasScheme || name.startsWith('//')) {
+          name = parsed.path;
+        }
+
+        // fragment が / で始まる場合は fragment を優先
+        if (parsed.fragment.startsWith('/')) {
+          name = parsed.fragment;
+        }
+      }
+
+      // query/hash を除去
+      final queryIndex = name.indexOf('?');
+      if (queryIndex >= 0) {
+        name = name.substring(0, queryIndex);
+      }
+
+      final hashIndex = name.indexOf('#');
+      if (hashIndex >= 0) {
+        name = name.substring(0, hashIndex);
+      }
+    }
+
+    name = Uri.decodeComponent(name).trim();
+
+    if (name.isEmpty) {
+      return AppRoutes.home;
+    }
+
+    if (!name.startsWith('/')) {
+      name = '/$name';
+    }
+
+    if (name.length > 1 && name.endsWith('/')) {
+      name = name.substring(0, name.length - 1);
+    }
+
+    return name;
+  }
+
+  static bool _isLoggedIn() {
+    return FirebaseAuth.instance.currentUser != null;
+  }
+
+  static MaterialPageRoute _buildAuthGuardedRoute({
+    required RouteSettings settings,
+    required WidgetBuilder pageBuilder,
+  }) {
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (context) {
+        final authService = context.read<AuthService>();
+        final isLoggedIn = _isLoggedIn() || authService.isLoggedIn();
+
+        if (!isLoggedIn) {
+          logger.warning('未認証のためログイン画面へ遷移: ${settings.name}', name: _logName);
+          return const UserLoginPage();
+        }
+
+        return pageBuilder(context);
+      },
+    );
   }
 
   /// ルートを構築（共通処理）

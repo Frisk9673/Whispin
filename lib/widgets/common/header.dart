@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../screens/user/profile.dart';
 import '../../services/notification_cache_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
@@ -110,7 +111,12 @@ class _CommonHeaderState extends State<CommonHeader> {
     if (widget.onProfilePressed != null) {
       widget.onProfilePressed!();
     } else {
-      Navigator.of(context).pushNamed(AppRoutes.profile);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+          settings: const RouteSettings(name: AppRoutes.profile),
+        ),
+      );
     }
   }
 
@@ -138,7 +144,7 @@ class _CommonHeaderState extends State<CommonHeader> {
   /// タイトル部分を構築（ダークモード対応）
   Widget _buildTitle(BuildContext context, bool isDark) {
     final isMobile = context.isMobile;
-    
+
     if (isMobile && widget.title.length > 15) {
       return Text(
         widget.title.length > 12
@@ -226,9 +232,8 @@ class _CommonHeaderState extends State<CommonHeader> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.red.withOpacity(0.4)
-                  : AppColors.shadowDark,
+              color:
+                  isDark ? Colors.red.withOpacity(0.4) : AppColors.shadowDark,
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
