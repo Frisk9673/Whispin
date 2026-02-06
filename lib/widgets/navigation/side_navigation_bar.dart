@@ -34,44 +34,6 @@ class AppSideNavigationBar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ヘッダー部分
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.8),
-                        AppColors.secondary.withOpacity(0.8),
-                      ],
-                    )
-                  : AppColors.primaryGradient,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  AppConstants.appName,
-                  style: AppTextStyles.headlineMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
           // ナビゲーションアイテム
           Expanded(
             child: ListView.builder(
