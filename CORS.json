@@ -1,0 +1,16 @@
+[
+    {
+        "origin": [
+            "https://wispin-999.web.app",
+            "http://localhost:5000",
+            "http://localhost:3000"
+        ],
+        "method": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]
