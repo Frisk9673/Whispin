@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/constants/responsive.dart';
-import '../models/user_evaluation.dart';
-import '../models/block.dart';
-import '../services/storage_service.dart';
-import '../services/friendship_service.dart';
-import '../repositories/block_repository.dart';
-import '../repositories/user_repository.dart';
-import '../constants/app_constants.dart';
-import '../constants/colors.dart';
-import '../constants/text_styles.dart';
-import '../extensions/context_extensions.dart';
-import '../utils/app_logger.dart';
+import '../../models/user_evaluation.dart';
+import '../../models/block.dart';
+import '../../services/storage_service.dart';
+import '../../services/friendship_service.dart';
+import '../../repositories/block_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
+import '../../utils/app_logger.dart';
 
 class EvaluationDialog extends StatefulWidget {
   final String partnerId;

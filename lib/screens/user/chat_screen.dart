@@ -8,7 +8,7 @@ import '../../services/storage_service.dart';
 import '../../services/invitation_service.dart';
 import '../../providers/user_provider.dart';
 import '../../models/chat_room.dart';
-import '../../widgets/evaluation_dialog.dart';
+import '../../widgets/user/evaluation_dialog.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';

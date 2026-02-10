@@ -1,10 +1,10 @@
 // lib/widgets/extension_request_dialog.dart
 import 'package:flutter/material.dart';
-import '../models/extension_request.dart';
-import '../constants/app_constants.dart';
-import '../constants/colors.dart';
-import '../constants/text_styles.dart';
-import '../extensions/context_extensions.dart';
+import '../../models/extension_request.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/colors.dart';
+import '../../constants/text_styles.dart';
+import '../../extensions/context_extensions.dart';
 
 class ExtensionRequestDialog extends StatelessWidget {
   final ExtensionRequest request;
