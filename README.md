@@ -8,15 +8,15 @@
 
 | ドキュメント | 内容 |
 |---|---|
-| [01_overview.md](docs/01_overview.md) | アプリ概要・主要機能 |
-| [02_architecture.md](docs/02_architecture.md) | アーキテクチャ・プロジェクト構造 |
-| [03_setup.md](docs/03_setup.md) | セットアップ手順・環境設定 |
-| [04_firebase.md](docs/04_firebase.md) | Firebase構成・Firestoreスキーマ全量 |
-| [05_features.md](docs/05_features.md) | 主要機能のコード例付き実装詳細 |
-| [06_security.md](docs/06_security.md) | セキュリティ対策・Firestoreルール例 |
-| [07_build.md](docs/07_build.md) | テスト・各プラットフォームのビルドコマンド |
-| [08_troubleshooting.md](docs/08_troubleshooting.md) | よくある問題と解決コード |
-| [09_roadmap.md](docs/09_roadmap.md) | ロードマップ・統計・コントリビューション |
+| [01_overview.md](docs/Readme/01_overview.md) | アプリ概要・主要機能 |
+| [02_architecture.md](docs/Readme/02_architecture.md) | アーキテクチャ・プロジェクト構造 |
+| [03_setup.md](docs/Readme/03_setup.md) | セットアップ手順・環境設定 |
+| [04_firebase.md](docs/Readme/04_firebase.md) | Firebase構成・Firestoreスキーマ全量 |
+| [05_features.md](docs/Readme/05_features.md) | 主要機能のコード例付き実装詳細 |
+| [06_security.md](docs/Readme/06_security.md) | セキュリティ対策・Firestoreルール例 |
+| [07_build.md](docs/Readme/07_build.md) | テスト・各プラットフォームのビルドコマンド |
+| [08_troubleshooting.md](docs/Readme/08_troubleshooting.md) | よくある問題と解決コード |
+| [09_roadmap.md](docs/Readme/09_roadmap.md) | ロードマップ・統計・コントリビューション |
 
 ---
 
