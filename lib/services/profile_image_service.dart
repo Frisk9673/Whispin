@@ -82,6 +82,8 @@ class ProfileImageService {
       '実行環境: ${kIsWeb ? "web" : "native"}, emulator=${Environment.shouldUseFirebaseEmulator}',
       name: _logName,
     );
+    String? uploadFilePath;
+    int? uploadBytesLength;
     StreamSubscription<TaskSnapshot>? subscription;
 
     try {
@@ -95,6 +97,7 @@ class ProfileImageService {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String fileName = 'profile_$timestamp.jpg';
       final String filePath = 'profile_images/$safeUserId/$fileName';
+      uploadFilePath = filePath;
 
       logger.start('アップロード先: $filePath', name: _logName);
       logger.debug('元ファイルパス: ${imageFile.path}', name: _logName);
@@ -117,6 +120,7 @@ class ProfileImageService {
       if (kIsWeb) {
         // Web環境: XFileからbytesを取得
         final bytes = await imageFile.readAsBytes();
+        uploadBytesLength = bytes.length;
         logger.info('Web画像bytes: ${bytes.length} bytes', name: _logName);
 
         if (bytes.isEmpty) {
@@ -136,9 +140,14 @@ class ProfileImageService {
           throw StateError('画像ファイルが見つからないためアップロードできません。');
         }
 
-        logger.info('Native画像ファイルサイズ: ${await file.length()} bytes', name: _logName);
+        final int nativeFileLength = await file.length();
+        logger.info('Native画像ファイルサイズ: $nativeFileLength bytes', name: _logName);
+        uploadBytesLength = nativeFileLength;
         uploadTask = ref.putFile(file, metadata);
       }
+
+      final Duration? uploadTimeout =
+          kIsWeb ? const Duration(seconds: 45) : null;
 
       // 進捗をログ出力
       if (kIsWeb) {
@@ -177,15 +186,39 @@ class ProfileImageService {
       // アップロード完了を待つ
       late final TaskSnapshot snapshot;
       try {
-        snapshot = await uploadTask;
+        snapshot = await (uploadTimeout != null
+            ? uploadTask.timeout(uploadTimeout)
+            : uploadTask);
       } on FirebaseException catch (e, stack) {
         logger.error(
-          'アップロード失敗(FirebaseException): code=${e.code}, message=${e.message}',
+          'アップロード失敗(FirebaseException): code=${e.code}, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
           name: _logName,
           error: e,
           stackTrace: stack,
         );
         rethrow;
+      } on TimeoutException catch (e, stack) {
+        logger.error(
+          'アップロード失敗(TimeoutException): code=timeout, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
+          name: _logName,
+          error: e,
+          stackTrace: stack,
+        );
+
+        try {
+          final bool canceled = await uploadTask.cancel();
+          logger.warning(
+            'タイムアウト後のアップロードキャンセル結果: canceled=$canceled, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
+            name: _logName,
+          );
+        } catch (cancelError, cancelStack) {
+          logger.warning(
+            'タイムアウト後のアップロードキャンセル失敗: error=$cancelError, stackTrace=$cancelStack, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
+            name: _logName,
+          );
+        }
+
+        throw StateError('アップロードがタイムアウトしました');
       }
 
       logger.success('アップロード完了', name: _logName);
@@ -231,14 +264,27 @@ class ProfileImageService {
       return downloadURL;
       
     } on FirebaseException catch (e, stack) {
-      logger.error('FirebaseException: ${e.code} - ${e.message}',
-          name: _logName, error: e, stackTrace: stack);
+      logger.error(
+        'FirebaseException: code=${e.code}, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
 
       if (kIsWeb && Environment.shouldUseFirebaseEmulator && e.code == 'object-not-found') {
         // エミュレーター特有のエラー
         logger.warning('catch分岐: object-not-found (再送出して上位に通知)', name: _logName);
       }
 
+      rethrow;
+
+    } on TimeoutException catch (e, stack) {
+      logger.error(
+        'TimeoutException: code=timeout, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
+        name: _logName,
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
       
     } catch (e, stack) {
