@@ -233,21 +233,6 @@ class _HomeScreenState extends State<HomeScreen> {
         showNotifications: true,
         showProfile: true,
         showPremiumBadge: true,
-        additionalActions: !isMobile
-            ? [
-                IconButton(
-                  icon: Icon(
-                    _isSidebarCollapsed ? Icons.menu_open : Icons.menu,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isSidebarCollapsed = !_isSidebarCollapsed;
-                    });
-                  },
-                  tooltip: _isSidebarCollapsed ? 'サイドバーを展開' : 'サイドバーを収納',
-                ),
-              ]
-            : null,
       ),
       body: Row(
         children: [
