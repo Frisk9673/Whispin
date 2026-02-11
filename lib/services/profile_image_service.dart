@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -76,6 +77,7 @@ class ProfileImageService {
   }) async {
     logger.section('画像アップロード開始', name: _logName);
     logger.info('userId: $userId', name: _logName);
+    StreamSubscription<TaskSnapshot>? subscription;
 
     try {
       // ===== 修正: 安全なファイル名生成 =====
@@ -117,10 +119,17 @@ class ProfileImageService {
       }
 
       // 進捗をログ出力
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        logger.debug('アップロード進捗: ${progress.toStringAsFixed(1)}%', name: _logName);
-      });
+      subscription = uploadTask.snapshotEvents.listen(
+        (TaskSnapshot snapshot) {
+          final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          logger.debug('アップロード進捗: ${progress.toStringAsFixed(1)}%', name: _logName);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          logger.error('アップロード進捗ストリームエラー: $error',
+              name: _logName, error: error, stackTrace: stackTrace);
+        },
+        cancelOnError: true,
+      );
 
       // アップロード完了を待つ
       final TaskSnapshot snapshot = await uploadTask;
@@ -171,6 +180,8 @@ class ProfileImageService {
       logger.error('アップロードエラー: $e',
           name: _logName, error: e, stackTrace: stack);
       rethrow;
+    } finally {
+      await subscription?.cancel();
     }
   }
 
