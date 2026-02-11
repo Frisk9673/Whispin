@@ -2,7 +2,9 @@
 
 ## レイヤー構成
 
-```
+Whispin は責務を分離したレイヤードアーキテクチャを採用しています。
+
+```text
 UI層（Screens / Widgets）
         ↓ Provider
 状態管理層（Providers）
@@ -10,159 +12,86 @@ UI層（Screens / Widgets）
 ビジネスロジック層（Services）
         ↓ Repository
 データアクセス層（Repositories）
-        ↓ Firestore SDK
-データベース（Firebase Cloud Firestore）
+        ↓ Firebase SDK
+データベース（Cloud Firestore / Firebase Storage）
 ```
 
 ### 各レイヤーの責務
 
-| レイヤー | 責務 |
+| レイヤー | 主な責務 |
 |---|---|
-| **UI層** | ユーザーインターフェース、イベントハンドリング |
-| **Provider層** | 状態管理、UIへの変更通知 |
-| **Service層** | ビジネスロジック、複数Repositoryの調整 |
-| **Repository層** | Firestoreアクセスの抽象化、CRUD操作 |
-| **Extensions** | Dart標準型の機能拡張、ユーティリティ |
+| **UI層** | 画面表示、ユーザー入力の受付、表示ロジック |
+| **Provider層** | 画面状態の保持、UI への通知、Service 呼び出し |
+| **Service層** | ユースケース実行、入力値検証、複数 Repository の調停 |
+| **Repository層** | Firebase との I/O を抽象化し CRUD を提供 |
+| **Model層** | Firestore ドキュメントとの変換、ドメインデータ表現 |
+| **Utils / Extensions** | 共通処理、拡張メソッド、アプリ横断の補助機能 |
 
 ---
 
-## プロジェクト構造
+## プロジェクト構造（現行実装ベース）
 
-```
+> 主要ディレクトリのみを抜粋しています（2026-02 時点）。
+
+```text
 lib/
-├── config/               # アプリケーション設定
-│   ├── app_config.dart       # Theme設定（Light / Dark）
-│   ├── environment.dart      # 環境変数管理（.env）
-│   └── firebase_config.dart  # Firebase初期化
-│
-├── constants/            # 定数定義
-│   ├── app_constants.dart    # アプリ全体の定数
-│   ├── colors.dart           # カラーパレット
-│   ├── routes.dart           # ルート名定義
-│   ├── text_styles.dart      # テキストスタイル
-│   ├── responsive.dart       # レスポンシブ設定
-│   └── navigation_items.dart # ナビゲーション定義
-│
-├── extensions/           # 拡張メソッド
-│   ├── context_extensions.dart   # BuildContext拡張
-│   ├── datetime_extensions.dart  # DateTime拡張
-│   ├── list_extensions.dart      # List拡張
-│   └── string_extensions.dart    # String拡張
-│
-├── models/               # データモデル
-│   ├── user.dart
-│   ├── chat_room.dart
-│   ├── friendship.dart
-│   ├── friend_request.dart
-│   ├── invitation.dart
-│   ├── block.dart
-│   ├── extension_request.dart
-│   ├── user_evaluation.dart
-│   ├── administrator.dart
-│   ├── premium_log_model.dart
-│   ├── premium_counter.dart
-│   └── question_message.dart
-│
-├── repositories/         # データアクセス層
-│   ├── base_repository.dart       # 基底クラス（CRUD共通）
-│   ├── user_repository.dart
-│   ├── chat_room_repository.dart
-│   ├── friendship_repository.dart
-│   ├── block_repository.dart
-│   └── premium_log_repository.dart
-│
-├── services/             # ビジネスロジック層
-│   ├── auth_service.dart
-│   ├── chat_service.dart
-│   ├── storage_service.dart           # 抽象インターフェース
-│   ├── firestore_storage_service.dart # Firestore実装
-│   ├── invitation_service.dart
-│   ├── friendship_service.dart
-│   ├── block_service.dart
-│   ├── fcm_service.dart
-│   ├── notification_cache_service.dart
-│   ├── startup_invitation_service.dart
-│   ├── user_auth_service.dart
-│   ├── account_create_service.dart
-│   ├── password_hasher.dart
-│   ├── premium_log_service.dart
-│   └── profile_image_service.dart
-│
-├── providers/            # 状態管理
-│   ├── user_provider.dart
-│   ├── admin_provider.dart
-│   ├── chat_provider.dart
-│   ├── theme_provider.dart
-│   └── premium_log_provider.dart
-│
-├── screens/              # UI画面
-│   ├── user/
-│   │   ├── home_screen.dart
-│   │   ├── profile.dart
-│   │   ├── chat_screen.dart
-│   │   ├── room_create_screen.dart
-│   │   ├── room_join_screen.dart
-│   │   ├── friend_list_screen.dart
-│   │   ├── block_list_screen.dart
-│   │   ├── notifications.dart
-│   │   ├── user_login_page.dart
-│   │   ├── account_create_screen.dart
-│   │   └── question_chat_user.dart
-│   └── admin/
-│       ├── admin_home_screen.dart
-│       ├── admin_login_screen.dart
-│       ├── premium_log_list_screen.dart
-│       └── admin_question_list_screen.dart
-│
-├── widgets/              # 再利用可能ウィジェット
-│   ├── common/
-│   │   ├── header.dart
-│   │   ├── unified_widgets.dart
-│   │   ├── message_bubble.dart
-│   │   └── message_input_field.dart
-│   ├── navigation/
-│   │   ├── bottom_navigation_bar.dart
-│   │   └── side_navigation_bar.dart
-│   ├── evaluation_dialog.dart
-│   └── extension_request_dialog.dart
-│
-├── routes/               # ルーティング
-│   ├── app_router.dart
-│   ├── navigation_helper.dart
-│   └── routes_guard.dart
-│
-└── utils/                # ユーティリティ
-    ├── app_logger.dart        # ロギングシステム
-    ├── navigation_logger.dart # ナビゲーションログ
-    └── app_exceptions.dart    # カスタム例外
+├── config/                 # Firebase 初期化・環境設定・テーマ設定
+├── constants/              # ルート名、色、レスポンシブ設定などの定数
+├── extensions/             # BuildContext / List / String / DateTime の拡張
+├── models/
+│   ├── user/               # ユーザー機能のモデル
+│   ├── admin/              # 管理者機能のモデル
+│   └── admin_user/         # 管理者-ユーザー共通系モデル
+├── providers/              # UI 状態管理（chat, user, theme, admin など）
+├── repositories/           # Firestore アクセス層
+├── routes/                 # 画面遷移・認可ガード
+├── screens/
+│   ├── user/               # ユーザー向け画面
+│   └── admin/              # 管理者向け画面
+├── services/
+│   ├── user/               # ユーザー機能サービス
+│   └── admin/              # 管理者機能サービス
+├── utils/                  # ロガー、例外定義など
+├── widgets/
+│   ├── common/             # 共通 UI コンポーネント
+│   ├── user/               # ユーザー機能用 UI 部品
+│   └── admin/              # 管理者機能用 UI 部品
+├── firebase_options.dart   # FlutterFire CLI 生成の Firebase 設定
+└── main.dart               # エントリーポイント
 ```
 
 ---
 
-## 依存パッケージ
+## 依存パッケージ（`pubspec.yaml`）
 
-```yaml
-dependencies:
-  # Firebase
-  firebase_core: ^4.2.1
-  firebase_auth: ^6.1.2
-  cloud_firestore: ^6.1.0
-  firebase_messaging: ^15.2.1
-  firebase_storage: (使用)
+### Firebase
+- `firebase_core: 4.4.0`
+- `firebase_auth: 6.1.2`
+- `cloud_firestore: 6.1.0`
+- `firebase_storage: 13.0.6`
+- `firebase_storage_web: 3.11.2`
+- `firebase_messaging: 16.0.4`
+- `flutter_local_notifications: 18.0.1`
 
-  # 状態管理
-  provider: ^6.1.2
+### 状態管理 / UI
+- `provider: 6.1.2`
+- `google_fonts: 6.3.2`
 
-  # UI
-  google_fonts: ^6.3.2
+### ユーティリティ
+- `http: 1.6.0`
+- `crypto: 3.0.3`
+- `shared_preferences: 2.2.2`
+- `intl: 0.19.0`
+- `path_provider: 2.1.5`
+- `flutter_dotenv: 5.1.0`
+- `image_picker: 1.2.1`
+- `image_cropper: 8.0.2`
 
-  # ユーティリティ
-  http: ^1.6.0
-  crypto: ^3.0.3
-  shared_preferences: ^2.2.2
-  intl: ^0.19.0
-  path_provider: ^2.1.5
-  flutter_dotenv: ^5.2.1
-  image_picker: ^1.2.1
-  flutter_local_notifications: ^18.0.1
-```
+---
+
+## 設計上のポイント
+
+- **機能分割**: `services/` と `screens/` は `user` / `admin` に分割し、責務を明確化。
+- **データアクセス統一**: Firestore へのアクセスは Repository 経由に集約し、UI 層から直接アクセスしない。
+- **状態更新の一元化**: Provider で状態変更を管理し、再描画トリガーを明確化。
+- **拡張性**: `storage_service.dart` のような抽象インターフェースを導入し、実装差し替えに対応。
