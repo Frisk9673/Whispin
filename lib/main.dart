@@ -54,9 +54,6 @@ Future<void> main() async {
 
   // Firebase初期化
   await FirebaseConfig.initialize();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   // FCMバックグラウンドハンドラー登録
   if (!kIsWeb) {

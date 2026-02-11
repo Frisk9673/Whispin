@@ -120,17 +120,27 @@ class ProfileImageService {
       }
 
       // 進捗をログ出力
-      subscription = uploadTask.snapshotEvents.listen(
-        (TaskSnapshot snapshot) {
-          final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          logger.debug('アップロード進捗: ${progress.toStringAsFixed(1)}%', name: _logName);
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          logger.error('アップロード進捗ストリームエラー: $error',
-              name: _logName, error: error, stackTrace: stackTrace);
-        },
-        cancelOnError: true,
-      );
+      try {
+        subscription = uploadTask.snapshotEvents.listen(
+          (TaskSnapshot snapshot) {
+            final progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            logger.debug('アップロード進捗: ${progress.toStringAsFixed(1)}%',
+                name: _logName);
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            logger.warning(
+              'アップロード進捗ストリームエラー: 進捗監視のみ停止し、アップロード本体は継続します。 error=$error, stackTrace=$stackTrace',
+              name: _logName,
+            );
+          },
+        );
+      } catch (e, stack) {
+        logger.warning(
+          'アップロード進捗ストリーム購読開始失敗: 進捗監視なしでアップロードを継続します。 error=$e, stackTrace=$stack',
+          name: _logName,
+        );
+      }
 
       // アップロード完了を待つ
       final TaskSnapshot snapshot = await uploadTask;
