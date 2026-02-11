@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../config/environment.dart';
 import '../utils/app_logger.dart';
 
 /// プロフィール画像のアップロード・管理サービス
@@ -135,17 +136,38 @@ class ProfileImageService {
       final TaskSnapshot snapshot = await uploadTask;
       logger.success('アップロード完了', name: _logName);
 
-      // ===== 修正: エミュレーター判定とURL取得 =====
-      String downloadURL;
-      
-      if (kIsWeb && _storage.bucket.contains('localhost')) {
-        // エミュレーター環境: 手動でURLを構築
-        final bucketName = _storage.bucket;
-        downloadURL = 'http://localhost:9199/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
+      // ===== 修正: 環境フラグベースのURL取得分岐 =====
+      final bool useEmulatorUrl =
+          kIsWeb && Environment.shouldUseFirebaseEmulator;
+      late final String downloadURL;
+
+      logger.info(
+        'URL取得分岐: ${useEmulatorUrl ? "emulator-manual-url" : "getDownloadURL"}',
+        name: _logName,
+      );
+
+      if (useEmulatorUrl) {
+        downloadURL = _buildEmulatorDownloadUrl(filePath);
         logger.info('エミュレーターURL構築: $downloadURL', name: _logName);
       } else {
-        // 本番環境: 通常通りgetDownloadURL
-        downloadURL = await snapshot.ref.getDownloadURL();
+        try {
+          downloadURL = await snapshot.ref.getDownloadURL();
+        } on FirebaseException catch (e, stack) {
+          logger.error(
+            'getDownloadURL失敗 code=${e.code}, message=${e.message}',
+            name: _logName,
+            error: e,
+            stackTrace: stack,
+          );
+
+          if (kIsWeb && Environment.shouldUseFirebaseEmulator) {
+            logger.warning('フォールバック分岐: emulator-manual-url', name: _logName);
+            downloadURL = _buildEmulatorDownloadUrl(filePath);
+          } else {
+            logger.warning('フォールバック分岐なし: 例外再送出', name: _logName);
+            rethrow;
+          }
+        }
       }
       
       logger.success('ダウンロードURL取得完了', name: _logName);
@@ -158,20 +180,9 @@ class ProfileImageService {
       logger.error('FirebaseException: ${e.code} - ${e.message}',
           name: _logName, error: e, stackTrace: stack);
 
-      if (kIsWeb && e.code == 'object-not-found') {
+      if (kIsWeb && Environment.shouldUseFirebaseEmulator && e.code == 'object-not-found') {
         // エミュレーター特有のエラー
-        logger.warning('エミュレーターでのURL取得失敗 → 代替URL生成', name: _logName);
-        
-        // 代替: 手動でURL構築
-        final safeUserId = userId
-            .replaceAll('@', '_at_')
-            .replaceAll('.', '_dot_')
-            .replaceAll('+', '_plus_');
-        final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-        final filePath = 'profile_images/$safeUserId/profile_$timestamp.jpg';
-        final bucketName = _storage.bucket;
-        
-        return 'http://localhost:9199/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
+        logger.warning('catch分岐: object-not-found (再送出して上位に通知)', name: _logName);
       }
 
       rethrow;
@@ -183,6 +194,14 @@ class ProfileImageService {
     } finally {
       await subscription?.cancel();
     }
+  }
+
+  String _buildEmulatorDownloadUrl(String filePath) {
+    final bucketName = _storage.bucket;
+    final host = Environment.emulatorHost;
+    final port = Environment.storageEmulatorPort;
+
+    return 'http://$host:$port/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
   }
 
   /// 既存のプロフィール画像を削除
