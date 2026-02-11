@@ -122,7 +122,16 @@ extension ContextExtensions on BuildContext {
   /// 
   /// 使用箇所: showLoadingDialogとペアで使用
   void hideLoadingDialog() {
-    Navigator.of(this, rootNavigator: true).pop();
+    final navigator = Navigator.of(this, rootNavigator: true);
+
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    debugPrint(
+      '[ContextExtensions] hideLoadingDialog was called, but there is no route to pop.',
+    );
   }
 
   // ===== 確認ダイアログ =====

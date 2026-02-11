@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -10,6 +11,7 @@ import '../utils/app_logger.dart';
 class ProfileImageService {
   static const String _logName = 'ProfileImageService';
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final ImagePicker _picker = ImagePicker();
 
   /// ギャラリーから画像を選択
@@ -84,6 +86,8 @@ class ProfileImageService {
     );
     String? uploadFilePath;
     int? uploadBytesLength;
+    String? refFullPath;
+    TaskState? snapshotState;
     StreamSubscription<TaskSnapshot>? subscription;
 
     try {
@@ -104,6 +108,7 @@ class ProfileImageService {
 
       // Storageリファレンスを取得
       final Reference ref = _storage.ref().child(filePath);
+      refFullPath = ref.fullPath;
 
       // メタデータを設定
       final SettableMetadata metadata = SettableMetadata(
@@ -122,6 +127,13 @@ class ProfileImageService {
         final bytes = await imageFile.readAsBytes();
         uploadBytesLength = bytes.length;
         logger.info('Web画像bytes: ${bytes.length} bytes', name: _logName);
+
+        if (!Environment.shouldUseFirebaseEmulator) {
+          logger.info(
+            'PROFILE_UPLOAD_WEB_START bucket=${_storage.bucket}, filePath=$filePath, contentType=${metadata.contentType}, bytesLength=${bytes.length}, authUid=${_auth.currentUser?.uid}, refFullPath=$refFullPath',
+            name: _logName,
+          );
+        }
 
         if (bytes.isEmpty) {
           logger.error('アップロード中止: 画像bytesが空です', name: _logName);
@@ -189,12 +201,17 @@ class ProfileImageService {
         snapshot = await (uploadTimeout != null
             ? uploadTask.timeout(uploadTimeout)
             : uploadTask);
+        snapshotState = snapshot.state;
       } on FirebaseException catch (e, stack) {
-        logger.error(
-          'アップロード失敗(FirebaseException): code=${e.code}, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
-          name: _logName,
-          error: e,
+        _logFirebaseException(
+          searchKey: 'PROFILE_UPLOAD_WEB_FAILURE',
+          phase: 'uploadTask.await',
+          exception: e,
           stackTrace: stack,
+          filePath: uploadFilePath,
+          bytesLength: uploadBytesLength,
+          refFullPath: refFullPath,
+          snapshotState: snapshotState,
         );
         rethrow;
       } on TimeoutException catch (e, stack) {
@@ -240,11 +257,15 @@ class ProfileImageService {
         try {
           downloadURL = await snapshot.ref.getDownloadURL();
         } on FirebaseException catch (e, stack) {
-          logger.error(
-            'getDownloadURL失敗 code=${e.code}, message=${e.message}',
-            name: _logName,
-            error: e,
+          _logFirebaseException(
+            searchKey: 'PROFILE_UPLOAD_WEB_GET_URL_FAILURE',
+            phase: 'getDownloadURL',
+            exception: e,
             stackTrace: stack,
+            filePath: uploadFilePath,
+            bytesLength: uploadBytesLength,
+            refFullPath: snapshot.ref.fullPath,
+            snapshotState: snapshot.state,
           );
 
           if (kIsWeb && Environment.shouldUseFirebaseEmulator) {
@@ -264,11 +285,15 @@ class ProfileImageService {
       return downloadURL;
       
     } on FirebaseException catch (e, stack) {
-      logger.error(
-        'FirebaseException: code=${e.code}, message=${e.message}, filePath=$uploadFilePath, bytesLength=$uploadBytesLength, kIsWeb=$kIsWeb',
-        name: _logName,
-        error: e,
+      _logFirebaseException(
+        searchKey: 'PROFILE_UPLOAD_WEB_FAILURE',
+        phase: 'uploadProfileImage.catch',
+        exception: e,
         stackTrace: stack,
+        filePath: uploadFilePath,
+        bytesLength: uploadBytesLength,
+        refFullPath: refFullPath,
+        snapshotState: snapshotState,
       );
 
       if (kIsWeb && Environment.shouldUseFirebaseEmulator && e.code == 'object-not-found') {
@@ -301,6 +326,29 @@ class ProfileImageService {
         );
       }
     }
+  }
+
+  void _logFirebaseException({
+    required String searchKey,
+    required String phase,
+    required FirebaseException exception,
+    required StackTrace stackTrace,
+    String? filePath,
+    int? bytesLength,
+    String? refFullPath,
+    TaskState? snapshotState,
+  }) {
+    logger.error(
+      '$searchKey summary phase=$phase, code=${exception.code}, message=${exception.message}, plugin=${exception.plugin}, filePath=$filePath, bytesLength=$bytesLength, refFullPath=$refFullPath, snapshotState=${snapshotState?.name}, kIsWeb=$kIsWeb, emulator=${Environment.shouldUseFirebaseEmulator}',
+      name: _logName,
+    );
+
+    logger.error(
+      '$searchKey detail exception=$exception, code=${exception.code}, message=${exception.message}, plugin=${exception.plugin}, firebaseStackTrace=${exception.stackTrace}, stackTrace=$stackTrace, filePath=$filePath, bytesLength=$bytesLength, bucket=${_storage.bucket}, authUid=${_auth.currentUser?.uid}, refFullPath=$refFullPath, snapshotState=${snapshotState?.name}',
+      name: _logName,
+      error: exception,
+      stackTrace: stackTrace,
+    );
   }
 
   String _buildEmulatorDownloadUrl(String filePath) {

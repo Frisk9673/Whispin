@@ -261,14 +261,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       if (!mounted) return;
-      context.hideLoadingDialog();
       context.showSuccessSnackBar('プロフィール画像を更新しました');
     } catch (e, stack) {
       logger.error('プロフィール画像アップロード失敗: $e',
           name: _logName, error: e, stackTrace: stack);
       if (!mounted) return;
-      context.hideLoadingDialog();
       context.showErrorSnackBar('プロフィール画像の更新に失敗しました。');
+    } finally {
+      if (mounted) {
+        try {
+          context.hideLoadingDialog();
+        } catch (e, stack) {
+          logger.warning(
+            'ローディングダイアログのクローズに失敗: error=$e,stackTrace=$stack',
+            name: _logName,
+          );
+        }
+      }
     }
   }
 
