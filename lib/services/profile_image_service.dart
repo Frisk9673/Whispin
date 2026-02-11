@@ -361,25 +361,35 @@ class ProfileImageService {
     logger.info('URL: $imageUrl', name: _logName);
 
     try {
-      // ===== 修正: エミュレーターURL対応 =====
-      if (imageUrl.contains('localhost:9199')) {
-        // エミュレーター: URLからパスを抽出
-        final uri = Uri.parse(imageUrl);
-        final pathMatch = RegExp(r'/o/(.+?)\?').firstMatch(imageUrl);
-        
-        if (pathMatch != null) {
-          final encodedPath = pathMatch.group(1)!;
-          final filePath = Uri.decodeComponent(encodedPath);
-          
-          logger.start('削除中 (エミュレーター): $filePath', name: _logName);
-          
-          final Reference ref = _storage.ref().child(filePath);
-          await ref.delete();
-          
-          logger.success('画像削除完了', name: _logName);
-        } else {
-          logger.warning('URLからパス抽出失敗: $imageUrl', name: _logName);
+      final uri = Uri.parse(imageUrl);
+      final bool isStorageEmulatorUrl =
+          uri.host == Environment.emulatorHost &&
+          uri.port == Environment.storageEmulatorPort;
+
+      if (isStorageEmulatorUrl) {
+        final int objectSegmentIndex = uri.pathSegments.indexOf('o');
+        final Map<String, String> queryParameters = uri.queryParameters;
+
+        if (objectSegmentIndex == -1 ||
+            objectSegmentIndex + 1 >= uri.pathSegments.length) {
+          logger.warning(
+            'URLからパス抽出失敗: host=${uri.host}, port=${uri.hasPort ? uri.port : "(none)"}, path=${uri.path}, query=$queryParameters',
+            name: _logName,
+          );
+          return;
         }
+
+        final String encodedPath = uri.pathSegments
+            .sublist(objectSegmentIndex + 1)
+            .join('/');
+        final String filePath = Uri.decodeComponent(encodedPath);
+
+        logger.start('削除中 (エミュレーター): $filePath', name: _logName);
+
+        final Reference ref = _storage.ref().child(filePath);
+        await ref.delete();
+
+        logger.success('画像削除完了', name: _logName);
       } else {
         // 本番環境: 通常のrefFromURL
         final Reference ref = _storage.refFromURL(imageUrl);
@@ -393,8 +403,15 @@ class ProfileImageService {
       
       logger.section('画像削除成功', name: _logName);
       
+    } on FormatException catch (e, stack) {
+      logger.warning(
+        'URL解析失敗: host=(invalid), port=(invalid), path=(invalid), query=(invalid), rawUrl=$imageUrl, error=$e',
+        name: _logName,
+      );
+      logger.error('削除エラー: $e',
+          name: _logName, error: e, stackTrace: stack);
     } catch (e, stack) {
-      logger.error('削除エラー: $e', 
+      logger.error('削除エラー: $e',
           name: _logName, error: e, stackTrace: stack);
       // 削除エラーは致命的ではないため、ログのみ
     }
