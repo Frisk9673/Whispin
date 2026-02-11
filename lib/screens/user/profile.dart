@@ -237,7 +237,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _uploadProfileImage(XFile imageFile) async {
     final userProvider = context.read<UserProvider>();
-    final userId = userProvider.currentUser?.id;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final legacyEmail = userProvider.currentUser?.id;
 
     if (userId == null || userId.isEmpty) {
       context.showErrorSnackBar('ユーザー情報が読み込まれていません。');
@@ -251,6 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final downloadUrl = await _profileImageService.uploadProfileImage(
         userId: userId,
+        legacyEmail: legacyEmail,
         imageFile: imageFile,
       );
 

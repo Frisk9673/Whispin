@@ -70,12 +70,14 @@ class ProfileImageService {
 
   /// Firebase Storageに画像をアップロード
   /// 
-  /// [userId] ユーザーID（メールアドレス）
+  /// [userId] ユーザーID（Firebase Auth UID）
+  /// [legacyEmail] 旧保存パス（safeEmail）互換のためのメールアドレス
   /// [imageFile] アップロードする画像ファイル
   /// 
   /// 戻り値: アップロードされた画像のダウンロードURL
   Future<String> uploadProfileImage({
     required String userId,
+    String? legacyEmail,
     required XFile imageFile,
   }) async {
     logger.section('画像アップロード開始', name: _logName);
@@ -91,16 +93,21 @@ class ProfileImageService {
     StreamSubscription<TaskSnapshot>? subscription;
 
     try {
-      // ===== 修正: 安全なファイル名生成 =====
-      // メールアドレスの @ と . を _ に置換（エンコーディング問題を回避）
-      final String safeUserId = userId
-          .replaceAll('@', '_at_')
-          .replaceAll('.', '_dot_')
-          .replaceAll('+', '_plus_');
-      
+      final String? currentUid = _auth.currentUser?.uid;
+      if (currentUid == null || currentUid.isEmpty) {
+        throw StateError('未ログインのためアップロードできません。');
+      }
+
+      if (currentUid != userId) {
+        logger.warning(
+          'upload引数userIdとAuth UIDが不一致のためAuth UIDを優先: arg=$userId, auth=$currentUid',
+          name: _logName,
+        );
+      }
+
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String fileName = 'profile_$timestamp.jpg';
-      final String filePath = 'profile_images/$safeUserId/$fileName';
+      final String filePath = 'profile_images/$currentUid/$fileName';
       uploadFilePath = filePath;
 
       logger.start('アップロード先: $filePath', name: _logName);
@@ -114,7 +121,9 @@ class ProfileImageService {
       final SettableMetadata metadata = SettableMetadata(
         contentType: 'image/jpeg',
         customMetadata: {
-          'userId': userId, // 元のメールアドレスを保存
+          'userId': currentUid,
+          if (legacyEmail != null && legacyEmail.isNotEmpty)
+            'legacyEmail': legacyEmail,
           'uploadedAt': DateTime.now().toIso8601String(),
         },
       );
@@ -408,29 +417,20 @@ class ProfileImageService {
 
   /// ユーザーの全プロフィール画像を削除（アカウント削除時）
   /// 
-  /// [userId] ユーザーID
-  Future<void> deleteAllUserImages(String userId) async {
+  /// [userId] ユーザーID（Firebase Auth UID）
+  /// [legacyEmail] 旧保存パス（safeEmail）互換のためのメールアドレス
+  Future<void> deleteAllUserImages(String userId, {String? legacyEmail}) async {
     logger.section('ユーザー画像全削除開始', name: _logName);
     logger.info('userId: $userId', name: _logName);
 
     try {
-      // 安全なユーザーIDに変換
-      final String safeUserId = userId
-          .replaceAll('@', '_at_')
-          .replaceAll('.', '_dot_')
-          .replaceAll('+', '_plus_');
-      
-      final String folderPath = 'profile_images/$safeUserId';
-      
-      final Reference folderRef = _storage.ref().child(folderPath);
-      final ListResult result = await folderRef.listAll();
-      
-      logger.info('削除対象: ${result.items.length}件', name: _logName);
-      
-      // 全ファイルを削除
-      for (final Reference fileRef in result.items) {
-        logger.debug('削除中: ${fileRef.name}', name: _logName);
-        await fileRef.delete();
+      final String targetUid = _auth.currentUser?.uid ?? userId;
+      await _deleteImagesInFolder('profile_images/$targetUid');
+
+      final String? legacySafeUserId =
+          _buildLegacySafeUserId(legacyEmail ?? userId);
+      if (legacySafeUserId != null && legacySafeUserId != targetUid) {
+        await _deleteImagesInFolder('profile_images/$legacySafeUserId');
       }
       
       logger.success('ユーザー画像全削除完了', name: _logName);
@@ -441,5 +441,28 @@ class ProfileImageService {
           name: _logName, error: e, stackTrace: stack);
       // エラーは致命的ではないため続行
     }
+  }
+
+  Future<void> _deleteImagesInFolder(String folderPath) async {
+    final Reference folderRef = _storage.ref().child(folderPath);
+    final ListResult result = await folderRef.listAll();
+
+    logger.info('削除対象($folderPath): ${result.items.length}件', name: _logName);
+
+    for (final Reference fileRef in result.items) {
+      logger.debug('削除中: ${fileRef.name}', name: _logName);
+      await fileRef.delete();
+    }
+  }
+
+  String? _buildLegacySafeUserId(String? email) {
+    if (email == null || email.isEmpty || !email.contains('@')) {
+      return null;
+    }
+
+    return email
+        .replaceAll('@', '_at_')
+        .replaceAll('.', '_dot_')
+        .replaceAll('+', '_plus_');
   }
 }
