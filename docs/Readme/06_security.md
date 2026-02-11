@@ -16,6 +16,10 @@
 
 ## Firestore Securityルール（例）
 
+> **ラベル: サンプル（現在適用中ルールではありません）**
+>
+> 以下は設計意図を共有するためのサンプルです。`firebase.json` では Firestore のルールファイル参照は定義されていないため、実際の適用状態は Firebase コンソールまたはデプロイ手順側で別途確認してください。
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -54,6 +58,29 @@ service cloud.firestore {
   }
 }
 ```
+
+---
+
+## Firebaseルールファイルの実適用状況（`firebase.json`）
+
+- **Realtime Database**: `database.rules.json`
+- **Storage**: `storage.rules`
+- **Firestore**: `firebase.json` 上の参照定義なし（このドキュメントのFirestoreルールはサンプル）
+
+### `database.rules.json` に関する注意
+
+現在の `database.rules.json` は次の通り、`".read": true` / `".write": true` の**全許可設定**です。
+
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+> ⚠️ **開発用途限定**: この設定はローカル検証や初期開発向けです。本番環境では必ず認証・認可を伴うルールへ変更してください（本番利用不可）。
 
 ---
 

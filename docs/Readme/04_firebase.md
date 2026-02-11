@@ -12,6 +12,16 @@
 
 ---
 
+## 各サービスのルール適用ファイル
+
+- **Realtime Database**: `database.rules.json`（`firebase.json` の `database.rules` で参照）
+- **Firebase Storage**: `storage.rules`（`firebase.json` の `storage.rules` で参照）
+- **Cloud Firestore**: `firebase.json` 上にルールファイル参照の記載なし
+
+> 補足: Realtime Database の `database.rules.json` は現状 `".read": true` / `".write": true` の全許可設定のため、開発用途限定です。本番環境では利用しないでください。
+
+---
+
 ## Firestoreコレクション一覧
 
 ### users — ユーザー

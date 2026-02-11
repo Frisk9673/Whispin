@@ -29,14 +29,33 @@
 
 | 項目 | 数 |
 |---|---|
-| 総コード行数 | 約25,000行 |
-| モデル | 18個 |
-| Repository | 8個 |
-| Service | 15個 |
-| Provider | 4個 |
-| 画面 | 25画面以上 |
+| 総コード行数 | 約22,800行（`lib/**/*.dart` を集計） |
+| モデル | 15個 |
+| Repository | 7個 |
+| Service | 22個 |
+| Provider | 5個 |
+| 画面 | 19画面 |
 | 共通ウィジェット | 20個以上 |
-| 拡張メソッド | 30個以上 |
+| 拡張メソッド | 4個 |
+
+算出日: 2026-02-11
+
+> 注記: 「総コード行数」は `lib` 配下の Dart ファイル（`lib/**/*.dart`）を対象に算出した概算値です。
+
+### 集計コマンド（手更新の再発防止）
+
+```bash
+# ファイル数（ディレクトリ別）
+rg --files lib/models | wc -l
+rg --files lib/repositories | wc -l
+rg --files lib/services | wc -l
+rg --files lib/providers | wc -l
+rg --files lib/screens | wc -l
+rg --files lib/extensions | wc -l
+
+# 総コード行数（lib 配下の Dart ファイル）
+rg --files lib -g '*.dart' | xargs wc -l | tail -n 1
+```
 
 ---
 

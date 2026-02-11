@@ -37,7 +37,21 @@ Whispinは、ユーザーが**匿名でリアルタイムチャット**を楽し
 
 ## 対応プラットフォーム
 
-- ✅ Android
-- ✅ Web
-- ⬜ iOS（要設定）
-- ⬜ macOS / Windows / Linux（要設定）
+Whispinでは、プラットフォームの対応状況を以下の3段階で定義します。
+
+| 区分 | 定義 |
+|---|---|
+| 対応済み | `flutter run` / `flutter build` と Firebase 初期化が現行設定で成立し、運用手順を `07_build.md` に明記している状態 |
+| 実験的 | プロジェクト雛形は存在しビルド着手は可能だが、設定や検証が不足しており、継続運用を保証しない状態 |
+| 未サポート | 現行コード・設定のままでは起動要件を満たせず、標準手順として提供しない状態 |
+
+| プラットフォーム | 現状 | 補足 |
+|---|---|---|
+| Android | ✅ 対応済み | Firebase 設定済み（`android/app/google-services.json`、`DefaultFirebaseOptions.android`） |
+| Web | ✅ 対応済み | Firebase 設定済み（`DefaultFirebaseOptions.web`） |
+| iOS | ⛔ 未サポート | `DefaultFirebaseOptions` が iOS を `UnsupportedError` にしており、現状では起動不可 |
+| macOS | ⛔ 未サポート | デスクトップ雛形は存在するが、Firebase 設定未投入で起動不可 |
+| Windows | ⛔ 未サポート | デスクトップ雛形は存在するが、Firebase 設定未投入で起動不可 |
+| Linux | ⛔ 未サポート | デスクトップ雛形は存在するが、Firebase 設定未投入で起動不可 |
+
+> 補足: 現時点で「実験的」に分類するプラットフォームはありません。iOS / macOS / Windows / Linux は雛形のみ存在し、起動必須の Firebase 設定が未完了のため「未サポート」とします。

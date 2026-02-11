@@ -2,12 +2,15 @@
 
 ## 必要要件
 
-| ツール | バージョン |
-|---|---|
-| Flutter SDK | 3.5以上 |
-| Dart | 3.2以上 |
-| Firebase CLI | 最新版 |
-| Node.js | 16以上（エミュレータ用） |
+`pubspec.yaml` の `environment.sdk: '>=3.0.0 <4.0.0'` を基準に、Dart/Flutter要件を以下に定義します。
+
+| ツール | 最小要件 | 推奨/検証メモ |
+|---|---|---|
+| Dart SDK | 3.0.0以上（4.0未満） | 3.x系の最新安定版を推奨 |
+| Flutter SDK | 3.10.0以上 | Stable チャンネルの最新安定版を推奨（Dart 3.x 同梱） |
+| Firebase CLI | 最新版 | `firebase emulators:start` が実行できること |
+| FlutterFire CLI | 最新版 | `flutterfire configure` が実行できること |
+| Node.js | 18以上 | Firebase Emulator Suite 利用時に必要 |
 
 ---
 
@@ -15,19 +18,34 @@
 
 ### 1. リポジトリのクローン
 ```bash
-git clone https://github.com/your-repo/whispin.git
+git clone https://github.com/Whispin/whispin.git
 cd whispin
+```
+
+### 2. 依存パッケージを取得
+```bash
 flutter pub get
 ```
 
-### 2. Firebase設定
+### 3. Firebase / FlutterFire CLI を準備
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase init
+
+dart pub global activate flutterfire_cli
 ```
 
-### 3. .env ファイルを作成
+### 4. FlutterFire 設定を反映
+```bash
+flutterfire configure
+```
+
+> 既存の `lib/firebase_options.dart` を使う場合でも、
+> プロジェクトやプラットフォーム設定を変更した際は `flutterfire configure` を再実行してください。
+
+### 5. `.env` ファイルを作成
+
+`lib/config/environment.dart` で参照しているキーに合わせて、プロジェクト直下に `.env` を作成します。
 
 ```env
 # 環境種別
@@ -50,21 +68,15 @@ STORAGE_EMULATOR_PORT=9199
 DATABASE_EMULATOR_PORT=9000
 ```
 
-> ⚠️ `FIREBASE_MODE=emulator` はデバッグビルド時のみ有効。  
+> ⚠️ `FIREBASE_MODE=emulator` はデバッグ/プロファイルビルド時のみ有効。  
 > リリースビルドでは自動的に本番環境へ接続します。
 
-### 4. FlutterFire設定
-```bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-```
-
-### 5. エミュレーター起動
+### 6. Firebase Emulator を起動
 ```bash
 firebase emulators:start
 ```
 
-### 6. アプリ起動
+### 7. アプリ起動
 ```bash
 flutter run
 ```

@@ -9,7 +9,7 @@
 | ドキュメント | 内容 |
 |---|---|
 | [01_overview.md](docs/Readme/01_overview.md) | アプリ概要・主要機能 |
-| [02_architecture.md](docs/Readme/02_architecture.md) | アーキテクチャ・プロジェクト構造 |
+| [02_architecture.md](docs/Readme/02_architechture.md) | アーキテクチャ・プロジェクト構造 |
 | [03_setup.md](docs/Readme/03_setup.md) | セットアップ手順・環境設定 |
 | [04_firebase.md](docs/Readme/04_firebase.md) | Firebase構成・Firestoreスキーマ全量 |
 | [05_features.md](docs/Readme/05_features.md) | 主要機能のコード例付き実装詳細 |
