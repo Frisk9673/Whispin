@@ -10,12 +10,14 @@ class AppSideNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final bool isCollapsed;
+  final VoidCallback onToggleCollapse;
 
   const AppSideNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
     required this.isCollapsed,
+    required this.onToggleCollapse,
   });
 
   @override
@@ -38,6 +40,8 @@ class AppSideNavigationBar extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _buildTopArea(isDark),
+
           // ナビゲーションアイテム
           Expanded(
             child: ListView.builder(
@@ -175,6 +179,38 @@ class AppSideNavigationBar extends StatelessWidget {
                       ),
                     ],
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopArea(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.divider,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: isCollapsed
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.spaceBetween,
+        children: [
+          if (!isCollapsed)
+            Text(
+              'TOP',
+              style: AppTextStyles.titleSmall.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          IconButton(
+            icon: Icon(isCollapsed ? Icons.menu_open : Icons.menu),
+            onPressed: onToggleCollapse,
+            tooltip: isCollapsed ? 'サイドバーを展開' : 'サイドバーを収納',
           ),
         ],
       ),
