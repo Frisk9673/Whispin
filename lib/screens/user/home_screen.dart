@@ -43,6 +43,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const String _logName = 'HomeScreen';
   int _currentNavIndex = 0;
+  bool _isSidebarCollapsed = false;
   bool _isLoadingRooms = true;
   List<ChatRoom> _randomRooms = [];
   final BlockRepository _blockRepository = BlockRepository();
@@ -232,6 +233,21 @@ class _HomeScreenState extends State<HomeScreen> {
         showNotifications: true,
         showProfile: true,
         showPremiumBadge: true,
+        additionalActions: !isMobile
+            ? [
+                IconButton(
+                  icon: Icon(
+                    _isSidebarCollapsed ? Icons.menu_open : Icons.menu,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isSidebarCollapsed = !_isSidebarCollapsed;
+                    });
+                  },
+                  tooltip: _isSidebarCollapsed ? 'サイドバーを展開' : 'サイドバーを収納',
+                ),
+              ]
+            : null,
       ),
       body: Row(
         children: [
@@ -240,6 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
             AppSideNavigationBar(
               currentIndex: _currentNavIndex,
               onTap: _onNavItemTapped,
+              isCollapsed: _isSidebarCollapsed,
             ),
 
           // メインコンテンツ（PageView）

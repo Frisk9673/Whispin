@@ -9,19 +9,23 @@ import '../../extensions/context_extensions.dart';
 class AppSideNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final bool isCollapsed;
 
   const AppSideNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.isCollapsed,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
 
-    return Container(
-      width: 280,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeInOut,
+      width: isCollapsed ? 72 : 280,
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         boxShadow: [
@@ -55,7 +59,7 @@ class AppSideNavigationBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
+                          horizontal: 12,
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
@@ -74,39 +78,58 @@ class AppSideNavigationBar extends StatelessWidget {
                                 )
                               : null,
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSelected ? item.activeIcon : item.icon,
-                              color: isSelected
-                                  ? (isDark
-                                      ? AppColors.primary.lighten(0.2)
-                                      : AppColors.primary)
-                                  : (isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600]),
-                              size: 24,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                item.label,
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  color: isSelected
-                                      ? (isDark
-                                          ? AppColors.primary.lighten(0.2)
-                                          : AppColors.primary)
-                                      : (isDark
-                                          ? Colors.grey[300]
-                                          : Colors.grey[800]),
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                        child: isCollapsed
+                            ? Center(
+                                child: Tooltip(
+                                  message: item.label,
+                                  child: Icon(
+                                    isSelected ? item.activeIcon : item.icon,
+                                    color: isSelected
+                                        ? (isDark
+                                            ? AppColors.primary.lighten(0.2)
+                                            : AppColors.primary)
+                                        : (isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600]),
+                                    size: 24,
+                                  ),
                                 ),
+                              )
+                            : Row(
+                                children: [
+                                  Icon(
+                                    isSelected ? item.activeIcon : item.icon,
+                                    color: isSelected
+                                        ? (isDark
+                                            ? AppColors.primary.lighten(0.2)
+                                            : AppColors.primary)
+                                        : (isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600]),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      item.label,
+                                      style: AppTextStyles.bodyLarge.copyWith(
+                                        color: isSelected
+                                            ? (isDark
+                                                ? AppColors.primary.lighten(
+                                                    0.2,
+                                                  )
+                                                : AppColors.primary)
+                                            : (isDark
+                                                ? Colors.grey[300]
+                                                : Colors.grey[800]),
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -125,24 +148,33 @@ class AppSideNavigationBar extends StatelessWidget {
                 ),
               ),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: isDark ? Colors.grey[500] : Colors.grey[600],
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Version ${AppConstants.appVersion}',
-                    style: AppTextStyles.labelSmall.copyWith(
+            child: isCollapsed
+                ? Tooltip(
+                    message: 'Version ${AppConstants.appVersion}',
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 16,
                       color: isDark ? Colors.grey[500] : Colors.grey[600],
                     ),
+                  )
+                : Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Version ${AppConstants.appVersion}',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark ? Colors.grey[500] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
