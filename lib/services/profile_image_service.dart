@@ -78,6 +78,10 @@ class ProfileImageService {
   }) async {
     logger.section('画像アップロード開始', name: _logName);
     logger.info('userId: $userId', name: _logName);
+    logger.info(
+      '実行環境: ${kIsWeb ? "web" : "native"}, emulator=${Environment.shouldUseFirebaseEmulator}',
+      name: _logName,
+    );
     StreamSubscription<TaskSnapshot>? subscription;
 
     try {
@@ -93,6 +97,7 @@ class ProfileImageService {
       final String filePath = 'profile_images/$safeUserId/$fileName';
 
       logger.start('アップロード先: $filePath', name: _logName);
+      logger.debug('元ファイルパス: ${imageFile.path}', name: _logName);
 
       // Storageリファレンスを取得
       final Reference ref = _storage.ref().child(filePath);
@@ -112,38 +117,77 @@ class ProfileImageService {
       if (kIsWeb) {
         // Web環境: XFileからbytesを取得
         final bytes = await imageFile.readAsBytes();
+        logger.info('Web画像bytes: ${bytes.length} bytes', name: _logName);
+
+        if (bytes.isEmpty) {
+          logger.error('アップロード中止: 画像bytesが空です', name: _logName);
+          throw StateError('画像データが空のためアップロードできません。');
+        }
+
         uploadTask = ref.putData(bytes, metadata);
       } else {
         // モバイル環境: Fileオブジェクトを使用
         final File file = File(imageFile.path);
+        final fileExists = await file.exists();
+        logger.info('Native画像ファイル存在確認: $fileExists (${file.path})', name: _logName);
+
+        if (!fileExists) {
+          logger.error('アップロード中止: 画像ファイルが見つかりません', name: _logName);
+          throw StateError('画像ファイルが見つからないためアップロードできません。');
+        }
+
+        logger.info('Native画像ファイルサイズ: ${await file.length()} bytes', name: _logName);
         uploadTask = ref.putFile(file, metadata);
       }
 
       // 進捗をログ出力
-      try {
-        subscription = uploadTask.snapshotEvents.listen(
-          (TaskSnapshot snapshot) {
-            final progress =
-                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            logger.debug('アップロード進捗: ${progress.toStringAsFixed(1)}%',
-                name: _logName);
-          },
-          onError: (Object error, StackTrace stackTrace) {
-            logger.warning(
-              'アップロード進捗ストリームエラー: 進捗監視のみ停止し、アップロード本体は継続します。 error=$error, stackTrace=$stackTrace',
-              name: _logName,
-            );
-          },
-        );
-      } catch (e, stack) {
-        logger.warning(
-          'アップロード進捗ストリーム購読開始失敗: 進捗監視なしでアップロードを継続します。 error=$e, stackTrace=$stack',
-          name: _logName,
-        );
+      if (kIsWeb) {
+        // firebase_storage_web では snapshotEvents が channel-error を起こすケースがあるため、
+        // Webでは進捗監視を無効化してアップロード本体を優先する。
+        logger.info('Web環境のため進捗ストリーム監視をスキップ', name: _logName);
+      } else {
+        try {
+          subscription = uploadTask.snapshotEvents.listen(
+            (TaskSnapshot snapshot) {
+              final total = snapshot.totalBytes;
+              final transferred = snapshot.bytesTransferred;
+              final progress =
+                  total > 0 ? (transferred / total) * 100 : 0.0;
+
+              logger.debug(
+                'アップロード進捗: ${progress.toStringAsFixed(1)}% ($transferred/$total)',
+                name: _logName,
+              );
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              logger.warning(
+                'アップロード進捗ストリームエラー: 進捗監視のみ停止し、アップロード本体は継続します。 error=$error, stackTrace=$stackTrace',
+                name: _logName,
+              );
+            },
+          );
+        } catch (e, stack) {
+          logger.warning(
+            'アップロード進捗ストリーム購読開始失敗: 進捗監視なしでアップロードを継続します。 error=$e, stackTrace=$stack',
+            name: _logName,
+          );
+        }
       }
 
       // アップロード完了を待つ
-      final TaskSnapshot snapshot = await uploadTask;
+      late final TaskSnapshot snapshot;
+      try {
+        snapshot = await uploadTask;
+      } on FirebaseException catch (e, stack) {
+        logger.error(
+          'アップロード失敗(FirebaseException): code=${e.code}, message=${e.message}',
+          name: _logName,
+          error: e,
+          stackTrace: stack,
+        );
+        rethrow;
+      }
+
       logger.success('アップロード完了', name: _logName);
 
       // ===== 修正: 環境フラグベースのURL取得分岐 =====
@@ -202,7 +246,14 @@ class ProfileImageService {
           name: _logName, error: e, stackTrace: stack);
       rethrow;
     } finally {
-      await subscription?.cancel();
+      try {
+        await subscription?.cancel();
+      } catch (e, stack) {
+        logger.warning(
+          '進捗ストリーム購読解除時エラー: error=$e, stackTrace=$stack',
+          name: _logName,
+        );
+      }
     }
   }
 
