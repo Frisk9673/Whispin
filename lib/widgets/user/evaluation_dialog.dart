@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispin/constants/responsive.dart';
-import '../../models/user_evaluation.dart';
-import '../../models/block.dart';
-import '../../services/storage_service.dart';
-import '../../services/friendship_service.dart';
+import '../../models/user/user_evaluation.dart';
+import '../../models/user/block.dart';
+import '../../services/user/storage_service.dart';
+import '../../services/user/friendship_service.dart';
 import '../../repositories/block_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../constants/app_constants.dart';

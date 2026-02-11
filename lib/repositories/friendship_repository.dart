@@ -1,5 +1,5 @@
-import '../models/friendship.dart';
-import '../models/friend_request.dart';
+import '../models/user/friendship.dart';
+import '../models/user/friend_request.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';

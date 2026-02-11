@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:whispin/screens/admin/admin_question_screen.dart';
-import '../../models/question_chat.dart';
+import '../../models/admin_user/question_chat.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';

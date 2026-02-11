@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/admin_auth_service.dart';
+import '../../services/admin/admin_auth_service.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/routes.dart';
 import '../../constants/app_constants.dart';

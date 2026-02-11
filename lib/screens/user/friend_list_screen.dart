@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../widgets/common/unified_widgets.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/block_repository.dart';
-import '../../services/friendship_service.dart';
+import '../../services/user/friendship_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/responsive.dart';

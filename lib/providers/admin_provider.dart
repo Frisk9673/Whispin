@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/premium_counter_repository.dart';
-import '../models/premium_counter.dart';
+import '../models/admin/premium_counter.dart';
 import '../utils/app_logger.dart';
-import '../models/question_message.dart';
-import '../services/admin_question_chat_service.dart';
+import '../models/admin_user/question_message.dart';
+import '../services/admin/admin_question_chat_service.dart';
 
 class AdminProvider extends ChangeNotifier {
   final UserRepository _userRepository;

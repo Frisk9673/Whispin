@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user.dart';
+import '../models/user/user.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/routes.dart';
-import '../services/auth_service.dart';
-import '../services/storage_service.dart';
-import '../services/chat_service.dart';
+import '../services/user/auth_service.dart';
+import '../services/user/storage_service.dart';
+import '../services/user/chat_service.dart';
 import 'app_router.dart';
 import '../utils/app_logger.dart';
 

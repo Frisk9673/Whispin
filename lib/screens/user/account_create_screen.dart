@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:whispin/services/storage_service.dart';
-import '../../models/user.dart';
-import '../../services/account_create_service.dart';
+import 'package:whispin/services/user/storage_service.dart';
+import '../../models/user/user.dart';
+import '../../services/user/account_create_service.dart';
 import '../../providers/user_provider.dart';
 import '../../routes/navigation_helper.dart';
 import '../../constants/routes.dart';
@@ -13,7 +13,7 @@ import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
-import '../../services/auth_service.dart';
+import '../../services/user/auth_service.dart';
 
 /// レスポンシブ対応のユーザー登録画面
 class UserRegisterPage extends StatefulWidget {

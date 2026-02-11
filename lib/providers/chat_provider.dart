@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/question_chat.dart';
-import '../models/administrator.dart';
+import '../services/user/question_chat_service.dart';
+import '../models/admin/administrator.dart';
 
 class ChatProvider extends ChangeNotifier {
   final QuestionChatService _service = QuestionChatService();

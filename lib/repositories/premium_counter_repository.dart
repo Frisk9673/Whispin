@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_constants.dart';
-import '../models/premium_counter.dart';
+import '../models/admin/premium_counter.dart';
 import '../utils/app_logger.dart';
 
 /// プレミアム会員数カウンターのリポジトリ

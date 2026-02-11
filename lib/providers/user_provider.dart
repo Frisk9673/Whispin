@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart' as app_user;
+import '../models/user/user.dart' as app_user;
 import '../repositories/user_repository.dart';
 import '../utils/app_logger.dart';
 

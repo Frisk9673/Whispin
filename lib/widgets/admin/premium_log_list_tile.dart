@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/premium_log_model.dart';
-import '../../services/premium_log_service.dart';
-import '../../models/user.dart';
+import '../../models/admin/premium_log_model.dart';
+import '../../services/user/premium_log_service.dart';
+import '../../models/user/user.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';

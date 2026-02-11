@@ -1,4 +1,4 @@
-import '../models/chat_room.dart';
+import '../models/user/chat_room.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';

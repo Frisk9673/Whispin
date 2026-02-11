@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
-import '../../screens/user/profile.dart';
-import '../../services/notification_cache_service.dart';
+import '../../screens/user/profile_screen.dart';
+import '../../services/user/notification_cache_service.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';

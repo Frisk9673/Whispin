@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/admin_provider.dart';
-import '../../models/question_message.dart';
+import '../../models/admin_user/question_message.dart';
 import '../../constants/colors.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/text_styles.dart';

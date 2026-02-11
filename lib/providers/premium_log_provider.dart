@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/premium_log_model.dart';
-import '../services/premium_log_service.dart';
+import '../models/admin/premium_log_model.dart';
+import '../services/user/premium_log_service.dart';
 import '../utils/app_logger.dart';
 
 class PremiumLogProvider extends ChangeNotifier {

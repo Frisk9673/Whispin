@@ -1,4 +1,4 @@
-import '../models/block.dart';
+import '../models/user/block.dart';
 import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';
