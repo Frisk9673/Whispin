@@ -249,42 +249,34 @@ class ProfileImageService {
 
       logger.success('アップロード完了', name: _logName);
 
-      // ===== 修正: 環境フラグベースのURL取得分岐 =====
-      final bool useEmulatorUrl =
-          kIsWeb && Environment.shouldUseFirebaseEmulator;
+      // 永続化するURLは getDownloadURL 成功値のみを採用する。
+      // emulator-manual-url は保存用URLとして利用しない。
       late final String downloadURL;
 
       logger.info(
-        'URL取得分岐: ${useEmulatorUrl ? "emulator-manual-url" : "getDownloadURL"}',
+        'URL取得分岐: getDownloadURL (永続化可否: true)',
         name: _logName,
       );
 
-      if (useEmulatorUrl) {
-        downloadURL = _buildEmulatorDownloadUrl(filePath);
-        logger.info('エミュレーターURL構築: $downloadURL', name: _logName);
-      } else {
-        try {
-          downloadURL = await snapshot.ref.getDownloadURL();
-        } on FirebaseException catch (e, stack) {
-          _logFirebaseException(
-            searchKey: 'PROFILE_UPLOAD_WEB_GET_URL_FAILURE',
-            phase: 'getDownloadURL',
-            exception: e,
-            stackTrace: stack,
-            filePath: uploadFilePath,
-            bytesLength: uploadBytesLength,
-            refFullPath: snapshot.ref.fullPath,
-            snapshotState: snapshot.state,
-          );
+      try {
+        downloadURL = await snapshot.ref.getDownloadURL();
+      } on FirebaseException catch (e, stack) {
+        _logFirebaseException(
+          searchKey: 'PROFILE_UPLOAD_WEB_GET_URL_FAILURE',
+          phase: 'getDownloadURL',
+          exception: e,
+          stackTrace: stack,
+          filePath: uploadFilePath,
+          bytesLength: uploadBytesLength,
+          refFullPath: snapshot.ref.fullPath,
+          snapshotState: snapshot.state,
+        );
 
-          if (kIsWeb && Environment.shouldUseFirebaseEmulator) {
-            logger.warning('フォールバック分岐: emulator-manual-url', name: _logName);
-            downloadURL = _buildEmulatorDownloadUrl(filePath);
-          } else {
-            logger.warning('フォールバック分岐なし: 例外再送出', name: _logName);
-            rethrow;
-          }
-        }
+        logger.warning(
+          'URL取得分岐: getDownloadURL-failed (永続化可否: false, fallback=none, action=retry-on-ui)',
+          name: _logName,
+        );
+        rethrow;
       }
       
       logger.success('ダウンロードURL取得完了', name: _logName);
@@ -360,13 +352,6 @@ class ProfileImageService {
     );
   }
 
-  String _buildEmulatorDownloadUrl(String filePath) {
-    final bucketName = _storage.bucket;
-    final host = Environment.emulatorHost;
-    final port = Environment.storageEmulatorPort;
-
-    return 'http://$host:$port/v0/b/$bucketName/o/${Uri.encodeComponent(filePath)}?alt=media';
-  }
 
   /// 既存のプロフィール画像を削除
   /// 
