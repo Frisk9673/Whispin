@@ -280,6 +280,20 @@ Whispinは、ニックネームで匿名チャットができるアプリです�
 3. 「管理者ログイン」を押す
 4. 管理画面が表示されたら完了
 
+エミュレーターを利用する際の管理者データ
+firebase auth
+ユーザー名 "Administrator"
+メールアドレス "admin@example.com"
+パスワード "admin1234"
+
+firebase firestore
+コレクション名 "administrator"
+ドキュメント名 "admin@example.com"
+フィールド
+: id "admin@example.com"
+: name "Administrator"
+: role "admin"
+
 ### 16-2. 管理画面（ホーム）でできること
 
 - 「更新」ボタンで表示内容を再読み込みできます
