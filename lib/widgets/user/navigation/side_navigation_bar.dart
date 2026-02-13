@@ -40,7 +40,7 @@ class AppSideNavigationBar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildTopArea(isDark),
+          _buildTopArea(context, isDark),
 
           // ナビゲーションアイテム
           Expanded(
@@ -185,7 +185,9 @@ class AppSideNavigationBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTopArea(bool isDark) {
+  Widget _buildTopArea(BuildContext context, bool isDark) {
+    final textColor = isDark ? Colors.grey[100] : Colors.grey[900];
+    final iconColor = isDark ? Colors.grey[300] : Colors.grey[700];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -204,11 +206,15 @@ class AppSideNavigationBar extends StatelessWidget {
             Text(
               'TOP',
               style: AppTextStyles.titleSmall.copyWith(
+                color: textColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
           IconButton(
-            icon: Icon(isCollapsed ? Icons.menu_open : Icons.menu),
+            icon: Icon(
+              isCollapsed ? Icons.menu_open : Icons.menu,
+              color: iconColor,
+            ),
             onPressed: onToggleCollapse,
             tooltip: isCollapsed ? 'サイドバーを展開' : 'サイドバーを収納',
           ),
