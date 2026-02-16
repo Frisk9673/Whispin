@@ -75,7 +75,7 @@ void main() {
         child: MyApp(
           authService: authService,
           storageService: storageService,
-          startupInvitationService: startupInvitationService, // ✅ 追加
+          startupInvitationService: startupInvitationService,
         ),
       ),
     );

@@ -47,7 +47,7 @@ class AdminQuestionChatService {
     await _db.collection("QuestionChat").doc(chatId).update({
       "LastMessage": text,
       "UpdatedAt": FieldValue.serverTimestamp(),
-      "Status": "in_progress", // ✅ 管理者がメッセージ送信時に自動的に「対応中」へ
+      "Status": "in_progress", // 管理者がメッセージ送信時に自動的に「対応中」へ
     });
   }
 
@@ -83,7 +83,7 @@ class AdminQuestionChatService {
   
   /// 取得対象データ: QuestionChat ドキュメントの Status。
   /// 更新可否: Status を resolved に更新可能。
-  /// ✅ 新規追加: チャットステータスを「対応済」に変更
+  /// チャットステータスを「対応済」に変更
   Future<void> markAsResolved(String chatId) async {
     // 次は Firestore QuestionChat ドキュメントの Status 更新処理へ渡す。
     await _db.collection("QuestionChat").doc(chatId).update({
@@ -94,7 +94,7 @@ class AdminQuestionChatService {
 
   /// 取得対象データ: QuestionChat ドキュメントの Status。
   /// 更新可否: Status を in_progress に更新可能。
-  /// ✅ 新規追加: チャットステータスを「対応中」に変更
+  /// チャットステータスを「対応中」に変更
   Future<void> markAsInProgress(String chatId) async {
     await _db.collection("QuestionChat").doc(chatId).update({
       "Status": "in_progress",
@@ -104,7 +104,7 @@ class AdminQuestionChatService {
 
   /// 取得対象データ: QuestionChat ドキュメントの Status。
   /// 更新可否: Status を pending に更新可能。
-  /// ✅ 新規追加: チャットステータスを「未対応」に戻す
+  /// チャットステータスを「未対応」に戻す
   Future<void> markAsPending(String chatId) async {
     await _db.collection("QuestionChat").doc(chatId).update({
       "Status": "pending",

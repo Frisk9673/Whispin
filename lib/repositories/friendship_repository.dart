@@ -348,7 +348,7 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
 
     final friendshipRepo = FriendshipRepository();
 
-    // ✅ ① 既にフレンドなら何もしない
+    // 既にフレンドなら何もしない
     final alreadyFriend =
         await friendshipRepo.isFriend(senderId, receiverId);
 
@@ -359,19 +359,19 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
       };
     }
 
-    // ✅ ② 片方向リクエスト重複防止
+    // 片方向リクエスト重複防止
     if (await hasExistingRequest(senderId, receiverId)) {
       throw Exception('既にリクエストを送信しています');
     }
 
-    // ✅ ③ 相互リクエストチェック
+    // 相互リクエストチェック
     final mutual =
         await findMutualRequest(receiverId, senderId);
 
     if (mutual != null) {
       await acceptRequest(mutual.id);
 
-      // ★ friendship 作成前に再チェック（保険）
+      // friendship 作成前に再チェック（保険）
       final stillNotFriend =
           !(await friendshipRepo.isFriend(senderId, receiverId));
 
@@ -394,7 +394,7 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
       };
     }
 
-    // ✅ ④ 通常のリクエスト作成
+    // 通常のリクエスト作成
     final request = FriendRequest(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       senderId: senderId,

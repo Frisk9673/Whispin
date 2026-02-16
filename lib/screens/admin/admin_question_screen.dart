@@ -74,7 +74,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
     _scrollToBottom();
   }
 
-  /// ✅ 新規追加: ステータス変更ダイアログを表示
+  /// ステータス変更ダイアログを表示
   Future<void> _showStatusChangeDialog() async {
     logger.section('ステータス変更ダイアログ表示', name: _logName);
 
@@ -181,7 +181,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
     );
   }
 
-  /// ✅ 新規追加: ステータスを変更
+  /// ステータスを変更
   Future<void> _changeStatus(String newStatus) async {
     logger.section('ステータス変更処理開始', name: _logName);
     logger.info('新しいステータス: $newStatus', name: _logName);
@@ -231,7 +231,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
       appBar: AppBar(
         title: const Text('お問い合わせ対応'),
         actions: [
-          // ✅ ステータス変更ボタンを追加␊
+          // ステータス変更ボタンを追加␊
           IconButton(
             icon: const Icon(Icons.edit_note),
             onPressed: _showStatusChangeDialog,

@@ -80,7 +80,7 @@ class ChatService {
           return false;
         }
 
-        // 3-2. プライベートルームは検索結果から除外 ✅ 追加
+        // 3-2. プライベートルームは検索結果から除外 
         if (room.private) {
           logger.debug('除外: プライベートルーム - ${room.topic}', name: _logName);
           return false;
@@ -165,7 +165,7 @@ class ChatService {
 
       logger.success('初期取得: ${rooms.length}件', name: _logName);
 
-      // ブロック関係 + プライベートルームでフィルタリング ✅ 修正
+      // ブロック関係 + プライベートルームでフィルタリング
       final filteredRooms = rooms.where((room) {
         // プライベートルームは検索結果から除外
         if (room.private) {

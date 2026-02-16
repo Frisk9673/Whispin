@@ -48,7 +48,7 @@ class UserRegisterService {
 
       final userWithPassword = User(
         id: user.id,
-        password: passwordHash, // ✅ ハッシュ化されたパスワード
+        password: passwordHash, // ハッシュ化されたパスワード
         firstName: user.firstName,
         lastName: user.lastName,
         nickname: user.nickname,

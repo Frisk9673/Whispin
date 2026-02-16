@@ -383,7 +383,7 @@ class UserRepository extends BaseRepository<User> {
   Stream<List<User>> watchPremiumUsers() {
     logger.debug('watchPremiumUsers() - Stream開始', name: _logName);
 
-    // ✅ 両方のフィールドに対応
+    // 両方のフィールドに対応
     return collection
         .where('deletedAt', isNull: true)
         .snapshots()
@@ -408,7 +408,6 @@ class UserRepository extends BaseRepository<User> {
       final detail = isPremium ? '契約' : '解約';
       final now = DateTime.now();
 
-      // ✅ 修正: トランザクションではなくバッチ処理を使用
       final batch = firestore.batch();
 
       // 1. ログを作成

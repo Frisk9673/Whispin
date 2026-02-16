@@ -198,7 +198,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
   Widget _buildChatInfo(QuestionChat chat) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    // ✅ ステータスに応じた色とアイコンを決定
+    // ステータスに応じた色とアイコンを決定
     Color statusColor;
     IconData statusIcon;
 
@@ -232,7 +232,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // ✅ ステータスバッジを改善
+            // ステータスバッジを改善
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 10,
