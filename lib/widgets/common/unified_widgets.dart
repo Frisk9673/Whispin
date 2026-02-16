@@ -3,12 +3,27 @@ import '../../constants/app_constants.dart';
 import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 
-/// 統一された情報カードウィジェット
-/// 
-/// 使用箇所:
-/// - ルーム作成画面の情報表示
-/// - プロフィール画面のユーザー情報
-/// - 各種情報表示カード
+/// `lib/widgets/common/unified_widgets.dart` の公開API一覧。
+///
+/// 直接利用推奨（✅）
+/// - [InfoCard]: 汎用情報ブロック。
+/// - [InfoItem]: 箇条書き情報行。
+/// - [GradientButton]: 主要CTAボタン。
+/// - [EmptyStateWidget]: データ無し状態表示。
+/// - [LoadingWidget]: ローディング状態表示。
+/// - [SectionHeader]: セクション見出し。
+/// - [UserAvatar]: 汎用イニシャルアバター。
+/// - [ListItemCard]: リスト行カード。
+///
+/// 直接利用非推奨（❌）
+/// - 業務固有文言・権限制御・画面固有レイアウトをこのファイルのWidgetへ直接実装すること。
+///   必要な場合は画面側でラップした専用Widgetを作成する。
+
+/// 統一された情報カードウィジェット。
+///
+/// - 汎用用途: アイコン + タイトル + 任意子要素の情報カード表示。
+/// - 依存テーマ: `AppColors.info` / `AppTextStyles.titleSmall` を基本配色として利用。
+/// - 禁止用途: 業務依存項目（部署別承認情報や管理指標）を共通カードに固定しない。
 class InfoCard extends StatelessWidget {
   final IconData? icon;
   final String title;
@@ -73,7 +88,11 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-/// 情報アイテム（チェックマーク付き）
+/// 情報アイテム（チェックマーク付き）。
+///
+/// - 汎用用途: 説明文の箇条書き行を簡潔に表示。
+/// - 依存テーマ: `AppColors.info` / `AppTextStyles.bodySmall`。
+/// - 禁止用途: 業務固有ステータスの真偽表示をこの見た目に固定しない。
 class InfoItem extends StatelessWidget {
   final String text;
   final Color? color;
@@ -111,7 +130,11 @@ class InfoItem extends StatelessWidget {
   }
 }
 
-/// グラデーションボタンウィジェット
+/// グラデーションボタンウィジェット。
+///
+/// - 汎用用途: 主要アクションの実行ボタン（ローディング対応）。
+/// - 依存テーマ: `AppColors.primaryGradient` / `AppTextStyles.buttonMedium`。
+/// - 禁止用途: 画面固有の権限制御や確認ダイアログ分岐を内包しない。
 class GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -185,7 +208,11 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-/// 空の状態を表示するウィジェット
+/// 空の状態を表示するウィジェット。
+///
+/// - 汎用用途: データ未登録・検索結果なし等の空状態表示。
+/// - 依存テーマ: `AppTextStyles.headlineSmall` / `AppColors.textSecondary`。
+/// - 禁止用途: 業務フロー固有の復旧手順を固定文言として持たせない。
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -251,7 +278,11 @@ class EmptyStateWidget extends StatelessWidget {
   }
 }
 
-/// ローディング表示ウィジェット
+/// ローディング表示ウィジェット。
+///
+/// - 汎用用途: 非同期処理中の待機状態表示。
+/// - 依存テーマ: `AppColors.primary` / `AppTextStyles.bodyMedium`。
+/// - 禁止用途: API種別ごとの詳細進捗や障害判定ロジックを実装しない。
 class LoadingWidget extends StatelessWidget {
   final String? message;
   final Color? color;
@@ -286,7 +317,11 @@ class LoadingWidget extends StatelessWidget {
   }
 }
 
-/// セクションヘッダーウィジェット
+/// セクションヘッダーウィジェット。
+///
+/// - 汎用用途: アイコン付きのセクション見出し表示。
+/// - 依存テーマ: `AppTextStyles.headlineMedium` / `AppColors.primary`。
+/// - 禁止用途: 業務依存のフィルタ条件や操作ボタンを見出しへ常設しない。
 class SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -328,7 +363,11 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// ユーザーアバターウィジェット
+/// ユーザーアバターウィジェット。
+///
+/// - 汎用用途: 名前の頭文字から生成するシンプルなアバター表示。
+/// - 依存テーマ: `AppColors.primaryGradient` と Material `BoxShadow`。
+/// - 禁止用途: 権限バッジや監査ラベル等の業務依存情報を重畳しない。
 class UserAvatar extends StatelessWidget {
   final String name;
   final double size;
@@ -379,7 +418,11 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
-/// リストアイテムカードウィジェット
+/// リストアイテムカードウィジェット。
+///
+/// - 汎用用途: タイトル/サブタイトル/前後要素を持つ汎用リスト行。
+/// - 依存テーマ: `AppTextStyles.bodyLarge` / `AppTextStyles.labelMedium`。
+/// - 禁止用途: 業務固有の選択ルールや承認状態遷移を内包しない。
 class ListItemCard extends StatelessWidget {
   final Widget leading;
   final String title;

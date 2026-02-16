@@ -8,7 +8,17 @@ import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../utils/app_logger.dart';
 
-/// アプリ起動時の招待チェックと確認ダイアログ表示
+/// 【担当ユースケース】
+/// - アプリ起動直後に招待を検出し、ユーザーへ承認/拒否UIを提示する。
+/// - 受信経路（FCM初期メッセージ / ローカル保留招待）を時系列で統合処理する。
+///
+/// 【依存するRepository/Service】
+/// - [StorageService]: 招待実体の検索。
+/// - [InvitationService]: 招待承認/拒否のドメイン処理。
+/// - [FCMService]: 起動時に開封された通知 payload の取得。
+///
+/// 【主な副作用（DB更新/通知送信）】
+/// - 承認/拒否時に InvitationService 経由で招待/ルーム状態を更新・永続化する。
 class StartupInvitationService {
   static const String _logName = 'StartupInvitationService';
   
@@ -24,7 +34,15 @@ class StartupInvitationService {
         _invitationService = invitationService,
         _fcmService = fcmService;
   
-  /// アプリ起動時に招待をチェックして処理
+  /// 入力: [context], [currentUserId]。
+  /// 前提条件: ログイン済みユーザーIDが確定していること。
+  /// 成功時結果: 起動時フローに沿って招待を検出し、必要なら確認ダイアログを表示する。
+  /// 失敗時挙動: 例外は捕捉してログ出力し、起動フローは継続する。
+  ///
+  /// 起動時時系列:
+  /// 1) FCM初期メッセージを確認
+  /// 2) 該当なしならローカル保留招待を確認
+  /// 3) 最新招待の確認ダイアログを表示
   Future<void> checkAndHandleInvitations(
     BuildContext context,
     String currentUserId,
@@ -66,7 +84,15 @@ class StartupInvitationService {
     }
   }
   
-  /// FCMから受信した招待を処理
+  /// 入力: [context], [data], [currentUserId]。
+  /// 前提条件: `data['type'] == 'room_invitation'` を満たす通知payloadであること。
+  /// 成功時結果: payload から招待IDを解決し、確認ダイアログ表示へ接続する。
+  /// 失敗時挙動: 必須データ不足/招待未存在時はログ出力して中断する。
+  ///
+  /// 受信時時系列:
+  /// 1) payload検証
+  /// 2) Storage上の招待を検索
+  /// 3) 確認ダイアログ表示
   Future<void> _handleFCMInvitation(
     BuildContext context,
     Map<String, dynamic> data,
@@ -114,7 +140,10 @@ class StartupInvitationService {
     }
   }
   
-  /// 招待確認ダイアログを表示
+  /// 入力: [context], [invitation], [currentUserId]。
+  /// 前提条件: invitation が有効で、招待者/ルーム情報を取得可能なこと。
+  /// 成功時結果: ユーザー選択に応じて承認/拒否ハンドラへ遷移する。
+  /// 失敗時挙動: データ不整合時はエラーログを残して終了する。
   Future<void> _showInvitationDialog(
     BuildContext context,
     Invitation invitation,
@@ -312,7 +341,10 @@ class StartupInvitationService {
     }
   }
   
-  /// 招待を承認してルームに参加
+  /// 入力: [context], [invitation]。
+  /// 前提条件: context が有効で invitation.id が存在すること。
+  /// 成功時結果: ローディング表示中に承認処理を完了し、画面遷移準備状態にする。
+  /// 失敗時挙動: 例外時はローディングを閉じてエラーダイアログ表示。
   Future<void> _acceptInvitation(
     BuildContext context,
     Invitation invitation,
@@ -372,7 +404,10 @@ class StartupInvitationService {
     }
   }
   
-  /// 招待を拒否
+  /// 入力: [invitation]。
+  /// 前提条件: 招待が pending であること。
+  /// 成功時結果: 招待を拒否状態に更新する。
+  /// 失敗時挙動: 例外はログ出力のみで上位には投げない。
   Future<void> _rejectInvitation(Invitation invitation) async {
     logger.section('招待拒否処理開始', name: _logName);
     

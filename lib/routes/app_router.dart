@@ -24,6 +24,24 @@ import '../services/user/chat_service.dart';
 import '../utils/app_logger.dart';
 
 /// アプリケーション全体のルーティングを管理するクラス
+///
+/// ルーティング全体図
+/// - 公開ルート（未ログインでもアクセス可）
+///   - [AppRoutes.login], [AppRoutes.register], [AppRoutes.adminLogin]
+/// - 保護ルート（ログイン必須）
+///   - [AppRoutes.home], [AppRoutes.profile], [AppRoutes.createRoom],
+///     [AppRoutes.joinRoom], [AppRoutes.friendList], [AppRoutes.blockList],
+///     [AppRoutes.userChat]
+/// - 管理者ルート（管理者権限を前提）
+///   - [AppRoutes.adminHome], [AppRoutes.premiumLogs], [AppRoutes.questionChat]
+///
+/// ルート追加時の更新チェックリスト
+/// - [ ] `constants/routes.dart` にルート定数を追加
+/// - [ ] `AppRouter.onGenerateRoute` に `case` を追加
+/// - [ ] 認証/管理者制御が必要な場合は `RouteGuard.requiresAuth` /
+///       `RouteGuard.requiresAdmin` を更新
+/// - [ ] 遷移ユーティリティが必要な場合は `NavigationHelper` にメソッドを追加
+/// - [ ] 未定義ルートフォールバック（`default`）での遷移要件を確認
 class AppRouter {
   static const String _logName = 'AppRouter';
 
@@ -266,6 +284,9 @@ class AppRouter {
       settings: settings,
       builder: (context) {
         final authService = context.read<AuthService>();
+        // ガード判定に使う状態値:
+        // - FirebaseAuth.instance.currentUser（Firebaseセッション）
+        // - Provider<AuthService>.isLoggedIn()（アプリ側ログイン状態）
         final isLoggedIn = _isLoggedIn() || authService.isLoggedIn();
 
         if (!isLoggedIn) {

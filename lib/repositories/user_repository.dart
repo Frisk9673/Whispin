@@ -4,7 +4,17 @@ import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';
 
-/// ユーザーデータのリポジトリ
+/// ユーザーデータのリポジトリ。
+///
+/// 対象コレクション: `AppConstants.usersCollection`
+/// 提供クエリの目的:
+/// - メールアドレス（`id` / 旧 `EmailAddress`）でのユーザー特定
+/// - プレミアム会員の抽出・件数集計
+/// - プレミアム状態フィールドの更新
+///
+/// 利用方針:
+/// - Service 層経由で利用する前提
+/// - UI から直接参照しない
 class UserRepository extends BaseRepository<User> {
   static const String _logName = 'UserRepository';
 
@@ -31,6 +41,7 @@ class UserRepository extends BaseRepository<User> {
 
       final snapshot1 = await firestore
           .collection(collectionName)
+          // Firestore制約: where 単一条件 + limit(1) の等価検索。
           .where('id', isEqualTo: email)
           .limit(1)
           .get();
@@ -86,6 +97,7 @@ class UserRepository extends BaseRepository<User> {
     try {
       // まず premium フィールドで検索
       var snapshot = await collection
+          // Firestore制約: 複合where（premium + deletedAt）は複合インデックス前提。
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();
@@ -96,6 +108,7 @@ class UserRepository extends BaseRepository<User> {
       if (results.isEmpty) {
         logger.info('premium で見つからず → Premium で再検索', name: _logName);
         snapshot = await collection
+            // Firestore制約: 互換用の別フィールド検索でも同様に複合インデックス前提。
             .where('Premium', isEqualTo: true)
             .where('deletedAt', isNull: true)
             .get();
@@ -120,6 +133,7 @@ class UserRepository extends BaseRepository<User> {
       // 両方のフィールド名で検索を試行
       logger.start('premium フィールドで検索中...', name: _logName);
       var snapshot = await collection
+          // Firestore制約: 複合where（premium + deletedAt）は複合インデックス前提。
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();
@@ -130,6 +144,7 @@ class UserRepository extends BaseRepository<User> {
       if (count == 0) {
         logger.info('premium=0 → Premium フィールドで再検索', name: _logName);
         snapshot = await collection
+            // Firestore制約: 互換用の別フィールド検索でも同様に複合インデックス前提。
             .where('Premium', isEqualTo: true)
             .where('deletedAt', isNull: true)
             .get();
@@ -170,6 +185,7 @@ class UserRepository extends BaseRepository<User> {
       // メールアドレスで検索
       final userSnapshot = await firestore
           .collection(collectionName)
+          // Firestore制約: where 単一条件 + limit(1) の等価検索。
           .where('id', isEqualTo: userId)
           .limit(1)
           .get();
@@ -178,6 +194,7 @@ class UserRepository extends BaseRepository<User> {
       if (userSnapshot.docs.isEmpty) {
         final altSnapshot = await firestore
             .collection(collectionName)
+            // Firestore制約: 旧スキーマ互換のため EmailAddress を等価検索。
             .where('EmailAddress', isEqualTo: userId)
             .limit(1)
             .get();

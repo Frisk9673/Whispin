@@ -20,6 +20,9 @@ class NavigationItem {
 class NavigationItems {
   NavigationItems._();
 
+  /// ユーザー/管理者ナビの使い分け条件:
+  /// 管理者ログインセッションでは管理者専用画面へ遷移するため本リストを使わず、
+  /// 一般ユーザーでログイン済みの場合のみ下部ナビとして `mainItems` を表示する。
   /// メインナビゲーションアイテム（タブ一覧）
   static const List<NavigationItem> mainItems = [
     NavigationItem(

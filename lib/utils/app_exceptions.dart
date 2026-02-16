@@ -1,6 +1,21 @@
 import 'app_logger.dart';
 
 /// アプリケーション全体で使用する例外の基底クラス
+///
+/// 共通方針（例外クラスの用途）:
+/// - ドメインで想定可能な失敗は `AppException` 派生クラスで表現する。
+/// - `message` はユーザー/運用者が状況を理解できる文章にし、`code` は機械判定用に使う。
+/// - `originalError` と `stackTrace` は、原因調査が必要な層（service/repository）で保持する。
+///
+/// throw / rethrow 指針:
+/// - 新しい文脈（メッセージ/コード/補足情報）を付与する場合は `throw XxxException(...)`。
+/// - 既に適切に分類された例外を上位にそのまま伝搬する場合は `rethrow`。
+/// - `catch (e, st)` したら、必要に応じて `originalError: e`, `stackTrace: st` を渡す。
+///
+/// 主要呼び出し元:
+/// - services: 入力検証やユースケース失敗を `ValidationException` 等で送出。
+/// - repositories: 通信/永続化失敗を `NetworkException` などへ変換して送出。
+/// - routes/UI: `userMessage` を表示し、必要に応じてリカバリー導線へ遷移。
 abstract class AppException implements Exception {
   final String message;
   final String? code;

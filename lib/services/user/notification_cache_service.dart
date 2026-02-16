@@ -3,9 +3,18 @@ import '../../repositories/friendship_repository.dart';
 import 'invitation_service.dart';
 import '../../utils/app_logger.dart';
 
-/// 通知数のキャッシュ＋定期更新を管理するサービス
+/// 【担当ユースケース】
+/// - ホーム/通知表示で使う未読件数の即時表示と、定期再取得。
+/// - 起動直後は StartupInvitationService の処理結果を反映するためキャッシュ無効化を許可する。
 ///
-/// Disposeポイント: main.dart で Provider に登録し、アプリライフサイクルで管理する
+/// 【依存するRepository/Service】
+/// - [FriendRequestRepository]: 受信フレンド申請件数の取得。
+/// - [InvitationService]: 受信招待件数の取得。
+///
+/// 【主な副作用（DB更新/通知送信）】
+/// - DB更新/通知送信は行わず、メモリキャッシュと定期Timerのみを更新する。
+///
+/// Disposeポイント: main.dart で Provider に登録し、アプリライフサイクルで管理する。
 class NotificationCacheService {
   static const String _logName = 'NotificationCacheService';
   static const Duration _cacheDuration = Duration(minutes: 5);
@@ -34,8 +43,15 @@ class NotificationCacheService {
 
   // ===== 取得 =====
 
-  /// キャッシュが有効なら即返す。無効なら実取得して更新する。
-  /// [forceRefresh] で強制的に再取得する。
+  /// 入力: [userId], [forceRefresh]。
+  /// 前提条件: userId がログイン中ユーザーであること。
+  /// 成功時結果: 有効キャッシュを返すか、再取得して合計件数を返す。
+  /// 失敗時挙動: `_fetch` の例外を上位へ伝播する。
+  ///
+  /// 時系列参照:
+  /// 1) アプリ起動時に StartupInvitationService が招待処理
+  /// 2) 画面復帰で `invalidateCache()`
+  /// 3) 本メソッドで最新件数を再計算
   Future<int> getCount({
     required String userId,
     bool forceRefresh = false,
@@ -51,8 +67,10 @@ class NotificationCacheService {
 
   // ===== 自動更新 =====
 
-  /// 5分ごとの自動リフレッシュを開始する。
-  /// [userId] を渡し、以降のタイマーでも同じユーザーで取得する。
+  /// 入力: [userId]。
+  /// 前提条件: 二重起動を避けるため既存Timerは内部で停止済み。
+  /// 成功時結果: 5分間隔の再取得Timerが開始される。
+  /// 失敗時挙動: Timer内の取得失敗はログ出力して継続する。
   void startAutoRefresh(String userId) {
     _autoRefreshTimer?.cancel();
 
@@ -69,7 +87,10 @@ class NotificationCacheService {
         name: _logName);
   }
 
-  /// 自動リフレッシュを停止する。
+  /// 入力: なし。
+  /// 前提条件: なし。
+  /// 成功時結果: 自動更新Timerを停止する。
+  /// 失敗時挙動: 例外は発生しない想定。
   void stopAutoRefresh() {
     _autoRefreshTimer?.cancel();
     _autoRefreshTimer = null;

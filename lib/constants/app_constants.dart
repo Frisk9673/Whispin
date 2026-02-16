@@ -3,21 +3,29 @@ class AppConstants {
   // インスタンス化を防ぐ
   AppConstants._();
 
+  // ===== 業務定数系（ドメインルール・運用設定） =====
+
   // アプリ情報
   static const String appName = 'Whispin';
   static const String appVersion = '1.0.0';
 
   // チャットルーム設定
   static const int roomNameMaxLength = 30;
+  // 100文字上限にすることで読みやすさを保ちつつ短文会話のテンポを維持する。
   static const int messageMaxLength = 100;
+  // 初回の会話体験で離脱しにくい長さとして、運用上バランスの良い10分を採用。
   static const int defaultChatDurationMinutes = 10;
+  // 延長は意思確認しやすい最小単位として5分刻みに固定する。
   static const int extensionDurationMinutes = 5;
   static const int defaultExtensionLimit = 2;
+  // 終了直前2分で通知することで会話中断前に延長判断の猶予を確保する。
   static const int extensionRequestThresholdMinutes = 2;
 
   // パスワード設定
   static const int passwordMinLength = 6;
   static const int passwordMaxLength = 50;
+
+  // ===== レイアウト系（余白・サイズ・ブレークポイント） =====
 
   // UI設定
   static const double defaultPadding = 24.0;
@@ -111,7 +119,10 @@ class AppConstants {
   static const String dateTimeFormatFull = 'yyyy-MM-dd HH:mm:ss';
 
   // ブレークポイント
+  // 768pxを境にすると縦タブレットと大型スマホを実運用で判別しやすい。
   static const double mobileBreakpoint = 768.0;
+  // 1024pxは一般的なタブレット横向き基準で、2カラム化の切替点として扱いやすい。
   static const double tabletBreakpoint = 1024.0;
+  // 1440px以上をデスクトップ拡張レイアウトにすると過度な横伸びを防げる。
   static const double desktopBreakpoint = 1440.0;
 }

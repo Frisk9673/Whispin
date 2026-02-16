@@ -15,7 +15,10 @@ import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 import '../../services/user/auth_service.dart';
 
-/// レスポンシブ対応のユーザー登録画面
+/// 画面概要:
+/// - 目的: 新規ユーザー登録を実施し、登録後にユーザー情報を読み込んでホームへ遷移する。
+/// - 主な操作: 必須項目入力、入力チェック、登録実行、ログイン画面への遷移。
+/// - 依存Provider/Service: UserProvider, AuthService, StorageService, UserRegisterService。
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
 
@@ -59,6 +62,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     final confirmPassword = confirmPasswordController.text.trim();
     final telId = telIdController.text.trim();
 
+    // バリデーション責務: この画面で入力の必須/形式/一致を検証し、Serviceには妥当な値のみ渡す。
     if (email.isBlank ||
         password.isBlank ||
         confirmPassword.isBlank ||
@@ -87,6 +91,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       return;
     }
 
+    // 非同期処理開始時は loading=true でUIをロックし、失敗時は SnackBar で理由を提示する。
     setState(() => loading = true);
 
     try {
@@ -164,6 +169,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   }
 
   @override
+  // build の責務: レスポンシブUIと入力フォームの描画、および loading 状態の見た目反映を行う。
+  // initState / didChangeDependencies は不要のため未実装（初期化はフィールド宣言で完結）。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;

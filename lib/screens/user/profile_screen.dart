@@ -15,6 +15,10 @@ import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 import '../../services/user/profile_image_service.dart';
 
+/// 画面概要:
+/// - 目的: ユーザープロフィール閲覧と各種アカウント操作（画像更新/プレミアム/削除/ログアウト）を提供する。
+/// - 主な操作: プロフィール画像変更、プレミアム切替、アカウント削除、ログアウト。
+/// - 依存Provider/Service: UserProvider, ThemeProvider, ProfileImageService, FirebaseAuth。
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -72,6 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
+    // 非同期処理開始時はローディングダイアログを表示し、例外時は必ずクローズしてエラー表示する。
     context.showLoadingDialog(
       message: isPremium ? '解約処理中...' : 'プレミアムに加入中...',
     );
@@ -124,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!result) return;
 
+    // 非同期処理開始時に進捗を明示し、失敗時は SnackBar で復帰可能な形で通知する。
     context.showLoadingDialog(message: 'アカウントを削除しています...');
 
     try {
@@ -247,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final previousImageUrl = userProvider.profileImageUrl;
 
+    // 非同期アップロード中はローディング表示を維持し、成否どちらでも finally で確実に閉じる。
     context.showLoadingDialog(message: 'プロフィール画像をアップロード中...');
 
     try {
@@ -301,6 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!result) return;
 
+    // 非同期削除中はローディング表示、失敗時はダイアログを閉じたうえでエラー通知する。
     context.showLoadingDialog(message: 'プロフィール画像を削除中...');
 
     try {
@@ -435,6 +443,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  // build の責務: UserProvider の状態に応じたプロフィール表示と各操作導線の描画を行う。
+  // initState / didChangeDependencies は不要のため未実装（都度 Provider 参照で最新値を描画）。
+  // 入力バリデーション責務: 編集/更新系の検証は UserProvider・ProfileImageService 側で最終担保する。
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final currentUser = userProvider.currentUser;

@@ -3,6 +3,25 @@ class AppRoutes {
   // インスタンス化を防ぐ
   AppRoutes._();
 
+  /// ルート名と画面の対応表
+  /// - /login: ユーザーログイン画面
+  /// - /register: ユーザー新規登録画面
+  /// - /admin/login: 管理者ログイン画面
+  /// - /: ユーザーホーム画面
+  /// - /profile: プロフィール編集画面
+  /// - /settings: 設定画面
+  /// - /room/create: ルーム作成画面
+  /// - /room/join: ルーム参加画面
+  /// - /chat: チャット画面
+  /// - /friends: フレンド一覧画面
+  /// - /friends/requests: フレンド申請一覧画面
+  /// - /blocks: ブロック一覧画面
+  /// - /admin: 管理者ホーム画面
+  /// - /admin/premium-logs: プレミアム履歴管理画面
+  /// - /admin/questions: 問い合わせチャット管理画面
+  /// - /contact: 問い合わせ送信画面
+  /// - /user/chat: ユーザーサポートチャット画面
+
   // 認証ルート
   static const String login = '/login';
   static const String register = '/register';

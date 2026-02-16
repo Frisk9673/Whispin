@@ -6,8 +6,11 @@ class AppTextStyles {
   // インスタンス化を防ぐ
   AppTextStyles._();
 
+  // ===== UIテーマ系（タイポグラフィ設計） =====
+
   // Display（超大見出し）
   static const TextStyle displayLarge = TextStyle(
+    // アプリ名ロゴと階層を明確に分離できる最大見出しサイズ。
     fontSize: 40,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -59,6 +62,7 @@ class AppTextStyles {
 
   // Body（本文）
   static const TextStyle bodyLarge = TextStyle(
+    // 可読性を維持しつつ1行あたり情報量を確保できる本文基準サイズ。
     fontSize: 16,
     fontWeight: FontWeight.normal,
     color: AppColors.textPrimary,

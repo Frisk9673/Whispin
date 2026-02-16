@@ -34,6 +34,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
     // 管理者としてチャット購読開始
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<AdminProvider>(context, listen: false);
+      // 次は AdminProvider.startMessageStream() から AdminQuestionChatService.messageStream() へ渡す。
       provider.startMessageStream(widget.chatId);
     });
   }
@@ -66,6 +67,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
     if (text.isEmpty) return;
 
     final provider = Provider.of<AdminProvider>(context, listen: false);
+    // 次は AdminProvider.sendMessage() から AdminQuestionChatService.sendMessage() へ渡す。
     await provider.sendMessage(widget.chatId, text);
 
     _controller.clear();
@@ -189,6 +191,7 @@ class _AdminQuestionChatScreenState extends State<AdminQuestionChatScreen> {
 
       final provider = Provider.of<AdminProvider>(context, listen: false);
 
+      // 次は AdminProvider の各ステータス更新メソッドから AdminQuestionChatService へ渡す。
       switch (newStatus) {
         case 'pending':
           await provider.markAsPending(widget.chatId);

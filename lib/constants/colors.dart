@@ -5,8 +5,12 @@ class AppColors {
   // インスタンス化を防ぐ
   AppColors._();
 
+  // ===== UIテーマ系（ブランド・状態・画面トーン） =====
+
   // 基本カラー
+  // 主要CTAやブランド印象を統一するため、全画面で同じ基調色を採用する。
   static const Color primary = Color(0xFF667EEA);
+  // primary とのグラデーション時に視認性と奥行きが両立する補助色を固定する。
   static const Color secondary = Color(0xFF764BA2);
 
   // グラデーション
@@ -27,6 +31,7 @@ class AppColors {
   static Color get backgroundSecondary => secondary.withValues(alpha: 0.1);
 
   // ダークモード
+  // 純黒を避けてコントラスト疲れを抑えるため、Material準拠の暗色値を使用する。
   static const Color darkBackground = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF1E1E1E);
   static const Color darkInput = Color(0xFF2C2C2C);

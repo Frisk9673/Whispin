@@ -9,6 +9,10 @@ import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// 画面概要:
+/// - 目的: ブロック中ユーザーの一覧確認と解除操作を提供する。
+/// - 主な操作: ブロック一覧読み込み、プルリフレッシュ、個別ブロック解除。
+/// - 依存Provider/Service: BlockService, FirebaseAuth。
 class BlockListScreen extends StatefulWidget {
   const BlockListScreen({super.key});
 
@@ -27,6 +31,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
   @override
   void initState() {
+    // initState の責務: Service 参照を固定し、初回データ取得を開始する。
     super.initState();
     _blockService = context.read<BlockService>();
     _loadBlockedUsers();
@@ -35,6 +40,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
   Future<void> _loadBlockedUsers() async {
     logger.section('_loadBlockedUsers() 開始', name: _logName);
 
+    // 非同期取得開始時は一覧をローディング表示に切り替え、失敗時は SnackBar で通知する。
     setState(() => _isLoading = true);
 
     try {
@@ -115,6 +121,8 @@ class _BlockListScreenState extends State<BlockListScreen> {
   }
 
   @override
+  // build の責務: ローディング/空状態/一覧表示を _isLoading とデータ件数で切り替える。
+  // didChangeDependencies は不要のため未実装（依存取得は initState で完了）。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;

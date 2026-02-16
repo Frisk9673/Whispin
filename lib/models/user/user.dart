@@ -1,6 +1,17 @@
 // lib/models/user.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// User は、アプリ利用者のプロフィール/認証/状態を表す中心モデル。
+/// 主に `users` コレクションに保存し、認証・チャット・フレンド機能の基点として利用する。
+///
+/// フォーマット規約:
+/// - ID (`id`) はメールアドレス文字列を主キーとして扱う。
+/// - 日付 (`createdAt` ほか) は Firestore Timestamp / ISO8601 の双方を許容。
+/// - 列挙相当値は主に bool (`premium`) と数値 (`rate`, `roomCount`) で管理。
+///
+/// 関連モデル:
+/// - Friendship / FriendRequest / Block / UserEvaluation で User.id が参照される。
+/// - ChatRoom (`id1`,`id2`) / Invitation / ExtensionRequest の主体ユーザーとして参照される。
 class User {
   final String id; // Email (Primary Key)
   final String password; // hashed password (JSON 用)
@@ -42,6 +53,10 @@ class User {
   bool get isDeleted => deletedAt != null;
 
   // ===== Firestore + JSON 両対応の fromMap =====
+  // 必須キー: id(または EmailAddress) 推奨
+  // 任意キー: password/firstName/lastName/nickname/phoneNumber/rate/premium/roomCount/
+  //          createdAt/lastUpdatedPremium/deletedAt/fcmToken/fcmTokenUpdatedAt/profileImageUrl
+  // デフォルト値: 文字列'', rate:0.0, premium:false, roomCount:0, createdAt:now
   factory User.fromMap(Map<String, dynamic> map) {
     DateTime? _toDate(dynamic v) {
       if (v == null) return null;
@@ -81,6 +96,8 @@ class User {
   }
 
   // ===== Firestore / JSON 両対応 Map 変換 =====
+  // 出力キー: id/password/firstName/lastName/nickname/phoneNumber/rate/premium/roomCount/
+  //          createdAt/lastUpdatedPremium/deletedAt/fcmToken/fcmTokenUpdatedAt/profileImageUrl
   Map<String, dynamic> toMap() {
     Timestamp? _ts(DateTime? d) => d != null ? Timestamp.fromDate(d) : null;
 

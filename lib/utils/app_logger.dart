@@ -7,6 +7,19 @@ import 'package:intl/intl.dart';
 /// アプリケーション全体のログ管理クラス
 ///
 /// コンソール出力（print + developer.log）とファイル出力の両方をサポート
+///
+/// 共通方針（ログレベル使い分け）:
+/// - debug: 詳細な開発調査ログ。開発時の追跡用で、本番運用判断には使わない。
+/// - info: 通常フローの状態変化。開始/終了/画面表示などの定常イベント。
+/// - warning: 処理継続は可能だが要注意な状態。後続調査が必要な兆候。
+/// - error: 失敗や例外を伴う異常。必ず error/stackTrace とセットで記録する。
+/// - success: 完了通知。内部的には info レベルとして保存し、可読性向上のため
+///   メソッドを分ける。
+///
+/// 主要呼び出し元:
+/// - services: API 呼び出し、外部連携、ユースケース処理。
+/// - repositories: 永続化操作（Firestore/DB/Cache）の成功・失敗。
+/// - routes/navigation: 画面遷移イベント（`NavigationLogger` 経由）。
 class AppLogger {
   static final AppLogger _instance = AppLogger._internal();
   factory AppLogger() => _instance;

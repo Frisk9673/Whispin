@@ -3,7 +3,17 @@ import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';
 
-/// チャットルームデータのリポジトリ
+/// チャットルームデータのリポジトリ。
+///
+/// 対象コレクション: `AppConstants.roomsCollection`
+/// 提供クエリの目的:
+/// - ステータス別ルーム一覧の取得
+/// - 特定ユーザー参加ルームの特定
+/// - 参加可能/期限切れルームの抽出
+///
+/// 利用方針:
+/// - Service 層経由で利用する前提
+/// - UI から直接参照しない
 class ChatRoomRepository extends BaseRepository<ChatRoom> {
   static const String _logName = 'ChatRoomRepository';
 
@@ -80,6 +90,7 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: 単一whereで待機中ルームを取得し、追加条件はアプリ側で絞り込む。
           .where('status', isEqualTo: AppConstants.roomStatusWaiting)
           .get();
 
@@ -126,6 +137,7 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
     logger.start('joinRoom($roomId, $userId) 開始', name: _logName);
 
     try {
+      // 次は findById() でルーム占有状況確認の取得処理へ渡す。
       final room = await findById(roomId);
       if (room == null) {
         throw Exception('ルームが見つかりません: $roomId');
@@ -277,6 +289,8 @@ class ChatRoomRepository extends BaseRepository<ChatRoom> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: status で先に絞り込み、期限判定はアプリ側で実施。
+          // expiresAt が String 保存のため、Firestore側での範囲比較クエリは使わない。
           .where('status', isEqualTo: AppConstants.roomStatusActive)
           .get();
 

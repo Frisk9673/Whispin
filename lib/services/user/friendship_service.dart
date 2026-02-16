@@ -248,6 +248,7 @@ class FriendshipService {
     logger.debug('getUserFriends($userId)', name: _logName);
 
     try {
+      // 次は FriendshipRepository.findUserFriends() で永続層クエリ処理へ渡す。
       final friends = await _friendshipRepository.findUserFriends(userId);
       logger.success('フレンド数: ${friends.length}人', name: _logName);
       return friends;

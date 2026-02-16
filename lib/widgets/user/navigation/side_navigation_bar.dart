@@ -8,6 +8,8 @@ import '../../../extensions/context_extensions.dart';
 /// Web/デスクトップ用サイドナビゲーションバー
 class AppSideNavigationBar extends StatelessWidget {
   final int currentIndex;
+
+  /// ルート遷移の実行責務は親に委譲し、このWidgetは選択index通知のみを担当する。
   final ValueChanged<int> onTap;
   final bool isCollapsed;
   final VoidCallback onToggleCollapse;
@@ -59,6 +61,7 @@ class AppSideNavigationBar extends StatelessWidget {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
+                      // 画面遷移自体は親が実施し、ここではタップ結果のみ通知する。
                       onTap: () => onTap(index),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(

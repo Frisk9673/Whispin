@@ -8,6 +8,7 @@ import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 
+// 対象業務: ログ閲覧（プレミアム利用ログの検索・確認）
 class PremiumLogListScreen extends StatefulWidget {
   const PremiumLogListScreen({super.key});
 
@@ -51,6 +52,10 @@ class _PremiumLogListScreenState extends State<PremiumLogListScreen> {
     context.showSuccessSnackBar('全件表示に戻しました');
   }
 
+  // 共通部品化判断基準:
+  // - 検索フォーム + 結果一覧の構成がユーザー向け履歴画面でも同一
+  // - 管理者限定の列（内部IDや監査情報）に依存しない
+  // 条件を満たす場合は widgets/common への移行を検討する。
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PremiumLogProvider>();

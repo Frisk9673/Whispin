@@ -1,3 +1,14 @@
+/// FriendRequest は、ユーザー間のフレンド申請状態を表すモデル。
+/// 主に `friend_requests` コレクションで承認/拒否ワークフローに利用する。
+///
+/// フォーマット規約:
+/// - ID (`id`, `senderId`, `receiverId`) は User.id 準拠の文字列。
+/// - 日付 (`createdAt`, `respondedAt`) は ISO8601 文字列で保存。
+/// - 列挙相当値 (`status`) は 'pending' | 'accepted' | 'rejected'。
+///
+/// 関連モデル:
+/// - User (`lib/models/user/user.dart`) 間の申請関係を表現する。
+/// - Friendship (`lib/models/user/friendship.dart`) の前段状態を表現する。
 class FriendRequest {
   final String id;
   final String senderId;
@@ -15,6 +26,7 @@ class FriendRequest {
     this.respondedAt,
   });
 
+  // toMap: 必須キー=id/senderId/receiverId/status/createdAt, 任意キー=respondedAt, デフォルト値=なし
   Map<String, dynamic> toMap() => {
         'id': id,
         'senderId': senderId,
@@ -24,6 +36,7 @@ class FriendRequest {
         'respondedAt': respondedAt?.toIso8601String(),
       };
 
+  // fromMap: 必須キー=id/senderId/receiverId/status/createdAt, 任意キー=respondedAt, デフォルト値=respondedAt:null
   factory FriendRequest.fromMap(Map<String, dynamic> json) => FriendRequest(
         id: json['id'] as String,
         senderId: json['senderId'] as String,

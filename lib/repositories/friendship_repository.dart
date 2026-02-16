@@ -4,7 +4,17 @@ import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';
 
-/// フレンドシップデータのリポジトリ
+/// フレンドシップデータのリポジトリ。
+///
+/// 対象コレクション: `AppConstants.friendshipsCollection`
+/// 提供クエリの目的:
+/// - ユーザーのフレンド関係（双方向）取得
+/// - 2ユーザー間のフレンド成立判定
+/// - フレンド関係の非アクティブ化
+///
+/// 利用方針:
+/// - Service 層経由で利用する前提
+/// - UI から直接参照しない
 class FriendshipRepository extends BaseRepository<Friendship> {
   static const String _logName = 'FriendshipRepository';
 
@@ -26,12 +36,15 @@ class FriendshipRepository extends BaseRepository<Friendship> {
     logger.debug('findUserFriends($userId)', name: _logName);
 
     try {
+      // 次は Firestore.collection.where(...).get() で Friendship 実データ取得へ渡す。
       final snapshot1 = await collection
+          // Firestore制約: 複合where（userId + active）は複合インデックス前提。
           .where('userId', isEqualTo: userId)
           .where('active', isEqualTo: true)
           .get();
 
       final snapshot2 = await collection
+          // Firestore制約: 複合where（friendId + active）は複合インデックス前提。
           .where('friendId', isEqualTo: userId)
           .where('active', isEqualTo: true)
           .get();
@@ -156,7 +169,17 @@ class FriendshipRepository extends BaseRepository<Friendship> {
   }
 }
 
-/// フレンドリクエストのリポジトリ（相互承認機能付き）
+/// フレンドリクエストのリポジトリ（相互承認機能付き）。
+///
+/// 対象コレクション: `AppConstants.friendRequestsCollection`
+/// 提供クエリの目的:
+/// - 受信/送信リクエストの検索
+/// - 重複/相互リクエストの判定
+/// - 承認・拒否ステータス更新
+///
+/// 利用方針:
+/// - Service 層経由で利用する前提
+/// - UI から直接参照しない
 class FriendRequestRepository extends BaseRepository<FriendRequest> {
   static const String _logName = 'FriendRequestRepository';
 
@@ -295,6 +318,8 @@ class FriendRequestRepository extends BaseRepository<FriendRequest> {
     String receiverId,
   ) async {
     final snap = await collection
+        // Firestore制約: senderId + receiverId + status の3条件whereは
+        // 複合インデックス前提。未作成時はコンソール提示リンクで作成すること。
         .where('senderId', isEqualTo: senderId)
         .where('receiverId', isEqualTo: receiverId)
         .where(

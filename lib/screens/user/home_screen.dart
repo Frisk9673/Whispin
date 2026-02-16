@@ -26,6 +26,10 @@ import 'room_create_screen.dart';
 import 'friend_list_screen.dart';
 import 'block_list_screen.dart';
 
+/// 画面概要:
+/// - 目的: ルーム一覧と主要ナビゲーションを提供するユーザーホーム。
+/// - 主な操作: ルーム一覧取得、画面タブ切替、ルーム参加導線。
+/// - 依存Provider/Service: UserProvider, ChatService, StorageService, UserRepository, BlockRepository。
 class HomeScreen extends StatefulWidget {
   final AuthService authService;
   final StorageService storageService;
@@ -51,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+    // initState の責務: 初期表示に必要なルーム一覧読み込みを開始する。
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoadUserData();
@@ -97,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadRandomRooms() async {
+    // 非同期ロード開始時は _isLoadingRooms=true でプレースホルダー表示、失敗時は SnackBar で通知する。
     logger.section('ランダムルーム読み込み開始', name: _logName);
     
     setState(() => _isLoadingRooms = true);
@@ -202,6 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  // build の責務: ナビゲーションレイアウトと各タブコンテンツを状態に応じて描画する。
+  // didChangeDependencies は不要のため未実装。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final isDark = context.isDark;

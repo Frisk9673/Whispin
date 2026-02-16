@@ -64,6 +64,7 @@ class ChatService {
 
       // ===== ステップ2: 全ルームを取得 =====
       logger.start('全ルーム取得中...', name: _logName);
+      // 次は ChatRoomRepository.findAll() でルーム一覧の永続層取得へ渡す。
       final allRooms = await _roomRepository.findAll();
       logger.success('全ルーム数: ${allRooms.length}件', name: _logName);
 
@@ -157,6 +158,7 @@ class ChatService {
 
       // Repository経由で参加可能なルームを取得
       logger.start('参加可能なルーム取得中...', name: _logName);
+      // 次は ChatRoomRepository.findJoinableRooms() で参加可能ルーム取得へ渡す。
       final rooms = await _roomRepository.findJoinableRooms(
         excludeUserId: currentUserId,
       );
@@ -217,6 +219,7 @@ class ChatService {
     try {
       // ===== 1. ルームに参加 =====
       logger.start('Repository経由でルーム参加中...', name: _logName);
+      // 次は ChatRoomRepository.joinRoom() で参加反映の永続化へ渡す。
       await _roomRepository.joinRoom(roomId, currentUserId);
       logger.success('ルーム参加成功', name: _logName);
 
@@ -296,7 +299,7 @@ class ChatService {
       comment2: '',
     );
 
-    // Repository経由でFirestoreに保存
+    // 次は ChatRoomRepository.create() で新規ルーム永続化へ渡す。
     await _roomRepository.create(newRoom, id: roomId);
 
     logger.success('ルーム作成完了: $roomId', name: _logName);
@@ -314,7 +317,7 @@ class ChatService {
     logger.info('roomId: $roomId', name: _logName);
     logger.info('userId: $currentUserId', name: _logName);
 
-    // Repository経由でルーム取得
+    // 次は ChatRoomRepository.findById() で対象ルーム取得へ渡す。
     final room = await _roomRepository.findById(roomId);
 
     if (room == null) {

@@ -3,7 +3,17 @@ import '../constants/app_constants.dart';
 import 'base_repository.dart';
 import '../utils/app_logger.dart';
 
-/// ブロックデータのリポジトリ
+/// ブロックデータのリポジトリ。
+///
+/// 対象コレクション: `AppConstants.blocksCollection`
+/// 提供クエリの目的:
+/// - ブロックした/された関係の検索
+/// - 2ユーザー間のブロック有無確認
+/// - ブロック状態の有効化/無効化
+///
+/// 利用方針:
+/// - Service 層経由で利用する前提
+/// - UI から直接参照しない
 class BlockRepository extends BaseRepository<Block> {
   static const String _logName = 'BlockRepository';
 
@@ -26,6 +36,7 @@ class BlockRepository extends BaseRepository<Block> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: 複合where（blockerId + active）は複合インデックス前提。
           .where('blockerId', isEqualTo: blockerId)
           .where('active', isEqualTo: true)
           .get();
@@ -47,6 +58,7 @@ class BlockRepository extends BaseRepository<Block> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: 複合where（blockedId + active）は複合インデックス前提。
           .where('blockedId', isEqualTo: blockedId)
           .where('active', isEqualTo: true)
           .get();
@@ -68,6 +80,7 @@ class BlockRepository extends BaseRepository<Block> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: 3条件where（blockerId/blockedId/active）は複合インデックス前提。
           .where('blockerId', isEqualTo: blockerId)
           .where('blockedId', isEqualTo: blockedId)
           .where('active', isEqualTo: true)

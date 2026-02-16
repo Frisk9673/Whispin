@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../screens/admin/admin_home_screen.dart';
 import '../../utils/app_logger.dart';
 
+/// 管理者権限前提: administrator コレクションで許可されたアカウントのみ利用可能。
+/// セッション管理方針: セッション本体は FirebaseAuth に一元管理し、本サービスは管理者権限の検証のみ追加実施。
 class AdminLoginService {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
@@ -15,7 +17,7 @@ class AdminLoginService {
     logger.info('入力メール: $email', name: _logName);
 
     try {
-      // Firebase Auth ログイン
+      // user auth と共通で FirebaseAuth ログインを行うが、管理画面保護のためこの後に管理者判定を必須化する。
       logger.start('FirebaseAuth にログイン中...', name: _logName);
 
       final credential = await _auth.signInWithEmailAndPassword(
@@ -26,6 +28,7 @@ class AdminLoginService {
       logger.success('Auth ログイン成功: UID=${credential.user?.uid}',
           name: _logName);
 
+      // user auth との差分理由: 一般ユーザーは User 情報確認が中心だが、管理者は administrator 登録の存在確認で権限制御する。
       // Firestore 管理者チェック
       logger.start('Firestore administrator/$email を確認中...', name: _logName);
 

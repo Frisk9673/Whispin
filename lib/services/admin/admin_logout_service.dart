@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/app_logger.dart';
 
+/// 管理者権限前提: 管理者画面セッションの終了処理専用サービス。
+/// セッション管理方針: ログアウトは FirebaseAuth.signOut() を唯一のセッション破棄手段として扱う。
 class AdminLogoutService {
   final _auth = FirebaseAuth.instance;
   static const String _logName = 'AdminLogoutService';
@@ -17,6 +19,7 @@ class AdminLogoutService {
         logger.info('ログアウト対象 UID: ${currentUser.uid}', name: _logName);
       }
 
+      // user logout と共通で signOut を使うが、差分理由: 管理者セッションは誤保持の影響が大きいため明示ログを強化する。
       logger.start('FirebaseAuth.signOut() を実行します...', name: _logName);
       await _auth.signOut();
 

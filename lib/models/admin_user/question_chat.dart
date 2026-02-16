@@ -1,5 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// QuestionChat は、ユーザー問い合わせスレッドのメタ情報を表すモデル。
+/// 主に `question_chats` コレクションで問い合わせ進行管理に利用する。
+///
+/// フォーマット規約:
+/// - ID (`id`, `userId`, `adminId`) は文字列 ID（`userId` は User.id を参照）。
+/// - 日付 (`updatedAt`) は Firestore Timestamp。
+/// - 列挙相当値 (`status`) は 'pending' | 'in_progress' | 'resolved'。
+///
+/// 関連モデル:
+/// - User (`lib/models/user/user.dart`) の問い合わせ主体を参照する。
+/// - Administrator (`lib/models/admin/administrator.dart`) の担当者を参照する。
+/// - Message (`lib/models/admin_user/question_message.dart`) を子メッセージとして持つ。
 class QuestionChat {
   final String id;
   final String userId;
@@ -17,6 +29,8 @@ class QuestionChat {
     this.status = 'pending',
   });
 
+  // fromFirestore(fromMap 相当): 必須キー=UserID, 任意キー=AdminID/LastMessage/UpdatedAt/Status
+  // デフォルト値=lastMessage:'', status:'pending'
   factory QuestionChat.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return QuestionChat(

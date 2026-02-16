@@ -20,6 +20,7 @@ class ChatProvider extends ChangeNotifier {
     loading = true;
     notifyListeners();
 
+    // 次は QuestionChatService.createOrGetChat() で問い合わせチャット作成/取得へ渡す。
     chatId = await _service.createOrGetChat();
 
     loading = false;
@@ -49,6 +50,7 @@ class ChatProvider extends ChangeNotifier {
         ? 'admin'
         : 'user';
 
+    // 次は QuestionChatService.sendMessage() で問い合わせメッセージ保存処理へ渡す。
     await _service.sendMessage(
       chatId: chatId!,
       text: text,

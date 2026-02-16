@@ -1,5 +1,17 @@
 import 'dart:convert';
 
+/// ChatRoom は、ユーザー同士の会話セッション（部屋）を表すモデル。
+/// 主に `chat_rooms` コレクションで、マッチング後の会話状態管理に利用する。
+///
+/// フォーマット規約:
+/// - ID (`id`, `id1`, `id2`) は文字列 ID（`id1/id2` は User.id を参照）。
+/// - 日付 (`startedAt`, `expiresAt`) は ISO8601 文字列で保存。
+/// - 列挙相当値 (`status`) は 0=待機, 1=会話, 2=終了 の整数コード。
+///
+/// 関連モデル:
+/// - User (`lib/models/user/user.dart`) の参加関係を保持する。
+/// - ExtensionRequest (`lib/models/user/extension_request.dart`) の対象 roomId になる。
+/// - Invitation (`lib/models/user/invitation.dart`) の対象 roomId になる。
 class ChatRoom {
   final String id; // roomId (Primary Key)
   final String topic; // 話題 (formerly 'name')
@@ -49,6 +61,8 @@ class ChatRoom {
   bool get isPrivate => private;
   bool get isPublic => !private;
 
+  // toMap: 必須キー=id/topic/status/id1/extensionCount/extension/startedAt/expiresAt/private
+  // 任意キー=id2/comment1/comment2, デフォルト値=status:0, extensionCount:0, extension:2, private:false
   Map<String, dynamic> toMap() => {
         'id': id,
         'topic': topic,
@@ -65,6 +79,8 @@ class ChatRoom {
         'name': topic,
       };
 
+  // fromMap: 必須キー=id/id1 (topic は未指定時 ''), 任意キー=id2/comment1/comment2/expiresAt/private
+  // デフォルト値=status:0, extensionCount:0, extension:2, startedAt:createdAt or now, expiresAt:startedAt+10min
   factory ChatRoom.fromMap(Map<String, dynamic> json) {
     final startedAt = json['startedAt'] != null
         ? DateTime.parse(json['startedAt'] as String)

@@ -140,6 +140,7 @@ class _AdminQuestionListScreenState extends State<AdminQuestionListScreen> {
       child: InkWell(
         onTap: () {
           logger.info('チャットタップ: ${chat.id}', name: _logName);
+          // 次は AdminQuestionChatScreen へ遷移し、AdminProvider 経由でサービス処理へ渡す。
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => AdminQuestionChatScreen(chatId: chat.id),

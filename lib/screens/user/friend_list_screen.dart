@@ -11,6 +11,10 @@ import '../../constants/responsive.dart';
 import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// 画面概要:
+/// - 目的: フレンド一覧の参照と解除/ブロック操作を提供する。
+/// - 主な操作: フレンド一覧読み込み、解除確認、ブロック実行。
+/// - 依存Provider/Service: FriendshipService, UserRepository, BlockRepository, FirebaseAuth。
 class FriendListScreen extends StatefulWidget {
   const FriendListScreen({super.key});
 
@@ -31,6 +35,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   @override
   void initState() {
+    // initState の責務: 依存Serviceを解決し、初回のフレンド取得を開始する。
     super.initState();
     _friendshipService = context.read<FriendshipService>();
     _loadFriends();
@@ -39,6 +44,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Future<void> _loadFriends() async {
     logger.section('_loadFriends() 開始', name: _logName);
 
+    // 非同期取得開始時はローディング表示へ切替、失敗時は SnackBar で通知する。
     if (!mounted) return;
     setState(() => _isLoading = true);
 
@@ -54,6 +60,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
       final currentUserEmail = currentUser.email!;
 
       logger.start('Service経由でフレンド一覧取得中...', name: _logName);
+      // 次は FriendshipService.getUserFriends() でフレンド取得ロジックへ渡す。
       final friendships =
           await _friendshipService.getUserFriends(currentUserEmail);
 
@@ -325,6 +332,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
   }
 
   @override
+  // build の責務: ローディング/空状態/一覧のUIを状態に応じて切り替える。
+  // didChangeDependencies は不要のため未実装（依存は initState で確定）。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;

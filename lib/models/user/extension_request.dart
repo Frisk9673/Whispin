@@ -1,3 +1,14 @@
+/// ExtensionRequest は、ChatRoom の会話時間延長リクエストを表すモデル。
+/// 主に `extension_requests` コレクションで延長承認フローに利用する。
+///
+/// フォーマット規約:
+/// - ID (`id`, `roomId`, `requesterId`) は文字列 ID（`roomId` は ChatRoom.id、`requesterId` は User.id）。
+/// - 日付 (`createdAt`) は ISO8601 文字列で保存。
+/// - 列挙相当値 (`status`) は 'pending' | 'approved' | 'rejected'。
+///
+/// 関連モデル:
+/// - ChatRoom (`lib/models/user/chat_room.dart`) の延長要求を表現する。
+/// - User (`lib/models/user/user.dart`) の操作履歴を表現する。
 class ExtensionRequest {
   final String id; // Unique request ID
   final String roomId; // Room ID
@@ -13,6 +24,7 @@ class ExtensionRequest {
     required this.createdAt,
   });
 
+  // toMap: 必須キー=id/roomId/requesterId/status/createdAt, 任意キー=なし, デフォルト値=status:'pending'
   Map<String, dynamic> toMap() => {
         'id': id,
         'roomId': roomId,
@@ -21,6 +33,7 @@ class ExtensionRequest {
         'createdAt': createdAt.toIso8601String(),
       };
 
+  // fromMap: 必須キー=id/roomId/requesterId/createdAt, 任意キー=status, デフォルト値=status:'pending'
   factory ExtensionRequest.fromMap(Map<String, dynamic> json) =>
       ExtensionRequest(
         id: json['id'] as String,

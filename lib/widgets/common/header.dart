@@ -10,9 +10,13 @@ import '../../constants/routes.dart';
 import '../../constants/responsive.dart';
 import '../../utils/app_logger.dart';
 
-/// レスポンシブ対応の統一ヘッダーコンポーネント（ダークモード対応版）
+/// レスポンシブ対応の統一ヘッダーコンポーネント（ダークモード対応版）。
 ///
-/// 通知数は NotificationCacheService のキャッシュを経由し、
+/// - 汎用用途: user/admin 共通で使う画面上部ヘッダー（タイトル・通知・プロフィール導線）。
+/// - 依存テーマ: `AppColors` / `AppTextStyles` と Material `AppBar` の配色前提。
+/// - 禁止用途: 業務固有のKPI表示やロール専用操作をこのコンポーネントに直接追加しない。
+///
+/// 通知数は `NotificationCacheService` のキャッシュを経由し、
 /// 画面遷移時に再取得・5分ごとに自動リフレッシュする。
 class CommonHeader extends StatefulWidget implements PreferredSizeWidget {
   final String title;

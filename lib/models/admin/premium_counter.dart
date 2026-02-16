@@ -4,6 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// 
 /// Firestoreの単一ドキュメントで管理
 /// ID: 'counter' (固定)
+/// 主に `premium_counter/counter` ドキュメント用途。
+///
+/// フォーマット規約:
+/// - ID は固定ドキュメントID `'counter'` を運用。
+/// - 日付 (`lastUpdated`) は Firestore Timestamp / ISO8601 を許容。
+/// - 列挙相当値はなし。
+///
+/// 関連モデル:
+/// - AdminPageState (`lib/models/admin/admin_home_model.dart`) の表示値ソースとなる。
 class PremiumCounter {
   final int count;
   final DateTime lastUpdated;
@@ -13,6 +22,7 @@ class PremiumCounter {
     required this.lastUpdated,
   });
 
+  // fromMap: 必須キー=なし, 任意キー=count/lastUpdated, デフォルト値=count:0, lastUpdated:now
   factory PremiumCounter.fromMap(Map<String, dynamic> map) {
     DateTime _toDate(dynamic v) {
       if (v == null) return DateTime.now();
@@ -27,6 +37,7 @@ class PremiumCounter {
     );
   }
 
+  // toMap: 必須キー=count/lastUpdated, 任意キー=なし, デフォルト値=なし
   Map<String, dynamic> toMap() {
     return {
       'count': count,

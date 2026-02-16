@@ -1,9 +1,13 @@
-/// List型の拡張メソッド
+/// List型向けの拡張メソッド。
+///
+/// 主用途: コレクションの安全アクセス。
+/// 区分: ドメイン向け（Repository/Serviceでの取得補助）中心。
 extension ListExtensions<T> on List<T> {
   // ===== 安全なアクセス =====
 
   /// 安全にインデックスアクセス（範囲外の場合はnull）
-  /// 
+  /// 境界条件: 空配列・負のindex・length以上のindexは `null` を返す。
+  ///
   /// 使用箇所:
   /// - Repository層でのデータ取得
   T? getOrNull(int index) {
@@ -12,7 +16,8 @@ extension ListExtensions<T> on List<T> {
   }
 
   /// 安全に最初の要素を取得
-  /// 
+  /// 境界条件: 空配列の場合は `null` を返す。
+  ///
   /// 使用箇所:
   /// - Service層でのデータ検索
   T? get firstOrNull {
@@ -20,7 +25,8 @@ extension ListExtensions<T> on List<T> {
   }
 
   /// 安全に最後の要素を取得
-  /// 
+  /// 境界条件: 空配列の場合は `null` を返す。
+  ///
   /// 使用箇所:
   /// - Service層でのデータ検索
   T? get lastOrNull {
@@ -28,7 +34,9 @@ extension ListExtensions<T> on List<T> {
   }
 
   /// 条件に一致する最初の要素を取得（見つからない場合はnull）
-  /// 
+  /// 境界条件: 空配列、または一致要素なしの場合は `null` を返す。
+  /// 例: `users.firstWhereOrNull((u) => u.id == targetId)`。
+  ///
   /// 使用箇所:
   /// - Repository層での条件検索
   /// - Service層でのフィルタリング

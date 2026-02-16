@@ -4,6 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 ///
 /// ユーザーがルームに他のユーザーを招待する際に使用されます。
 /// 招待はペンディング状態から承認または拒否されます。
+/// 主に `invitations` コレクションで利用されます。
+///
+/// フォーマット規約:
+/// - ID (`id`, `roomId`, `inviterId`, `inviteeId`) は文字列 ID。
+/// - 日付 (`createdAt`, `respondedAt`, `expiresAt`) は Firestore Timestamp / ISO8601 を許容。
+/// - 列挙相当値 (`status`) は 'pending' | 'accepted' | 'rejected' | 'expired'。
+///
+/// 関連モデル:
+/// - ChatRoom (`lib/models/user/chat_room.dart`) への参加招待を表す。
+/// - User (`lib/models/user/user.dart`) の招待者/被招待者を参照する。
 class Invitation {
   final String id; // 招待ID (Primary Key)
   final String roomId; // ルームID
@@ -47,6 +57,9 @@ class Invitation {
   // ===== Firestore / JSON 変換 =====
 
   /// Firestore & JSON 対応の toMap
+  /// - 必須キー: id/roomId/inviterId/inviteeId/status/createdAt/expiresAt
+  /// - 任意キー: respondedAt
+  /// - デフォルト値: status:'pending', expiresAt:createdAt+24h
   Map<String, dynamic> toMap() {
     Timestamp? _ts(DateTime? d) => d != null ? Timestamp.fromDate(d) : null;
 
@@ -63,6 +76,9 @@ class Invitation {
   }
 
   /// Firestore & JSON 対応の fromMap
+  /// - 必須キー: id/roomId/inviterId/inviteeId（欠損時は空文字）
+  /// - 任意キー: status/createdAt/respondedAt/expiresAt
+  /// - デフォルト値: status:'pending', createdAt:now, expiresAt:now+24h
   factory Invitation.fromMap(Map<String, dynamic> map) {
     DateTime? _toDate(dynamic v) {
       if (v == null) return null;

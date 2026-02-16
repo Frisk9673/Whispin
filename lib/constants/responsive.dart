@@ -157,12 +157,15 @@ extension ResponsiveContext on BuildContext {
   String get deviceInfo => ResponsiveHelper.getDeviceInfo(this);
 }
 
+/// ===== レイアウト系（レスポンシブ判定と寸法計算） =====
+
 /// レスポンシブデザインのブレークポイント定数
 class ResponsiveBreakpoints {
   // プライベートコンストラクタ
   ResponsiveBreakpoints._();
 
   /// モバイルの上限（600px未満）
+  // 600px未満をスマホ扱いにすると一般的な縦持ち端末を過不足なく包含できる。
   static const double mobile = 600;
 
   /// タブレットの上限（900px未満）
@@ -172,6 +175,7 @@ class ResponsiveBreakpoints {
   static const double desktop = 900;
 
   /// 大画面デスクトップの下限（1200px以上）
+  // 1200px以上で余白設計を広げると情報密度を落とさず横幅を活かせる。
   static const double largeDesktop = 1200;
 }
 
@@ -301,6 +305,7 @@ class ResponsiveHelper {
     double? tablet,
     double? desktop,
   }) {
+    // 16/24/32 は8pxグリッドを維持しつつ端末サイズごとの余白不足を防ぐための段階値。
     final value = getResponsiveValue(
       context,
       mobile: mobile ?? 16,
@@ -317,6 +322,7 @@ class ResponsiveHelper {
     double? tablet,
     double? desktop,
   }) {
+    // 横方向は情報が詰まりやすいため、端末に応じて余白を段階的に広げる。
     final value = getResponsiveValue(
       context,
       mobile: mobile ?? 16,
@@ -333,6 +339,7 @@ class ResponsiveHelper {
     double? tablet,
     double? desktop,
   }) {
+    // 縦方向も同じスケールを使い、スクロール時のリズムを崩さない。
     final value = getResponsiveValue(
       context,
       mobile: mobile ?? 16,

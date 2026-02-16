@@ -1,3 +1,17 @@
+/// [責務]
+/// - Firebase Core/Auth/Firestore/Storage の初期化と、必要に応じたエミュレーター接続を一元管理する。
+///
+/// [初期化タイミング]
+/// - `main.dart` の起動シーケンス内で `Environment.loadFromEnv()` 実行後に
+///   `FirebaseConfig.initialize()` を呼び出す前提。
+///
+/// [例外時の扱い]
+/// - Core 初期化失敗時: 例外をログ出力後に `rethrow` し、起動側で失敗を検知できるようにする。
+/// - エミュレーター設定失敗時: 警告ログのみ出力して処理を継続する（致命扱いにしない）。
+///
+/// [主要参照元（import）]
+/// - `lib/main.dart`
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

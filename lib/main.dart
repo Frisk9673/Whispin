@@ -1,3 +1,10 @@
+// アプリ起動フロー概要:
+// 1) .env/Environment初期化
+// 2) Firebase初期化
+// 3) 各Service初期化
+// 4) Repository初期化
+// 5) Provider登録
+// 6) runApp実行
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +41,8 @@ import 'utils/app_logger.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // このハンドラーはバックグラウンド isolate 上で実行されるため、
+  // UI操作やBuildContextへのアクセスは不可。必要最小限の初期化と処理のみ行う。
   if (kIsWeb) return;
 
   await Firebase.initializeApp(
@@ -45,32 +54,33 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> main() async {
+  // Flutterエンジンを初期化し、以降の非同期セットアップを安全に実行できる状態にする。
   WidgetsFlutterBinding.ensureInitialized();
 
-  // .env読み込み
+  // 設定値の初期化: .envを読み込み、Environmentへ反映して以降の初期化が参照できるようにする。
   await dotenv.load(fileName: '.env');
   Environment.loadFromEnv();
   Environment.printConfiguration();
 
-  // Firebase初期化
+  // Firebase基盤の初期化: FCMや認証などFirebase依存サービス利用前に必須。
   await FirebaseConfig.initialize();
 
-  // FCMバックグラウンドハンドラー登録
+  // FCM受信処理の登録: Firebase初期化後に、バックグラウンド通知のハンドラーを紐付ける。
   if (!kIsWeb) {
     FirebaseMessaging.onBackgroundMessage(
       firebaseMessagingBackgroundHandler,
     );
   }
 
-  // 日付フォーマット初期化
+  // ロケール依存機能の初期化: 日付表示で日本語フォーマットを使用するため事前準備する。
   await initializeDateFormatting('ja_JP', null);
 
-  // ログシステムの初期化
+  // ログ基盤の初期化: 起動後の各レイヤー初期化ログを正しく記録するため先に有効化する。
   await logger.initialize();
 
   logger.section('🚀 Whispin アプリ起動中...', name: 'Main');
 
-  // Services層の初期化
+  // Service層の基盤初期化: 永続化・認証・通知など、Repository/Providerが依存する実処理を生成する。
   logger.start('Services 初期化中...', name: 'Main');
   final storageService = FirestoreStorageService();
   await storageService.initialize();
@@ -82,11 +92,11 @@ Future<void> main() async {
 
   final chatService = ChatService(storageService);
 
-  // FCMサービスの初期化
+  // 通知サービス初期化: FCMを有効化し、招待通知などの受信処理に備える。
   final fcmService = FCMService();
   await fcmService.initialize();
 
-  // 招待サービスの初期化
+  // 起動時招待導線の初期化: Storage/Invitation/FCMを束ねて、起動後チェックで利用可能にする。
   final invitationService = InvitationService(storageService);
   final startupInvitationService = StartupInvitationService(
     storageService: storageService,
@@ -94,13 +104,13 @@ Future<void> main() async {
     fcmService: fcmService,
   );
 
-  // ThemeProviderの初期化
+  // UI設定の初期化: runApp前にテーマ状態を読み込み、初期描画へ即時反映できるようにする。
   final themeProvider = ThemeProvider();
   await themeProvider.initialize();
 
   logger.success('Services 初期化完了', name: 'Main');
 
-  // Repository層の初期化
+  // Repository層の初期化: データアクセス窓口を生成し、上位Service/Providerへ注入可能にする。
   logger.start('Repositories 初期化中...', name: 'Main');
   final userRepository = UserRepository();
   final friendshipRepository = FriendshipRepository();
@@ -110,7 +120,7 @@ Future<void> main() async {
 
   logger.success('Repositories 初期化完了', name: 'Main');
 
-  // Service層の初期化
+  // ドメインServiceの初期化: Repositoryを組み合わせたユースケース処理を構築する。
   logger.start('FriendshipService 初期化中...', name: 'Main');
   final friendshipService = FriendshipService(
     friendshipRepository: friendshipRepository,
@@ -134,38 +144,39 @@ Future<void> main() async {
 
   logger.section('✨ アプリ起動準備完了！', name: 'Main');
 
+  // Provider登録とrunApp: 画面層が必要な状態/サービスへアクセスできるよう依存性を配線して起動する。
   runApp(
     MultiProvider(
       providers: [
         // Providers
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()), // チャット一覧/トーク画面の状態管理
         ChangeNotifierProvider(
-          create: (_) => UserProvider(userRepository: userRepository),
+          create: (_) => UserProvider(userRepository: userRepository), // プロフィール表示・ユーザー情報同期
         ),
         ChangeNotifierProvider(
-          create: (_) => AdminProvider(userRepository: userRepository),
+          create: (_) => AdminProvider(userRepository: userRepository), // 管理者向けユーザー管理機能
         ),
-        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider), // 全画面のライト/ダークテーマ切替
         Provider<NotificationCacheService>.value(
-            value: notificationCacheService),
+            value: notificationCacheService), // 通知バッジ/未処理通知キャッシュ参照
 
         // Services
-        Provider<StorageService>.value(value: storageService),
-        Provider<AuthService>.value(value: authService),
-        Provider<ChatService>.value(value: chatService),
-        Provider<FCMService>.value(value: fcmService),
-        Provider<InvitationService>.value(value: invitationService),
+        Provider<StorageService>.value(value: storageService), // ログイン状態・ユーザーデータの永続化
+        Provider<AuthService>.value(value: authService), // 認証フロー(ログイン/ログアウト/セッション管理)
+        Provider<ChatService>.value(value: chatService), // チャット送受信・履歴取得機能
+        Provider<FCMService>.value(value: fcmService), // Push通知登録・トークン管理
+        Provider<InvitationService>.value(value: invitationService), // 招待作成/承認など招待機能
         Provider<StartupInvitationService>.value(
-            value: startupInvitationService),
-        Provider<FriendshipService>.value(value: friendshipService),
-        Provider<BlockService>.value(value: blockService),
+            value: startupInvitationService), // アプリ起動時の招待処理導線
+        Provider<FriendshipService>.value(value: friendshipService), // フレンド申請/承認/解除機能
+        Provider<BlockService>.value(value: blockService), // ユーザーブロック/解除機能
 
         // Repositories
-        Provider<UserRepository>.value(value: userRepository),
-        Provider<FriendshipRepository>.value(value: friendshipRepository),
-        Provider<FriendRequestRepository>.value(value: friendRequestRepository),
-        Provider<ChatRoomRepository>.value(value: chatRoomRepository),
-        Provider<BlockRepository>.value(value: blockRepository),
+        Provider<UserRepository>.value(value: userRepository), // ユーザー情報取得・更新のデータアクセス
+        Provider<FriendshipRepository>.value(value: friendshipRepository), // フレンド関係データの永続化操作
+        Provider<FriendRequestRepository>.value(value: friendRequestRepository), // フレンド申請データの取得/更新
+        Provider<ChatRoomRepository>.value(value: chatRoomRepository), // チャットルーム一覧・メッセージ関連データ
+        Provider<BlockRepository>.value(value: blockRepository), // ブロック関係データの取得/更新
       ],
       child: MyApp(
         authService: authService,

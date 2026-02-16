@@ -10,6 +10,7 @@ import '../../constants/colors.dart';
 import '../../constants/text_styles.dart';
 import '../../utils/app_logger.dart';
 
+// 対象業務: 管理ハブ（質問管理/チャット監視/ログ閲覧への導線）
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
 

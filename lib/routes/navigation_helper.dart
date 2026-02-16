@@ -16,18 +16,21 @@ class NavigationHelper {
   // ===== Authentication Navigation =====
 
   /// ログイン画面へ遷移
+  /// 利用タイミング: ログアウト時 / セッション切れ時（ログイン後遷移ではなく再認証導線）
   static Future<void> toLogin(BuildContext context) {
     logger.navigation('current', 'Login', name: _logName);
     return AppRouter.navigateAndRemoveUntil(context, AppRoutes.login);
   }
 
   /// 新規登録画面へ遷移
+  /// 利用タイミング: 画面内遷移（ログイン画面→新規登録画面）
   static Future<void> toRegister(BuildContext context) {
     logger.navigation('current', 'Register', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.register);
   }
 
   /// 管理者ログイン画面へ遷移
+  /// 利用タイミング: 画面内遷移（一般導線から管理者導線へ切替）
   static Future<void> toAdminLogin(BuildContext context) {
     logger.navigation('current', 'AdminLogin', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.adminLogin);
@@ -36,6 +39,7 @@ class NavigationHelper {
   // ===== User Navigation =====
 
   /// ホーム画面へ遷移
+  /// 利用タイミング: ログイン後遷移（認証成功後の初期画面遷移）
   static Future<void> toHome(
     BuildContext context, {
     required AuthService authService,
@@ -54,6 +58,7 @@ class NavigationHelper {
   }
 
   /// プロフィール画面へ遷移
+  /// 利用タイミング: 画面内遷移（ホーム/設定などからの通常遷移）
   static Future<void> toProfile(BuildContext context) {
     logger.navigation('current', 'Profile', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.profile);
@@ -62,6 +67,7 @@ class NavigationHelper {
   // ===== Chat Navigation =====
 
   /// ルーム作成画面へ遷移
+  /// 利用タイミング: 画面内遷移（機能メニューからの通常遷移）
   static Future<void> toCreateRoom(
     BuildContext context, {
     required AuthService authService,
@@ -82,6 +88,7 @@ class NavigationHelper {
   }
 
   /// チャット画面へ遷移
+  /// 利用タイミング: 画面内遷移（ルーム選択後の遷移）
   static Future<void> toChat(
     BuildContext context, {
     required String roomId,
@@ -106,12 +113,14 @@ class NavigationHelper {
   // ===== Room Navigation =====
 
   /// 新しいルーム作成画面へ遷移（Firestore版）
+  /// 利用タイミング: 画面内遷移（Firestore導線からの遷移）
   static Future<void> toRoomCreate(BuildContext context) {
     logger.navigation('current', 'RoomCreate', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.createRoom);
   }
 
   /// ルーム参加画面へ遷移（Firestore版）
+  /// 利用タイミング: 画面内遷移（Firestore導線からの遷移）
   static Future<void> toRoomJoin(BuildContext context) {
     logger.navigation('current', 'RoomJoin', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.joinRoom);
@@ -120,12 +129,14 @@ class NavigationHelper {
   // ===== Friend Navigation =====
 
   /// フレンド一覧画面へ遷移
+  /// 利用タイミング: 画面内遷移（マイページ/メニューからの遷移）
   static Future<void> toFriendList(BuildContext context) {
     logger.navigation('current', 'FriendList', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.friendList);
   }
 
   /// ブロック一覧画面へ遷移
+  /// 利用タイミング: 画面内遷移（設定/フレンド管理からの遷移）
   static Future<void> toBlockList(BuildContext context) {
     logger.navigation('current', 'BlockList', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.blockList);
@@ -134,12 +145,14 @@ class NavigationHelper {
   // ===== Admin Navigation =====
 
   /// 管理者ホーム画面へ遷移
+  /// 利用タイミング: ログイン後遷移（管理者認証成功後の初期画面遷移）
   static Future<void> toAdminHome(BuildContext context) {
     logger.navigation('current', 'AdminHome', name: _logName);
     return AppRouter.navigateAndRemoveUntil(context, AppRoutes.adminHome);
   }
 
   /// プレミアムログ画面へ遷移
+  /// 利用タイミング: 画面内遷移（管理者ホームからの遷移）
   static Future<void> toPremiumLogs(BuildContext context) {
     logger.navigation('current', 'PremiumLogs', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.premiumLogs);
@@ -148,6 +161,7 @@ class NavigationHelper {
   // ===== Support Navigation =====
 
   /// お問い合わせチャット画面へ遷移
+  /// 利用タイミング: 画面内遷移（サポート導線からの遷移）
   static Future<void> toUserChat(BuildContext context) {
     logger.navigation('current', 'UserChat', name: _logName);
     return AppRouter.navigateTo(context, AppRoutes.userChat);

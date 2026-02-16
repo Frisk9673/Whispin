@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import 'app_logger.dart';
 
 /// ページ遷移をログに記録するNavigatorObserver
+///
+/// 共通方針（画面遷移ログの取得目的）:
+/// - デバッグ: 遷移順序やスタック状態を把握し、不具合再現を容易にする。
+/// - 監査: 重要画面への到達・離脱の記録を残し、運用時の追跡性を高める。
+///
+/// 個人情報配慮方針:
+/// - ルート名・画面識別子のみを記録し、氏名/メール/ID トークン等は出力しない。
+/// - クエリ文字列やフォーム入力値はログ化しない（必要時はマスクして記録）。
+/// - 監査用途でも、個人を直接特定できる値は扱わない。
+///
+/// 主要呼び出し元:
+/// - routes: `MaterialApp.navigatorObservers` へ登録して全遷移を自動収集。
+/// - services/repositories: 直接利用せず、遷移はルーティング層で集約管理。
 class NavigationLogger extends NavigatorObserver {
   static const String _logName = 'Navigation';
 

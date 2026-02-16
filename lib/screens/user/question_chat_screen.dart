@@ -8,6 +8,10 @@ import '../../extensions/datetime_extensions.dart';
 import '../../extensions/context_extensions.dart';
 import '../../constants/colors.dart';
 
+/// 画面概要:
+/// - 目的: ユーザーからの問い合わせチャットを表示・送信する。
+/// - 主な操作: チャット初期読み込み、メッセージ送信、スクロール追従。
+/// - 依存Provider/Service: ChatProvider, QuestionChatService, FirebaseFirestore。
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
 
@@ -22,7 +26,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
   @override
   void initState() {
+    // initState の責務: チャットセッションの初回ロードを開始する。
     super.initState();
+    // 次は ChatProvider.loadChat() でチャット作成/取得の状態管理処理へ渡す。
     Provider.of<ChatProvider>(context, listen: false).loadChat();
   }
 
@@ -46,16 +52,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
   }
 
   Future<void> _sendMessage() async {
+    // 非同期送信中のエラー表示方針は ChatProvider 側で統一し、この画面は送信トリガーに専念する。
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     final provider = Provider.of<ChatProvider>(context, listen: false);
+    // 次は ChatProvider.send() でメッセージ送信サービス呼び出しへ渡す。
     await provider.send(text);
     _controller.clear();
     _scrollToBottom();
   }
 
   @override
+  // build の責務: チャット準備中/本文表示を provider 状態で切り替えて描画する。
+  // didChangeDependencies は不要のため未実装。
   Widget build(BuildContext context) {
     final provider = Provider.of<ChatProvider>(context);
     final isDark = context.isDark;

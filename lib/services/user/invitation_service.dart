@@ -9,10 +9,16 @@ import '../../extensions/context_extensions.dart';
 import 'storage_service.dart';
 import '../../utils/app_logger.dart';
 
-/// 招待機能を管理するサービス（UI拡張版）
+/// 【担当ユースケース】
+/// - ルーム招待の送信/承認/拒否/期限切れ処理を一元管理する。
+/// - 起動時の招待提示は StartupInvitationService から本サービスを呼び出す。
 ///
-/// ユーザーがルームに他のユーザーを招待する機能を提供します。
-/// 招待の送信、承認、拒否、有効期限の管理を行います。
+/// 【依存するRepository/Service】
+/// - [StorageService]: 招待・ルームデータの参照と保存。
+///
+/// 【主な副作用（DB更新/通知送信）】
+/// - 招待ステータス更新、ルーム参加者更新を `save()` で永続化する。
+/// - 通知送信は行わない（通知トリガーは別サービス/FCM側）。
 class InvitationService {
   final StorageService _storageService;
   static const String _logName = 'InvitationService';
@@ -21,20 +27,10 @@ class InvitationService {
 
   // ===== 招待の作成 =====
 
-  /// 招待を送信
-  ///
-  /// [roomId] 招待先のルームID
-  /// [inviterId] 招待者のユーザーID
-  /// [inviteeId] 招待されるユーザーID
-  ///
-  /// 戻り値: 作成された Invitation
-  ///
-  /// エラー:
-  /// - ルームが存在しない
-  /// - ルームが満員
-  /// - 招待者がルームのメンバーでない
-  /// - 被招待者が既にルームのメンバー
-  /// - 被招待者へのペンディング招待が既に存在
+  /// 入力: [roomId], [inviterId], [inviteeId]。
+  /// 前提条件: 招待者がルーム参加中で、ルームに空きがあり、重複pending招待がないこと。
+  /// 成功時結果: pending 招待を作成し永続化した [Invitation] を返す。
+  /// 失敗時挙動: バリデーション違反時は例外を送出する。
   Future<Invitation> sendInvitation({
     required String roomId,
     required String inviterId,
@@ -127,7 +123,10 @@ class InvitationService {
 
   // ===== 招待の承認 =====
 
-  /// ルーム名を取得（招待表示用）
+  /// 入力: [roomId]。
+  /// 前提条件: roomId に対応するルームが存在すること。
+  /// 成功時結果: ルーム名(topic)を返す。
+  /// 失敗時挙動: ルーム未存在時は例外を送出する。
   Future<String> getRoomTopic(String roomId) async {
     logger.debug('getRoomTopic($roomId)', name: _logName);
 
@@ -139,18 +138,10 @@ class InvitationService {
     return room.topic;
   }
 
-  /// 招待を承認してルームに参加
-  ///
-  /// [invitationId] 招待ID
-  ///
-  /// 戻り値: 更新された ChatRoom
-  ///
-  /// エラー:
-  /// - 招待が見つからない
-  /// - 招待が既に処理済み
-  /// - 招待が期限切れ
-  /// - ルームが満員
-  /// - ルームが存在しない
+  /// 入力: [invitationId]。
+  /// 前提条件: 招待が pending かつ期限内で、対象ルームに空きがあること。
+  /// 成功時結果: 招待を accepted に更新し、被招待者をルームへ参加させた [ChatRoom] を返す。
+  /// 失敗時挙動: 条件不一致時は例外を送出し、更新は確定しない。
   Future<ChatRoom> acceptInvitation(String invitationId) async {
     logger.section('acceptInvitation() 開始', name: _logName);
     logger.info('invitationId: $invitationId', name: _logName);
@@ -259,13 +250,10 @@ class InvitationService {
 
   // ===== 招待の拒否 =====
 
-  /// 招待を拒否
-  ///
-  /// [invitationId] 招待ID
-  ///
-  /// エラー:
-  /// - 招待が見つからない
-  /// - 招待が既に処理済み
+  /// 入力: [invitationId]。
+  /// 前提条件: 対象招待が pending であること。
+  /// 成功時結果: 招待を rejected に更新して永続化する。
+  /// 失敗時挙動: 招待未存在/処理済み時は例外を送出する。
   Future<void> rejectInvitation(String invitationId) async {
     logger.section('rejectInvitation() 開始', name: _logName);
     logger.info('invitationId: $invitationId', name: _logName);
@@ -346,7 +334,10 @@ class InvitationService {
 
   // ===== 期限切れ招待のクリーンアップ =====
 
-  /// 期限切れの招待を自動的に expired 状態に更新
+  /// 入力: なし。
+  /// 前提条件: なし（定期実行を想定）。
+  /// 成功時結果: pending かつ期限切れの招待を expired へ更新する。
+  /// 失敗時挙動: `save()` 失敗時は例外を送出する。
   Future<void> cleanupExpiredInvitations() async {
     logger.section('cleanupExpiredInvitations() 開始', name: _logName);
 
@@ -380,15 +371,10 @@ class InvitationService {
 
   // ===== 招待のキャンセル =====
 
-  /// 招待をキャンセル（招待者のみ可能）
-  ///
-  /// [invitationId] 招待ID
-  /// [inviterId] 招待者のユーザーID（確認用）
-  ///
-  /// エラー:
-  /// - 招待が見つからない
-  /// - 招待者が一致しない
-  /// - 招待が既に処理済み
+  /// 入力: [invitationId], [inviterId]。
+  /// 前提条件: 呼び出しユーザーが招待者本人で、招待が pending であること。
+  /// 成功時結果: 招待を canceled に更新して永続化する。
+  /// 失敗時挙動: 権限不一致/処理済みなどは例外を送出する。
   Future<void> cancelInvitation(String invitationId, String inviterId) async {
     logger.section('cancelInvitation() 開始', name: _logName);
     logger.info('invitationId: $invitationId', name: _logName);

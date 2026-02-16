@@ -7,8 +7,13 @@ import '../../constants/text_styles.dart';
 import '../../extensions/context_extensions.dart';
 
 class ExtensionRequestDialog extends StatelessWidget {
+  /// 入力: 延長リクエスト表示用データ。
   final ExtensionRequest request;
+
+  /// 結果通知(承認): 親でルート遷移やAPI呼び出しを行うためのコールバック。
   final VoidCallback onApprove;
+
+  /// 結果通知(拒否): 親でルート遷移や状態更新を行うためのコールバック。
   final VoidCallback onReject;
 
   const ExtensionRequestDialog({

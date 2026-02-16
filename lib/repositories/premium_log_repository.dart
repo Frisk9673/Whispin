@@ -6,6 +6,16 @@ import '../utils/app_logger.dart';
 
 /// プレミアムログのリポジトリ
 /// ※ 検索キーはすべて「メールアドレス」で統一
+///
+/// 対象コレクション: `AppConstants.premiumLogCollection`
+/// 提供クエリの目的:
+/// - メールアドレス単位の課金ログ検索
+/// - Timestamp基準の時系列・期間検索
+/// - 管理画面向けの一覧/監視ストリーム提供
+///
+/// 利用方針:
+/// - 管理系 Service 層経由で利用する前提
+/// - UI から直接参照しない
 class PremiumLogRepository extends BaseRepository<PremiumLog> {
   static const String _logName = 'PremiumLogRepository';
 
@@ -60,6 +70,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       // ===== 方法1: 'ID' フィールドで検索 =====
       logger.start('方法1: ID フィールドで検索中...', name: _logName);
       var snapshot = await collection
+          // Firestore制約: where + orderBy の複合クエリはインデックス前提。
           .where('ID', isEqualTo: email)
           .orderBy('Timestamp', descending: true)
           .get();
@@ -76,6 +87,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
       // ===== 方法2: 'email' フィールドで検索（フォールバック） =====
       logger.start('方法2: email フィールドで検索中...', name: _logName);
       snapshot = await collection
+          // Firestore制約: 代替フィールドでも where + orderBy のインデックスが必要。
           .where('email', isEqualTo: email)
           .orderBy('Timestamp', descending: true)
           .get();
@@ -164,6 +176,8 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: 同一フィールド Timestamp の範囲条件 + orderBy は有効。
+          // ただし他フィールドと組み合わせる場合は追加インデックスが必要。
           .where(
             'Timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
@@ -196,6 +210,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
 
     try {
       final snapshot = await collection
+          // Firestore制約: where + orderBy の複合クエリはインデックス前提。
           .where('Detail', isEqualTo: detail)
           .orderBy('Timestamp', descending: true)
           .get();
@@ -263,6 +278,7 @@ class PremiumLogRepository extends BaseRepository<PremiumLog> {
     );
 
     return collection
+        // Firestore制約: where + orderBy の複合クエリはインデックス前提。
         .where('ID', isEqualTo: email)
         .orderBy('Timestamp', descending: true)
         .snapshots()

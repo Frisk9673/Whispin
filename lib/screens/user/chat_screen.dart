@@ -17,6 +17,10 @@ import '../../extensions/context_extensions.dart';
 import '../../extensions/datetime_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// 画面概要:
+/// - 目的: 1対1チャットの表示、送信、延長/招待などの会話操作を提供する。
+/// - 主な操作: ルーム読み込み、メッセージ送信、延長リクエスト対応、フレンド招待。
+/// - 依存Provider/Service: ChatService, StorageService, InvitationService, UserProvider, AuthService。
 class ChatScreen extends StatefulWidget {
   final String roomId;
   final AuthService authService;
@@ -62,6 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
+    // initState の責務: ルーム情報取得・タイマー開始・定期更新開始を行う。
     super.initState();
     _invitationService = InvitationService(widget.storageService);
 
@@ -70,6 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _loadRoom();
     if (_currentRoom != null) {
+      // 次は ChatService.startRoomTimer() でルーム監視/終了判定処理へ渡す。
       widget.chatService
           .startRoomTimer(_currentRoom!.id, _currentRoom!.expiresAt);
     }
@@ -99,6 +105,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _showInviteFriendDialog() async {
     final currentUserId = _getCurrentUserId();
 
+    // 次は InvitationService.showInviteFriendDialog() で招待処理へ渡す。
     await _invitationService.showInviteFriendDialog(
       context: context,
       roomId: widget.roomId,
@@ -290,6 +297,7 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.info('requestId: $requestId', name: _logName);
 
     try {
+      // 次は ChatService.approveExtension() で延長承認の更新処理へ渡す。
       await widget.chatService.approveExtension(requestId);
 
       if (!mounted) return;
@@ -314,6 +322,7 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.info('requestId: $requestId', name: _logName);
 
     try {
+      // 次は ChatService.rejectExtension() で延長拒否の更新処理へ渡す。
       await widget.chatService.rejectExtension(requestId);
 
       if (!mounted) return;
@@ -567,6 +576,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== メッセージ送信 =====
 
   Future<void> _sendMessage() async {
+    // 非同期送信開始時は入力をクリアしつつ失敗時に SnackBar を表示し、会話継続を優先する。
     if (_messageController.text.trim().isEmpty) return;
 
     if (_messageController.text.trim().length > AppConstants.messageMaxLength) {
@@ -586,6 +596,7 @@ class _ChatScreenState extends State<ChatScreen> {
     logger.debug('メッセージ送信: userId=$currentUserId', name: _logName);
 
     try {
+      // 次は ChatService.sendComment() でコメント永続化処理へ渡す。
       await widget.chatService.sendComment(
         widget.roomId,
         currentUserId,
@@ -613,6 +624,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     try {
+      // 次は ChatService.requestExtension() で延長リクエスト作成処理へ渡す。
       await widget.chatService.requestExtension(
         widget.roomId,
         currentUserId,
@@ -649,6 +661,7 @@ class _ChatScreenState extends State<ChatScreen> {
         logger.info('Privateルームのため評価ダイアログをスキップ', name: _logName);
       }
 
+      // 次は ChatService.leaveRoom() で退出反映とルーム状態更新処理へ渡す。
       await widget.chatService.leaveRoom(widget.roomId, currentUserId);
 
       if (mounted) {
@@ -695,6 +708,8 @@ class _ChatScreenState extends State<ChatScreen> {
   // ===== UI =====
 
   @override
+  // build の責務: チャット状態に応じたメッセージUI・入力UI・補助アクションを描画する。
+  // didChangeDependencies は不要のため未実装（依存は widget 経由 + initState で管理）。
   Widget build(BuildContext context) {
     final isDark = context.isDark;
 

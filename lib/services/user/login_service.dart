@@ -2,11 +2,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/app_logger.dart';
 
+/// 【担当ユースケース】
+/// - メール/パスワードログインの実行と、認証後のFirestore整合性確認。
+/// - 認証ライフサイクル上、成功後のセッション管理は AuthService に委譲する。
+///
+/// 【依存するRepository/Service】
+/// - [FirebaseAuth]: 認証実行。
+/// - [FirebaseFirestore]: User ドキュメントの存在/整合性確認。
+///
+/// 【主な副作用（DB更新/通知送信）】
+/// - FirebaseAuth セッション状態を更新する（サインイン）。
 class UserAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _logName = 'UserAuthService';
 
+  /// 入力: [email], [password]。
+  /// 前提条件: FirebaseAuth/Firestore が利用可能であること。
+  /// 成功時結果: 認証済み [User] を返す（Firestore未登録でも Auth 成功なら返す）。
+  /// 失敗時挙動: 認証・通信エラー時はログ出力後に rethrow する。
+  ///
+  /// 認証ライフサイクル参照:
+  /// - セッション保持: AuthService.initialize / AuthService.currentUser
+  /// - サインアウト: AuthService.logout, AdminLogoutService.logout
   Future<User?> loginUser({
     required String email,
     required String password,
@@ -23,6 +41,7 @@ class UserAuthService {
     try {
       logger.start('FirebaseAuth.signInWithEmailAndPassword() 呼び出し中...',
           name: _logName);
+      // 次は FirebaseAuth.signInWithEmailAndPassword() で認証基盤へ処理を渡す。
 
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),

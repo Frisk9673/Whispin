@@ -8,6 +8,36 @@ import '../../constants/text_styles.dart';
 import '../../extensions/datetime_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// Premium 課金ログを 1 件表示する管理画面向けタイル。
+///
+/// ## ドメイン情報の意味
+/// - 時刻情報: `log.timestamp` は課金イベントの発生時刻を表す。
+///   - 一覧では「相対時間 (`toRelativeTime`) + 日付 (`toJapaneseDate`)」を表示。
+///   - ダイアログでは「曜日付き日付 (`toJapaneseDateWithWeekday`) + 時刻 (`toTimeString`)」を表示。
+/// - ユーザー情報: `log.email` をキーに `PremiumLogService.fetchUserByEmail` で Firestore ユーザーを取得し、
+///   氏名・電話番号・ニックネーム・プレミアム契約状態を補足表示する。
+/// - 課金関連項目: `log.detail` は課金イベント種別（例: 契約/解約）を表す。
+///   - 「契約」はポジティブアクションとして success 系カラー。
+///   - それ以外は解約系として error 系カラー。
+///
+/// ## フォーマット規約
+/// - 日時: 画面用途でフォーマットを統一する。
+///   - 一覧: `toRelativeTime`, `toJapaneseDate`
+///   - 詳細: `toJapaneseDateWithWeekday`, `toTimeString`
+/// - 金額: 本タイルでは金額を扱わない。将来追加する場合は「`¥` + 3桁区切り + 税込/税抜ラベル」を必須とする。
+/// - ステータス: 短い日本語ラベルで表示し、色で意味を補強する（契約中=success, 未契約/解約=secondary or error）。
+///
+/// ## 同種タイル追加時の実装ルール
+/// - 命名:
+///   - Widget 名は `*LogListTile` 形式（例: `PremiumLogListTile`）。
+///   - ロガー名は `static const String _logName = '<ClassName>'` でクラス名と一致させる。
+/// - 引数:
+///   - コンストラクタは `const` + `required` なログモデル 1 件を受け取る。
+///   - 詳細表示で追加データが必要な場合は service 経由で取得し、UI で null 安全を担保する。
+/// - スタイル:
+///   - 余白/角丸/色/文字は `AppConstants`・`AppColors`・`AppTextStyles` を優先して再利用。
+///   - タップ可能領域は `Card + InkWell` を基本とし、角丸値を統一する。
+///   - 情報行は `_buildInfoSection` / `_buildInfoRow` 相当の構造を使い、視覚的一貫性を保つ。
 class PremiumLogListTile extends StatelessWidget {
   final PremiumLog log;
   static const String _logName = 'PremiumLogListTile';

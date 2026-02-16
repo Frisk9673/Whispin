@@ -14,6 +14,7 @@ class RouteGuard {
   RouteGuard._();
 
   /// 認証が必要なルートかチェック
+  /// ガード判定に使う状態値: routeName（遷移先ルート文字列）
   static bool requiresAuth(String routeName) {
     const protectedRoutes = [
       AppRoutes.home,
@@ -29,6 +30,7 @@ class RouteGuard {
   }
 
   /// 管理者権限が必要なルートかチェック
+  /// ガード判定に使う状態値: routeName（遷移先ルート文字列）
   static bool requiresAdmin(String routeName) {
     const adminRoutes = [
       AppRoutes.adminHome,
@@ -40,6 +42,9 @@ class RouteGuard {
   }
 
   /// 認証チェック（ユーザー）
+  /// ガード判定に使うProvider/状態値:
+  /// - 引数の [AuthService]（通常は Provider 経由で注入された認証サービス）
+  /// - [AuthService.isLoggedIn] の戻り値
   static Future<bool> checkAuth(
     BuildContext context,
     String routeName,
@@ -72,6 +77,9 @@ class RouteGuard {
   }
 
   /// プレミアム会員チェック
+  /// ガード判定に使うProvider/状態値:
+  /// - 引数の [AuthService.currentUser]
+  /// - [currentUser.premium] フラグ
   static bool checkPremium(BuildContext context, AuthService authService) {
     final user = authService.currentUser;
 
@@ -138,6 +146,9 @@ class RouteGuard {
   }
 
   /// ルームの参加可能チェック
+  /// ガード判定に使うProvider/状態値:
+  /// - Provider<StorageService> から取得した [StorageService.rooms] / [StorageService.blocks]
+  /// - 引数の [roomId], [userId]
   static bool checkRoomAccess(
     BuildContext context,
     String roomId,
@@ -202,6 +213,7 @@ class RouteGuard {
   }
 
   /// 戻るボタンの無効化（特定画面用）
+  /// ガード判定に使う状態値: routeName（現在表示中ルート）
   static bool preventBack(String routeName) {
     const noBackRoutes = [
       AppRoutes.home,

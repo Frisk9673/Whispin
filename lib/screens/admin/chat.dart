@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// 対象業務: チャット監視（簡易チャット画面の管理者向けモック）
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 

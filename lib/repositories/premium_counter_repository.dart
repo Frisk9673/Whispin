@@ -3,7 +3,17 @@ import '../constants/app_constants.dart';
 import '../models/admin/premium_counter.dart';
 import '../utils/app_logger.dart';
 
-/// プレミアム会員数カウンターのリポジトリ
+/// プレミアム会員数カウンターのリポジトリ。
+///
+/// 対象コレクション: `AppConstants.premiumCounterCollection`
+/// 提供クエリの目的:
+/// - 単一ドキュメント (`counter`) の取得/監視
+/// - increment/decrement によるカウンター更新
+/// - users コレクションからの再計算
+///
+/// 利用方針:
+/// - 管理系 Service 層経由で利用する前提
+/// - UI から直接参照しない
 class PremiumCounterRepository {
   static const String _logName = 'PremiumCounterRepository';
   static const String _collectionName = AppConstants.premiumCounterCollection;
@@ -50,6 +60,7 @@ class PremiumCounterRepository {
       // 実際のプレミアム会員数を計算
       final snapshot = await _firestore
           .collection(AppConstants.usersCollection)
+          // Firestore制約: 複合where（premium + deletedAt）は複合インデックス前提。
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();
@@ -155,6 +166,7 @@ class PremiumCounterRepository {
       // 実際のプレミアム会員数を計算
       final snapshot = await _firestore
           .collection('users')
+          // Firestore制約: 複合where（premium + deletedAt）は複合インデックス前提。
           .where('premium', isEqualTo: true)
           .where('deletedAt', isNull: true)
           .get();

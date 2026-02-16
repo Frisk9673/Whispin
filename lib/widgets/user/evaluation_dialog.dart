@@ -14,8 +14,13 @@ import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 class EvaluationDialog extends StatefulWidget {
+  /// 入力: 評価対象ユーザーID。
   final String partnerId;
+
+  /// 入力: 評価送信者ユーザーID。
   final String currentUserId;
+
+  /// 入力: 評価/ブロック情報を永続化する保存先。
   final StorageService storageService;
 
   const EvaluationDialog({
@@ -30,12 +35,20 @@ class EvaluationDialog extends StatefulWidget {
 }
 
 class _EvaluationDialogState extends State<EvaluationDialog> {
+  /// 内部状態: UIで選択中の評価値（Good/Bad）。
   String? _selectedRating;
+
+  /// 内部状態: このダイアログ内でのみ保持するフレンド申請チェック状態。
   bool _addFriend = false;
+
+  /// 内部状態: このダイアログ内でのみ保持するブロックチェック状態。
   bool _blockUser = false;
+
+  /// 内部状態: 送信中の二重操作を防止するフラグ。
   bool _isSubmitting = false;
   static const String _logName = 'EvaluationDialog';
 
+  /// 外部状態アクセス: Repository 経由でブロック状態を反映するために使用。
   final BlockRepository _blockRepository = BlockRepository();
 
   Future<void> _handleSubmit() async {
@@ -77,6 +90,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
       if (_addFriend) {
         logger.start('フレンドリクエスト送信', name: _logName);
 
+        // 外部状態(Provider): FriendshipService 経由で申請を反映する。
         final friendshipService = context.read<FriendshipService>();
 
         final result = await friendshipService.sendFriendRequest(
@@ -137,7 +151,8 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
 
       logger.section('評価ダイアログ送信完了', name: _logName);
 
-      // ダイアログを閉じる
+      // 結果通知: Navigator.pop で呼び出し元へ完了を通知。
+      // 実データの反映は storageService / Provider 経由で行う。
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -160,6 +175,7 @@ class _EvaluationDialogState extends State<EvaluationDialog> {
     logger.info('selectedRating: $_selectedRating', name: _logName);
 
     try {
+      // 外部状態(Provider): UserRepository を取得して相手のrateを更新。
       final userRepository = context.read<UserRepository>();
 
       logger.start('相手のユーザー情報を取得中...', name: _logName);

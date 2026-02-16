@@ -16,6 +16,10 @@ import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 /// レスポンシブ対応のルーム作成画面（ダークモード対応版）
+/// 画面概要:
+/// - 目的: 新規ルームを作成してチャット開始へ遷移する。
+/// - 主な操作: ルーム名入力、公開設定選択、作成実行。
+/// - 依存Provider/Service: AuthService, ChatService, StorageService, UserProvider, ChatRoomRepository。
 class RoomCreateScreen extends StatefulWidget {
   const RoomCreateScreen({super.key});
 
@@ -39,6 +43,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   Future<void> _createRoom() async {
+    // バリデーション責務: 画面側で最低限の入力チェックを行い、作成APIへ不正値を渡さない。
     final roomName = _roomNameController.text.trim();
 
     if (roomName.isEmpty) {
@@ -52,6 +57,7 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
       return;
     }
 
+    // 非同期作成開始時はローディング表示を有効化し、失敗時は SnackBar で通知する。
     setState(() => _isLoading = true);
 
     try {
@@ -118,6 +124,8 @@ class _RoomCreateScreenState extends State<RoomCreateScreen> {
   }
 
   @override
+  // build の責務: 入力フォームと作成ボタン状態(_isLoading)を描画する。
+  // initState / didChangeDependencies は不要のため未実装。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;

@@ -16,6 +16,10 @@ import '../../extensions/context_extensions.dart';
 import '../../utils/app_logger.dart';
 
 /// レスポンシブ対応のルーム参加画面（ダークモード対応版）
+/// 画面概要:
+/// - 目的: 公開ルームを検索・参加する。
+/// - 主な操作: ルーム一覧読み込み、リフレッシュ、ルーム参加。
+/// - 依存Provider/Service: ChatService, StorageService, UserProvider, UserRepository。
 class RoomJoinScreen extends StatefulWidget {
   const RoomJoinScreen({super.key});
 
@@ -36,6 +40,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
 
   @override
   void initState() {
+    // initState の責務: 初回ルーム一覧の取得を開始する。
     super.initState();
     _chatService = context.read<ChatService>();
   }
@@ -57,6 +62,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     // キーボードを閉じる
     FocusScope.of(context).unfocus();
 
+    // 非同期検索開始時は検索中UIを表示し、失敗時は SnackBar で通知する。
     setState(() {
       _isSearching = true;
       _searchResults = [];
@@ -107,6 +113,7 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
     logger.section('ルーム参加処理開始', name: _logName);
     logger.info('参加先: ${room.topic} (${room.id})', name: _logName);
 
+    // 非同期参加開始時は操作をロックし、失敗時は _isLoading を戻してエラー通知する。
     setState(() => _isLoading = true);
 
     try {
@@ -157,6 +164,8 @@ class _RoomJoinScreenState extends State<RoomJoinScreen> {
   }
 
   @override
+  // build の責務: 参加可能ルーム一覧/空状態/ロード状態を描画する。
+  // didChangeDependencies は不要のため未実装。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsiveHorizontalPadding;

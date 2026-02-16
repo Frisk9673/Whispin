@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+// 親画面（例: lib/screens/admin/chat_screen.dart）から受け取るデータ構造:
+// - name: 発言者名（表示ラベル）
+// - text: 発言本文
+// - isMe: 表示方向（true=右寄せ、false=左寄せ）
+// 共通部品化判断基準:
+// - 管理者/ユーザーの両画面で同一の3プロパティ契約で利用できる
+// - 画面固有の色・監視用メタ情報表示を内包しない
+// 条件を満たす場合は widgets/common への移行対象とする。
 class SpeechBubble extends StatelessWidget {
   final String name;
   final String text;

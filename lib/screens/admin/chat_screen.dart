@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'components/speech_bubble.dart';
 
+// 対象業務: チャット監視（会話表示レイアウトの管理者向け確認画面）
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
@@ -34,6 +35,10 @@ class ChatScreen extends StatelessWidget {
               ),
             ),
 
+            // 共通部品化判断基準:
+            // - SpeechBubble と入力欄のレイアウトがユーザー画面でも同じ構成
+            // - 管理者専用の監視情報（通報ステータスなど）を持たない
+            // 上記を満たせば widgets/common へ移行する。
             // Messages area
             Expanded(
               child: Padding(

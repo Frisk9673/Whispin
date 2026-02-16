@@ -1,3 +1,24 @@
+/// [責務]
+/// - `.env` から実行環境に必要な設定を読み込み、アプリ全体で参照する。
+///
+/// [環境変数キー仕様]
+/// - 必須: なし（未設定時はすべて既定値へフォールバック）
+/// - 任意:
+///   - `ENVIRONMENT`（未設定時: `development`）
+///   - `FIREBASE_MODE`（未設定時: `emulator`）
+///   - `BACKEND`（未設定時: `firebase`）
+///   - `DEBUG_MODE`（未設定時: ビルドモード `kDebugMode`）
+///   - `EMULATOR_HOST`（未設定時: `localhost`）
+///   - `AUTH_EMULATOR_PORT`（未設定時: `9099`）
+///   - `FIRESTORE_EMULATOR_PORT`（未設定時: `8080`）
+///   - `STORAGE_EMULATOR_PORT`（未設定時: `9199`）
+///   - `DATABASE_EMULATOR_PORT`（未設定時: `9000`）
+/// - 未設定/不正値時の挙動: `int.tryParse` 失敗時を含め、既定値で継続する。
+///
+/// [主要参照元（import）]
+/// - `lib/main.dart`
+/// - `lib/config/firebase_config.dart`
+/// - `lib/services/user/profile_image_service.dart`
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 

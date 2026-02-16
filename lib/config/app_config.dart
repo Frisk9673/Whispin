@@ -1,3 +1,14 @@
+/// [責務]
+/// - アプリ全体で共通利用する UI/表示系設定値（テーマ・ロケール・タイトル）を提供する。
+///
+/// [設定値の意味と参照先]
+/// - `lightTheme` / `darkTheme`: `MaterialApp` のテーマ定義（参照先: `lib/main.dart`）。
+/// - `defaultLocale` / `supportedLocales`: ローカライズの既定値と対応言語（参照先: `lib/main.dart` の `MaterialApp`）。
+/// - `appTitle`: アプリ表示名（参照先: `lib/main.dart` の `MaterialApp.title`）。
+/// - `showDebugBanner`: デバッグバナー表示制御（参照先: `lib/main.dart` の `debugShowCheckedModeBanner`）。
+///
+/// [主要参照元（import）]
+/// - `lib/main.dart`
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 

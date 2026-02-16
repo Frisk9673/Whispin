@@ -6,6 +6,8 @@ import '../../../extensions/context_extensions.dart';
 /// モバイル用ボトムナビゲーションバー
 class AppBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
+
+  /// ルート遷移の実行責務は親に委譲し、このWidgetはindex通知のみを担当する。
   final ValueChanged<int> onTap;
 
   const AppBottomNavigationBar({

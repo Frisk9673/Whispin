@@ -7,6 +7,10 @@ class UserProvider extends ChangeNotifier {
   final UserRepository _userRepository;
   static const String _logName = 'UserProvider';
 
+  // ===== 管理対象state一覧 =====
+  // _currentUser: 認証済みユーザーのプロフィール情報。
+  // _isLoading: ユーザー関連処理の進行状態。
+  // _error: 画面表示用エラーメッセージ。
   app_user.User? _currentUser;
   bool _isLoading = false;
   String? _error;
@@ -22,22 +26,30 @@ class UserProvider extends ChangeNotifier {
   String? get profileImageUrl => _currentUser?.profileImageUrl;
 
   /// ログイン時にユーザー情報を読み込む
+  /// state変更:
+  /// - 開始時: _isLoading=true, _error=null
+  /// - 成功時: _currentUser 更新
+  /// - 失敗時: _error 更新
+  /// - 終了時: _isLoading=false
   Future<void> loadUserData(String email) async {
     logger.section('loadUserData() 開始 - email: $email', name: _logName);
 
     _isLoading = true;
     _error = null;
+    // 読み込み開始とエラー解除を画面へ反映する。
     notifyListeners();
 
     try {
       logger.start('Repository経由でユーザー検索中...', name: _logName);
 
+      // 次は UserRepository.findByEmail() で Firestore の User 取得処理へ渡す。
       _currentUser = await _userRepository.findByEmail(email);
 
       if (_currentUser == null) {
         logger.error('ユーザーが見つかりません: $email', name: _logName);
         _error = 'ユーザー情報が見つかりません';
         _isLoading = false;
+        // エラー表示とローディング解除を即時反映する。
         notifyListeners();
         return;
       }
@@ -56,6 +68,7 @@ class UserProvider extends ChangeNotifier {
       logger.section('loadUserData() 完了', name: _logName);
 
       _isLoading = false;
+      // ユーザー情報ロード完了を画面へ反映する。
       notifyListeners();
     } catch (e, stack) {
       logger.error(
@@ -66,11 +79,13 @@ class UserProvider extends ChangeNotifier {
       );
       _error ??= 'ユーザー情報の読み込みに失敗しました: $e';
       _isLoading = false;
+      // エラー表示とローディング解除を画面へ反映する。
       notifyListeners();
     }
   }
 
   /// プレミアムステータスを更新
+  /// state変更: 成功時に _currentUser.premium を更新。
   Future<void> updatePremiumStatus(bool isPremium) async {
     logger.section('updatePremiumStatus($isPremium) 開始', name: _logName);
 
@@ -84,6 +99,7 @@ class UserProvider extends ChangeNotifier {
       logger.info('現在のプレミアム状態: ${_currentUser!.premium}', name: _logName);
       logger.info('変更後のプレミアム状態: $isPremium', name: _logName);
 
+      // Repository境界: プレミアム状態更新はRepositoryへ委譲する。
       await _userRepository.updatePremiumStatus(
         _currentUser!.id,
         isPremium,
@@ -91,6 +107,7 @@ class UserProvider extends ChangeNotifier {
 
       // プレミアム契約・解約ログを作成
       if (_currentUser!.id.isNotEmpty) {
+        // Repository境界: ログ作成はRepositoryへ委譲する。
         await _userRepository.createPremiumLog(
           id: _currentUser!.id,
           isPremium: isPremium,
@@ -121,6 +138,7 @@ class UserProvider extends ChangeNotifier {
       logger.success('ローカルユーザー情報更新完了', name: _logName);
       logger.info('  premium: ${_currentUser!.premium}', name: _logName);
 
+      // premium表示の更新を画面へ反映する。
       notifyListeners();
 
       logger.section('updatePremiumStatus() 完了', name: _logName);
@@ -132,6 +150,7 @@ class UserProvider extends ChangeNotifier {
 
 
   /// プロフィール画像URLを更新
+  /// state変更: 成功時に _currentUser.profileImageUrl を更新。
   Future<void> updateProfileImageUrl(String? profileImageUrl) async {
     logger.section('updateProfileImageUrl() 開始', name: _logName);
 
@@ -141,6 +160,7 @@ class UserProvider extends ChangeNotifier {
     }
 
     try {
+      // Repository境界: プロフィール画像URL更新はRepositoryへ委譲する。
       await _userRepository.updateProfileImageUrl(
         _currentUser!.id,
         profileImageUrl,
@@ -164,6 +184,7 @@ class UserProvider extends ChangeNotifier {
         profileImageUrl: profileImageUrl,
       );
 
+      // プロフィール画像表示の更新を画面へ反映する。
       notifyListeners();
 
       logger.section('updateProfileImageUrl() 完了', name: _logName);
@@ -175,6 +196,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// アカウント削除（論理削除）
+  /// state変更: 成功時に _currentUser と _error をクリア。
   Future<void> deleteAccount() async {
     logger.section('deleteAccount() 開始', name: _logName);
 
@@ -189,6 +211,7 @@ class UserProvider extends ChangeNotifier {
         name: _logName,
       );
 
+      // Repository境界: 論理削除はRepositoryへ委譲する。
       await _userRepository.softDelete(_currentUser!.id);
 
       logger.success('Firestore deletedAt 更新完了', name: _logName);
@@ -197,6 +220,7 @@ class UserProvider extends ChangeNotifier {
       _currentUser = null;
       _error = null;
 
+      // 削除後のログアウト状態を画面へ反映する。
       notifyListeners();
 
       logger.section('deleteAccount() 完了', name: _logName);
@@ -212,21 +236,25 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// ユーザー情報をクリア（ログアウト時）
+  /// state変更: _currentUser/_error/_isLoading を初期状態へ戻す。
   void clearUser() {
     logger.info('clearUser() - ユーザー情報をクリア', name: _logName);
     _currentUser = null;
     _error = null;
     _isLoading = false;
+    // ログアウト後の初期表示へ再描画する。
     notifyListeners();
   }
 
   /// ユーザー評価スコアを更新
+  /// state変更: 成功時に _currentUser.rate を更新。
   Future<void> updateRate(double rate) async {
     if (_currentUser == null) return;
 
     logger.debug('updateRate($rate)', name: _logName);
 
     try {
+      // Repository境界: 評価スコア更新はRepositoryへ委譲する。
       await _userRepository.updateRate(_currentUser!.id, rate);
 
       _currentUser = app_user.User(
@@ -247,6 +275,7 @@ class UserProvider extends ChangeNotifier {
         profileImageUrl: _currentUser!.profileImageUrl,
       );
 
+      // 最新評価スコアの表示へ更新する。
       notifyListeners();
     } catch (e) {
       logger.error('評価スコア更新エラー: $e', name: _logName, error: e);
@@ -255,12 +284,14 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// ルーム参加回数をインクリメント
+  /// state変更: 成功時に _currentUser.roomCount を +1 更新。
   Future<void> incrementRoomCount() async {
     if (_currentUser == null) return;
 
     logger.debug('incrementRoomCount()', name: _logName);
 
     try {
+      // Repository境界: 参加回数更新はRepositoryへ委譲する。
       await _userRepository.incrementRoomCount(_currentUser!.id);
 
       _currentUser = app_user.User(
@@ -281,6 +312,7 @@ class UserProvider extends ChangeNotifier {
         profileImageUrl: _currentUser!.profileImageUrl,
       );
 
+      // 参加回数表示の更新を画面へ反映する。
       notifyListeners();
     } catch (e) {
       logger.error('ルーム参加回数更新エラー: $e', name: _logName, error: e);

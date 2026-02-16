@@ -19,7 +19,10 @@ import '../../extensions/context_extensions.dart';
 import '../../extensions/datetime_extensions.dart';
 import '../../utils/app_logger.dart';
 
-/// 通知一覧画面（フレンドリクエスト + ルーム招待）
+/// 画面概要:
+/// - 目的: 通知（フレンド申請・ルーム招待）を集約表示し、承認/拒否などの処理を行う。
+/// - 主な操作: 通知読み込み、フレンド申請承認/拒否、招待承認/拒否。
+/// - 依存Provider/Service: FriendshipService, InvitationService, UserRepository, FirebaseAuth。
 class FriendRequestsScreen extends StatefulWidget {
   const FriendRequestsScreen({super.key});
 
@@ -42,6 +45,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   @override
   void initState() {
+    // initState の責務: 通知取得に必要なService初期化と初回ロードを行う。
     super.initState();
     _friendshipService = context.read<FriendshipService>();
     _invitationService = context.read<InvitationService>();
@@ -51,6 +55,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   Future<void> _loadNotifications() async {
     logger.section('通知読み込み開始', name: _logName);
 
+    // 非同期読み込み開始時はローディング表示にし、例外時は SnackBar で通知する。
     setState(() => _isLoading = true);
 
     try {
@@ -256,6 +261,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   @override
+  // build の責務: 通知種別ごとの表示とロード状態UIを統合して描画する。
+  // didChangeDependencies は不要のため未実装（依存取得は initState に集約）。
   Widget build(BuildContext context) {
     final isDark = context.isDark;
 

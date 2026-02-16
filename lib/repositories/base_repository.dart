@@ -1,9 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/app_logger.dart';
 
-/// リポジトリの基底クラス
+/// リポジトリの基底クラス。
 ///
-/// 全てのリポジトリで共通する基本操作を提供
+/// `BaseRepository` は各 Repository 実装の共通基盤として、以下を統一する。
+/// - 共通 CRUD (`create/find/update/delete`) の提供
+/// - Realtime 監視 Stream (`watchById/watchAll/watchWhere`) の提供
+/// - ログ出力と例外ハンドリング方針の統一
+///
+/// エラーハンドリング方針:
+/// - 永続化処理で失敗した場合は logger に記録して `rethrow` する
+/// - 参照系の一部ユーティリティ（`exists`, `count`）はフェイルセーフ値を返す
+///
+/// 利用方針:
+/// - 個別 Repository はこの基底を継承し、アプリ固有のクエリのみを追加する
+/// - 呼び出しは Service 層経由を前提とし、UI から直接呼ばない
 abstract class BaseRepository<T> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _logName;

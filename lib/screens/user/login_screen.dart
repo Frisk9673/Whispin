@@ -17,6 +17,10 @@ import '../../extensions/context_extensions.dart';
 import '../../extensions/string_extensions.dart';
 import '../../utils/app_logger.dart';
 
+/// 画面概要:
+/// - 目的: 既存ユーザーの認証と初期データ読み込みを行い、ホームへ遷移する。
+/// - 主な操作: メール/パスワード入力、ログイン実行、アカウント作成画面への遷移。
+/// - 依存Provider/Service: UserProvider, AuthService, StorageService, UserAuthService, FCMService。
 class UserLoginPage extends StatefulWidget {
   const UserLoginPage({super.key});
 
@@ -44,6 +48,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
   Future<void> _login() async {
     logger.section('_login() 開始', name: _logName);
 
+    // 非同期処理開始時にローディングを表示し、失敗時は SnackBar + message で画面内に反映する。
     setState(() {
       _isLoading = true;
       message = '';
@@ -53,7 +58,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
 
-      // バリデーション
+      // バリデーション責務: 画面側で入力値の基本整合性を担保し、認証API呼び出し前に早期リターンする。
       if (email.isBlank || password.isBlank) {
         context.showWarningSnackBar("メールアドレスとパスワードを入力してください");
         setState(() {
@@ -83,6 +88,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
       logger.info('ログイン試行: $email', name: _logName);
 
+      // 次は UserAuthService.loginUser() で Firebase Auth/Firestore 認証処理へ渡す。
       final loginResult = await userAuthService.loginUser(
         email: email,
         password: password,
@@ -136,6 +142,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
       logger.start('UserProvider.loadUserData() 実行中...', name: _logName);
       final userProvider = context.read<UserProvider>();
+      // 次は UserProvider.loadUserData() で Repository 経由のユーザー取得へ渡す。
       await userProvider.loadUserData(email);
 
       if (userProvider.error != null) {
@@ -206,6 +213,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
   }
 
   @override
+  // build の責務: 入力フォーム/ボタン/ローディング表示を状態(_isLoading, message)に応じて描画する。
+  // initState / didChangeDependencies は不要のため未実装（依存解決はイベント内で実施）。
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
     final padding = context.responsivePadding;
