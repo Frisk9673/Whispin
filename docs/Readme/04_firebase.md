@@ -16,9 +16,23 @@
 
 - **Realtime Database**: `database.rules.json`（`firebase.json` の `database.rules` で参照）
 - **Firebase Storage**: `storage.rules`（`firebase.json` の `storage.rules` で参照）
-- **Cloud Firestore**: `firebase.json` 上にルールファイル参照の記載なし
+- **Cloud Firestore**: `firestore.rules`（リポジトリルート）
 
 > 補足: Realtime Database の `database.rules.json` は現状 `".read": true` / `".write": true` の全許可設定のため、開発用途限定です。本番環境では利用しないでください。
+
+`docs/Readme/06_security.md` はセキュリティ設計・運用方針の解説ドキュメントで、実際に Firestore へ適用するルール定義はリポジトリルートの `firestore.rules` を正本として管理します。
+
+### Firestoreルールの適用手順
+
+```bash
+# ローカル検証（Emulator）
+firebase emulators:start
+
+# 本番反映（Firestore Rulesのみ）
+firebase deploy --only firestore:rules
+```
+
+> `firebase emulators:start` 実行時は `firebase.json` の設定に従って `firestore.rules` が読み込まれます。ルール変更時は、Emulator で動作確認後に `firebase deploy --only firestore:rules` で反映してください。
 
 ---
 
